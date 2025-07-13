@@ -52,9 +52,6 @@ const ThemeSwatches = ({ theme }: { theme: 'light' | 'dark' }) => {
           <h1 className="text-3xl font-bold mb-2">
             {theme === 'light' ? '☀️' : '🌙'} {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Colors
           </h1>
-          <p className="text-muted-foreground">
-            DaisyUI-inspired semantic color system
-          </p>
         </div>
 
         {/* Color Swatches */}

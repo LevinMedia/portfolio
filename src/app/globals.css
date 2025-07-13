@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  /* Light theme with DaisyUI-inspired colors */
+  /* Light theme */
   --background: #ffffff;
   --foreground: #1a1a1a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --border: #e2e8f0;
   --input: #ffffff;
+  
+  /* Responsive grid properties */
+  --grid-size: 4px;
+  --grid-major: 16px;
+  --grid-opacity-light: 0.08;
+  --grid-opacity-dark: 0.15;
   
   /* Vibrant theme colors - light mode versions */
   --primary: #c026d3;           /* Slightly darker purple for light mode */
@@ -47,7 +53,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Base colors - converted from DaisyUI OKLCH */
+    /* Base colors */
     --background: #242427;        /* oklch(14% 0.005 285.823) */
     --foreground: #f4f4f5;        /* oklch(96% 0.007 247.896) */
     --muted: #36363b;             /* oklch(21% 0.006 285.885) */
@@ -55,7 +61,7 @@
     --border: #52525b;            /* slightly lighter muted */
     --input: #36363b;             /* same as muted */
     
-    /* Theme colors - from DaisyUI OKLCH */
+    /* Theme colors */
     --primary: #d946ef;           /* oklch(55% 0.288 302.321) */
     --primary-foreground: #ffffff; /* oklch(100% 0 0) */
     --secondary: #f471b5;         /* oklch(65% 0.241 354.308) */
@@ -81,6 +87,28 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Responsive grid sizing */
+@media (max-width: 640px) {
+  :root {
+    --grid-size: 2px;
+    --grid-major: 8px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    --grid-size: 3px;
+    --grid-major: 12px;
+  }
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --grid-size: 4px;
+    --grid-major: 16px;
+  }
 }
 
 /* Ensure system dark mode is respected */

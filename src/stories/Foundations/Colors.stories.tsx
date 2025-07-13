@@ -92,7 +92,7 @@ export const AllColors: Story = {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Color Palette</h1>
           <p className="text-muted-foreground">
-            LevinMedia utilizes the complete Tailwind CSS color system with all scales from 50 to 950.
+            LevinMedia utilizes the complete Tailwind CSS color system with all scales from 50 to 950. 
             Hover over swatches to see shade numbers.
           </p>
         </div>
