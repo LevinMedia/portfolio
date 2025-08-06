@@ -6,7 +6,7 @@ import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 interface TooltipProps {
   children: ReactElement;
-  codeGenerator?: (props: any, children: React.ReactNode) => string;
+  codeGenerator?: (props: Record<string, unknown>, children: React.ReactNode) => string;
   borderRadius?: number;
   showBorder?: boolean;
   borderColor?: string;
@@ -15,7 +15,7 @@ interface TooltipProps {
   fullWidth?: boolean;
 }
 
-function getDefaultCode(props: any, children: React.ReactNode) {
+function getDefaultCode(props: Record<string, unknown>, children: React.ReactNode) {
   const propOrder = [
     'style', 'color', 'size', 'disabled', 'className', 'iconLeft', 'iconRight', 'type', 'onClick'
   ];
@@ -47,8 +47,8 @@ function getDefaultCode(props: any, children: React.ReactNode) {
   
   if (React.isValidElement(children)) {
     const childType = children.type;
-    if (typeof childType === 'function') {
-      componentName = (childType as any).displayName || (childType as any).name || 'Component';
+          if (typeof childType === 'function') {
+        componentName = (childType as { displayName?: string; name?: string }).displayName || (childType as { name?: string }).name || 'Component';
     } else if (typeof childType === 'string') {
       componentName = childType;
     }
@@ -113,9 +113,9 @@ const Tooltip: React.FC<TooltipProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  const componentProps = (children.props ?? {}) as Record<string, any>;
+  const componentProps = (children.props ?? {}) as Record<string, unknown>;
   const code = tooltipType === 'code' 
-    ? (tooltipContent || codeGenerator(componentProps, componentProps.children))
+    ? (tooltipContent || codeGenerator(componentProps, componentProps.children as React.ReactNode))
     : tooltipContent || '';
 
   useEffect(() => {

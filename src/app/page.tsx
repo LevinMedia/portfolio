@@ -115,7 +115,7 @@ export default function Home() {
       <div className="row-start-2 col-span-6 flex flex-col lg:flex-row items-start" style={{ gap: 'var(--grid-major)' }}>
         {/* Image Box */}
         <Tooltip 
-          codeGenerator={(props: any, children: any) => {
+          codeGenerator={() => {
             return `<img 
   src="/Levin_Home.jpg" 
   alt="David Levin"
@@ -137,9 +137,9 @@ export default function Home() {
 
         <main className="relative flex flex-col items-center sm:items-start border border-blue-200/15 rounded-none w-full lg:flex-grow" style={{ gap: 'var(--grid-major)', padding: 'var(--grid-major)' }}>
         <Tooltip 
-          codeGenerator={(props: any, children: any) => {
+          codeGenerator={() => {
             return `<div className="w-full text-2xl sm:text-5xl font-extrabold tracking-wide text-foreground font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>
-  Hi, I'm David 👋
+  Hi, I&apos;m David 👋
 </div>`
           }} 
           borderRadius={0}
@@ -147,10 +147,10 @@ export default function Home() {
           borderColor="stroke-accent"
           fullWidth={true}
         >
-          <div className="w-full text-2xl sm:text-5xl font-extrabold tracking-wide text-foreground font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>Hi, I'm David 👋</div>
+          <div className="w-full text-2xl sm:text-5xl font-extrabold tracking-wide text-foreground font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>Hi, I&apos;m David 👋</div>
         </Tooltip>
         <Tooltip 
-          codeGenerator={(props: any, children: any) => {
+          codeGenerator={() => {
             return `<ul className="w-full list-none text-xs sm:text-sm/6 text-left font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>
   <li className="tracking-[-.01em] flex items-start gap-2" style={{ marginBottom: 'var(--grid-major)' }}>
     <span className="text-lg">👷</span>
@@ -215,7 +215,7 @@ export default function Home() {
       
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] z-50">
         <Tooltip 
-          codeGenerator={(props: any, children: any) => {
+                      codeGenerator={() => {
             return `<Navigation>
   <CircleInSquare size={32} onClick={() => window.location.href = '/'} />
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />

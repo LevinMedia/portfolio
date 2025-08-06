@@ -56,7 +56,7 @@ export default function Navigation({ children }: NavigationProps) {
   // Clone navigation items with modified onClick handlers for mobile menu
   const mobileNavigationItems = navigationItems.map((item, index) => {
     if (isValidElement(item)) {
-      const typedItem = item as React.ReactElement<any>
+      const typedItem = item as React.ReactElement<{ onClick?: () => void }>
       return cloneElement(typedItem, {
         key: index,
         onClick: () => {

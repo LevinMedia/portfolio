@@ -5,7 +5,7 @@ interface ButtonTooltipProps {
   children: React.ReactElement;
 }
 
-function getButtonCode(props: any, children: React.ReactNode) {
+function getButtonCode(props: Record<string, unknown>) {
   const propOrder = [
     'style', 'color', 'size', 'disabled', 'className', 'iconLeft', 'iconRight', 'type', 'onClick'
   ];
@@ -35,12 +35,12 @@ function getButtonCode(props: any, children: React.ReactNode) {
 }
 
 const ButtonTooltip: React.FC<ButtonTooltipProps> = ({ children }) => {
-  const buttonProps = (children.props ?? {}) as Record<string, any>;
+  const buttonProps = (children.props ?? {}) as Record<string, unknown>;
   const borderRadius = buttonProps.size === 'large' ? 8 : 6;
 
   return (
     <Tooltip
-      codeGenerator={getButtonCode}
+      codeGenerator={() => getButtonCode(buttonProps)}
       borderRadius={borderRadius}
       showBorder={true}
       tooltipType="code"

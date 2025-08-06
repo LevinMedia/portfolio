@@ -171,7 +171,7 @@ const WorkHistoryContent: React.FC = () => {
                   Lead all design initiatives at USA TODAY Sports. Worked in conjunction with senior executives at USA TODAY and Gannett to develop and deliver digital product, advertising, and brand marketing solutions. Lead and managed a nationally distributed team of UX / UI designers, art directors and third party vendors. Managed USA TODAY Sports Creative Solutions, a full service in house creative agency producing print and digital advertising for clients of USA TODAY Sports.
                 </p>
                 <p className="text-foreground/80 leading-relaxed mt-2">
-                  Led an assessment and reorganization of a nationally distributed design team, resulting in dramatic improvement of group productivity, morale, and overall quality of output. Led design rollout of 16 website launches, or re-launches, between April 2014 and April 2015, including USA TODAY Ad Meter, USA TODAY Bracket Challenge, and the 2016 Olympics Experience. In 2015 the sites accounted for 18% of USA TODAY's digital advertising revenue.
+                  Led an assessment and reorganization of a nationally distributed design team, resulting in dramatic improvement of group productivity, morale, and overall quality of output. Led design rollout of 16 website launches, or re-launches, between April 2014 and April 2015, including USA TODAY Ad Meter, USA TODAY Bracket Challenge, and the 2016 Olympics Experience. In 2015 the sites accounted for 18% of USA TODAY&apos;s digital advertising revenue.
                 </p>
               </div>
 
