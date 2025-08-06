@@ -11,6 +11,8 @@ interface DrawerProps {
   icon?: React.ReactNode
   showLinkedInButton?: boolean
   linkedInUrl?: string
+  contentPadding?: string
+  maxWidth?: string
   children: React.ReactNode
 }
 
@@ -21,6 +23,8 @@ const Drawer: React.FC<DrawerProps> = ({
   icon, 
   showLinkedInButton = false,
   linkedInUrl,
+  contentPadding = "p-4",
+  maxWidth = "max-w-2xl",
   children 
 }) => {
   const [mounted, setMounted] = useState(false)
@@ -53,7 +57,7 @@ const Drawer: React.FC<DrawerProps> = ({
         style={{
           height: 'calc(100vh - 64px)', // Full height minus space for navigation to show above
           overflowY: 'auto',
-          zIndex: 5,
+          zIndex: 10,
           backgroundImage: `
             linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -107,8 +111,8 @@ const Drawer: React.FC<DrawerProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 flex justify-center">
-          <div className="w-full max-w-2xl">
+        <div className={`${contentPadding} flex justify-center`}>
+          <div className={`w-full ${maxWidth}`}>
             {children}
           </div>
         </div>

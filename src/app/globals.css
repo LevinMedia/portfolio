@@ -52,7 +52,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     /* Base colors */
     --background: #242427;        /* oklch(14% 0.005 285.823) */
     --foreground: #f4f4f5;        /* oklch(96% 0.007 247.896) */
@@ -74,6 +74,29 @@
     --destructive-foreground: #ffffff;
     --ring: #d946ef;              /* same as primary */
   }
+}
+
+.dark {
+  /* Base colors */
+  --background: #242427;        /* oklch(14% 0.005 285.823) */
+  --foreground: #f4f4f5;        /* oklch(96% 0.007 247.896) */
+  --muted: #36363b;             /* oklch(21% 0.006 285.885) */
+  --muted-foreground: #a1a1aa;  /* derived from content */
+  --border: #52525b;            /* slightly lighter muted */
+  --input: #36363b;             /* same as muted */
+  
+  /* Theme colors */
+  --primary: #d946ef;           /* oklch(55% 0.288 302.321) */
+  --primary-foreground: #ffffff; /* oklch(100% 0 0) */
+  --secondary: #f471b5;         /* oklch(65% 0.241 354.308) */
+  --secondary-foreground: #ffffff;
+  --accent: #67e8f9;            /* oklch(77% 0.152 181.912) */
+  --accent-foreground: #0f172a;
+  
+  /* Status colors */
+  --destructive: #f87171;       /* oklch(71% 0.194 13.428) */
+  --destructive-foreground: #ffffff;
+  --ring: #d946ef;              /* same as primary */
 }
 
 
@@ -113,13 +136,21 @@ body {
 
 /* Ensure system dark mode is respected */
 @media (prefers-color-scheme: dark) {
-  html {
+  html:not(.light) {
     color-scheme: dark;
   }
 }
 
 @media (prefers-color-scheme: light) {
-  html {
+  html:not(.dark) {
     color-scheme: light;
   }
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
 }

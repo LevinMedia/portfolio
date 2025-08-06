@@ -41,7 +41,9 @@ const ViewportDebug = () => {
     console.log('Initialization - HTML classes before:', html.classList.toString());
     if (initialTheme === 'dark') {
       html.classList.add('dark');
+      html.classList.remove('light');
     } else {
+      html.classList.add('light');
       html.classList.remove('dark');
     }
     console.log('Initialization - HTML classes after:', html.classList.toString());
@@ -82,24 +84,26 @@ const ViewportDebug = () => {
     console.log('HTML classes before:', html.classList.toString());
     if (newTheme === 'dark') {
       html.classList.add('dark');
+      html.classList.remove('light');
     } else {
+      html.classList.add('light');
       html.classList.remove('dark');
     }
     console.log('HTML classes after:', html.classList.toString());
   };
 
   return (
-    <div className="fixed bottom-4 right-4 bg-black text-purple-400 px-3 py-2 rounded-md font-mono text-xs z-50 border border-purple-500/30 shadow-lg backdrop-blur-sm flex items-center gap-3">
+    <div className="fixed bottom-4 right-4 bg-background text-primary px-3 py-2 rounded-md font-mono text-xs z-50 border border-primary/30 shadow-lg backdrop-blur-sm flex items-center gap-3">
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
-        <span className="text-white">{windowSize.width} × {windowSize.height}</span>
-        <span className="text-purple-300">•</span>
-        <span className="text-purple-400 font-bold">{breakpoint}</span>
+        <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+        <span className="text-foreground">{windowSize.width} × {windowSize.height}</span>
+        <span className="text-primary/70">•</span>
+        <span className="text-primary font-bold">{breakpoint}</span>
       </div>
       <button
         aria-label="Toggle light/dark mode"
         onClick={handleToggle}
-        className="ml-2 p-1 rounded hover:bg-purple-900/30 transition-colors text-lg"
+        className="ml-2 p-1 rounded hover:bg-primary/20 transition-colors text-lg"
         style={{ lineHeight: 1 }}
       >
         {mounted ? (theme === 'dark' ? '🌙' : '☀️') : '•'}

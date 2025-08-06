@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, ReactElement } from 'react';
 // @ts-expect-error: No types for react-syntax-highlighter
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // @ts-expect-error: No types for react-syntax-highlighter
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface TooltipProps {
   children: ReactElement;
@@ -80,8 +80,38 @@ const Tooltip: React.FC<TooltipProps> = ({
   const [show, setShow] = useState(false);
   const [anim, setAnim] = useState(false);
   const [typedLength, setTypedLength] = useState(0);
+  const [isDark, setIsDark] = useState(true);
   const timeout = useRef<NodeJS.Timeout | null>(null);
   const typingInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Detect theme changes
+  useEffect(() => {
+    const detectTheme = () => {
+      const html = document.documentElement;
+      const hasLight = html.classList.contains('light');
+      const hasDark = html.classList.contains('dark');
+      
+      if (hasLight) {
+        setIsDark(false);
+      } else if (hasDark) {
+        setIsDark(true);
+      } else {
+        // Fall back to system preference
+        setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      }
+    };
+
+    detectTheme();
+
+    // Watch for class changes on the html element
+    const observer = new MutationObserver(detectTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const componentProps = (children.props ?? {}) as Record<string, any>;
   const code = tooltipType === 'code' 
@@ -134,7 +164,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     >
       {/* Animated border */}
       {showBorder && anim && (
-        <span className="absolute inset-0 pointer-events-none z-10">
+        <span className="absolute inset-0 pointer-events-none z-40">
           <svg
             className={`w-full h-full stroke-2 animate-stroke ${borderColor}`}
             fill="none"
@@ -155,18 +185,28 @@ const Tooltip: React.FC<TooltipProps> = ({
       
       {/* Tooltip */}
       {show && (
-        <div className="absolute bottom-full left-0 px-3 py-1 rounded bg-background border border-border shadow z-20 whitespace-pre-wrap animate-fade-in font-mono mb-2" style={{ fontSize: '10px', minWidth: 0, wordBreak: 'break-word' }}>
+        <div className="absolute bottom-full left-1/2 sm:left-0 transform -translate-x-1/2 sm:translate-x-0 py-1 rounded bg-background border border-border shadow z-40 whitespace-pre-wrap animate-fade-in font-mono mb-2 max-w-[calc(100vw-2rem)] overflow-x-auto" style={{ fontSize: '10px', minWidth: 0, wordBreak: 'break-word', paddingLeft: 'var(--grid-major)', paddingRight: 'var(--grid-major)' }}>
           {tooltipType === 'code' ? (
             <SyntaxHighlighter
               language="jsx"
-              style={vscDarkPlus}
+              style={isDark ? vscDarkPlus : vs}
               customStyle={{ 
                 background: 'transparent', 
                 margin: 0, 
                 padding: 0, 
                 fontSize: '10px', 
                 minWidth: 0, 
-                display: 'inline' 
+                display: 'inline',
+                border: 'none',
+                outline: 'none'
+              }}
+              lineProps={{
+                style: { 
+                  border: 'none', 
+                  outline: 'none',
+                  margin: 0,
+                  padding: 0
+                }
               }}
               codeTagProps={{ 
                 style: { fontFamily: 'var(--font-geist-mono, monospace)' } 
