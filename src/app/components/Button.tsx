@@ -8,7 +8,7 @@ export interface ButtonProps {
   children: React.ReactNode
   style?: 'solid' | 'outline' | 'ghost'
   color?: 'primary' | 'secondary' | 'accent' | 'destructive'
-  size?: 'small' | 'medium' | 'large'
+  size?: 'xsmall' | 'small' | 'medium' | 'large'
   disabled?: boolean
   className?: string
   onClick?: () => void
@@ -60,6 +60,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
     
     const sizeStyles = {
+      xsmall: `h-6 px-2 text-xs ${fullWidth ? 'rounded-none' : 'rounded-sm'}`,
       small: `h-8 px-3 text-sm ${fullWidth ? 'rounded-none' : 'rounded-md'}`,
       medium: `h-10 px-4 text-sm ${fullWidth ? 'rounded-none' : 'rounded-md'}`,
       large: `h-12 px-6 text-base ${fullWidth ? 'rounded-none' : 'rounded-lg'}`

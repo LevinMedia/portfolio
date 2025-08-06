@@ -1,9 +1,43 @@
 'use client'
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Button from "./components/Button";
 import ButtonTooltip from "./components/ButtonTooltip";
+import Navigation, { NavigationItem } from "./components/Navigation";
+import Tooltip from "./components/Tooltip";
+import Drawer from "./components/Drawer";
+import WorkHistoryContent from "./components/WorkHistoryContent";
+import CircleInSquare from "./components/CircleInSquare";
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
+
+  // Check URL parameters on mount
+  useEffect(() => {
+    const showWorkHistory = searchParams.get('work-history') === 'true';
+    setIsWorkHistoryOpen(showWorkHistory);
+  }, [searchParams]);
+
+  // Handle opening work history drawer
+  const handleWorkHistoryOpen = () => {
+    setIsWorkHistoryOpen(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('work-history', 'true');
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Handle closing work history drawer
+  const handleWorkHistoryClose = () => {
+    setIsWorkHistoryOpen(false);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('work-history');
+    const newUrl = params.toString() ? `?${params.toString()}` : '/';
+    router.push(newUrl, { scroll: false });
+  };
+
   return (
     <div className="grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
       gridTemplateRows: 'var(--grid-major) 1fr 0',
@@ -58,29 +92,56 @@ export default function Home() {
           </ButtonTooltip>
         </div>
       </main>
-      <footer className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex flex-wrap items-center justify-start border border-blue-200/15 rounded-none mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] w-full" style={{ 
-        gap: 'var(--grid-major)', 
-        padding: 'var(--grid-major)', 
-        height: 'calc(var(--grid-major) * 4)'
-      }}>
-        <span className="flex items-center text-base" style={{ gap: 'var(--grid-major)' }}>
-          <BriefcaseIcon className="w-5 h-5" aria-hidden />
-          Work history
-        </span>
-        <span className="flex items-center text-base" style={{ gap: 'var(--grid-major)' }}>
-          <QuestionMarkCircleIcon className="w-5 h-5" aria-hidden />
-          About David
-        </span>
-        <span className="flex items-center text-base" style={{ gap: 'var(--grid-major)' }}>
-          <ChartBarSquareIcon className="w-5 h-5" aria-hidden />
-          Stats
-        </span>
-        <span className="flex items-center text-base" style={{ gap: 'var(--grid-major)' }}>
-          <PencilSquareIcon className="w-5 h-5" aria-hidden />
-          Sign the guest book
-          <span aria-hidden>→</span>
-        </span>
-      </footer>
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]">
+        <Tooltip 
+          codeGenerator={(props: any, children: any) => {
+            return `<Navigation>
+  <CircleInSquare size={32} onClick={() => window.location.href = '/'} />
+  <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={() => setIsWorkHistoryOpen(true)} />
+  <NavigationItem icon={<QuestionMarkCircleIcon />} label="About David" />
+  <NavigationItem icon={<ChartBarSquareIcon />} label="Stats" />
+  <NavigationItem icon={<PencilSquareIcon />} label="Sign the guest book" />
+</Navigation>`
+          }} 
+          borderRadius={0}
+          showBorder={true}
+          borderColor="stroke-accent"
+          fullWidth={true}
+        >
+          <Navigation>
+            <CircleInSquare size={32} onClick={() => window.location.href = '/'} />
+            <NavigationItem 
+              icon={<BriefcaseIcon className="w-5 h-5" />}
+              label="Work history"
+              onClick={handleWorkHistoryOpen}
+            />
+            <NavigationItem 
+              icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
+              label="About David"
+            />
+            <NavigationItem 
+              icon={<ChartBarSquareIcon className="w-5 h-5" />}
+              label="Stats"
+            />
+            <NavigationItem 
+              icon={<PencilSquareIcon className="w-5 h-5" />}
+              label="Sign the guest book"
+            />
+          </Navigation>
+        </Tooltip>
+      </div>
+
+      {/* Work History Drawer */}
+      <Drawer
+        isOpen={isWorkHistoryOpen}
+        onClose={handleWorkHistoryClose}
+        title="Work History"
+        icon={<BriefcaseIcon className="w-6 h-6" />}
+        showLinkedInButton={true}
+        linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
+      >
+        <WorkHistoryContent />
+      </Drawer>
     </div>
   );
 }
