@@ -5,7 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 // Create themes from originals but remove background properties to avoid conflicts
-const createCustomTheme = (originalTheme: any) => {
+const createCustomTheme = (originalTheme: Record<string, Record<string, unknown>>) => {
   const customTheme = JSON.parse(JSON.stringify(originalTheme)); // Deep clone
   
   // Remove all background-related properties from all selectors
