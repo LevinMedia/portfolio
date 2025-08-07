@@ -99,6 +99,41 @@
   --ring: #d946ef;              /* same as primary */
 }
 
+/* Image container responsive sizing */
+.image-container {
+  width: calc(100vw);
+  aspect-ratio: 1;
+}
+
+@media (min-width: 384px) {
+  .image-container {
+    width: 384px;
+    height: 384px;
+    aspect-ratio: unset;
+  }
+}
+
+@media (min-width: 640px) {
+  .image-container {
+    width: 640px;
+    height: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .image-container {
+    width: 766px;
+    height: 766px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .image-container {
+    width: 328px;
+    height: 328px;
+  }
+}
+
 
 
 * {

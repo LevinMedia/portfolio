@@ -127,7 +127,12 @@ function HomeContent() {
           showBorder={true}
           borderColor="stroke-accent"
         >
-          <div className="relative border border-blue-200/15 rounded-none w-full aspect-square xxs:w-[384px] xxs:h-[384px] xs:w-[384px] xs:h-[384px] sm:w-[640px] sm:h-[640px] md:w-[766px] md:h-[766px] lg:w-[328px] lg:h-[328px] lg:flex-shrink-0 mx-auto lg:mx-0" style={{ padding: 'var(--grid-major)' }}>
+          <div 
+            className="relative border border-blue-200/15 rounded-none lg:flex-shrink-0 mx-auto lg:mx-0 image-container" 
+            style={{ 
+              padding: 'var(--grid-major)'
+            }}
+          >
             <Image 
               src="/Levin_Home.jpg" 
               alt="David Levin"
