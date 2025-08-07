@@ -113,7 +113,7 @@ function HomeContent() {
       backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
       backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
     }}>
-      <div className="row-start-2 col-span-6 flex flex-col lg:flex-row items-start" style={{ gap: 'var(--grid-major)' }}>
+      <div className="row-start-2 col-span-6 flex flex-col lg:flex-row items-center lg:items-start" style={{ gap: 'var(--grid-major)' }}>
         {/* Image Box */}
         <Tooltip 
           codeGenerator={() => {
@@ -127,12 +127,13 @@ function HomeContent() {
           showBorder={true}
           borderColor="stroke-accent"
         >
-          <div className="relative border border-blue-200/15 rounded-none w-full lg:w-[328px] lg:h-[328px] lg:flex-shrink-0 aspect-square" style={{ padding: 'var(--grid-major)' }}>
+          <div className="relative border border-blue-200/15 rounded-none w-full aspect-square xxs:w-[384px] xxs:h-[384px] xs:w-[384px] xs:h-[384px] sm:w-[640px] sm:h-[640px] md:w-[766px] md:h-[766px] lg:w-[328px] lg:h-[328px] lg:flex-shrink-0 mx-auto lg:mx-0" style={{ padding: 'var(--grid-major)' }}>
             <Image 
               src="/Levin_Home.jpg" 
               alt="David Levin"
               fill
               className="object-cover"
+              priority
             />
           </div>
         </Tooltip>
