@@ -18,7 +18,7 @@ const themeColors = {
     { name: 'Foreground', value: '#1a1a1a', usage: 'Primary text color, headings' },
     { name: 'Muted', value: '#f1f5f9', usage: 'Secondary backgrounds, subtle sections' },
     { name: 'Muted Foreground', value: '#64748b', usage: 'Secondary text, placeholders, captions' },
-    { name: 'Border', value: '#e2e8f0', usage: 'Dividers, input borders, card outlines' },
+    { name: 'Border', value: '#cbd5e1', usage: 'Dividers, input borders, card outlines' },
     { name: 'Primary', value: '#c026d3', usage: 'Main brand color, primary buttons, links' },
     { name: 'Secondary', value: '#ec4899', usage: 'Secondary buttons, highlights, badges' },
     { name: 'Accent', value: '#0891b2', usage: 'Success states, positive actions, progress' },
