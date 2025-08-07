@@ -94,17 +94,15 @@ const ViewportDebug = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 bg-background text-primary px-3 py-2 rounded-md font-mono text-xs z-50 border border-primary/30 shadow-lg backdrop-blur-sm flex items-center gap-3">
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-        <span className="text-foreground">{windowSize.width} × {windowSize.height}</span>
-        <span className="text-primary/70">•</span>
-        <span className="text-primary font-bold">{breakpoint}</span>
-      </div>
+    <div className="flex items-center gap-2 font-mono text-xs text-foreground">
+      <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+      <span>{windowSize.width} × {windowSize.height}</span>
+      <span className="text-primary/70">•</span>
+      <span className="text-primary font-bold">{breakpoint}</span>
       <button
         aria-label="Toggle light/dark mode"
         onClick={handleToggle}
-        className="ml-2 p-1 rounded hover:bg-primary/20 transition-colors text-lg"
+        className="ml-1 p-1 rounded hover:bg-primary/20 transition-colors text-lg"
         style={{ lineHeight: 1 }}
       >
         {mounted ? (theme === 'dark' ? '🌙' : '☀️') : '•'}

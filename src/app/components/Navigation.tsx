@@ -4,6 +4,7 @@ import Button from './Button'
 import { ReactNode, useState, cloneElement, isValidElement } from 'react'
 import { Bars3Icon } from "@heroicons/react/24/outline"
 import Drawer from './Drawer'
+import ViewportDebug from './ViewportDebug'
 
 interface NavigationItemProps {
   icon: ReactNode
@@ -84,11 +85,13 @@ export default function Navigation({ children }: NavigationProps) {
         
         {/* Navigation items - hidden on md and below */}
         <div className="hidden lg:flex items-center" style={{ gap: 'var(--grid-major)' }}>
+          <ViewportDebug />
           {navigationItems}
         </div>
         
-        {/* Hamburger menu - visible on md and below */}
-        <div className="lg:hidden">
+        {/* Mobile navigation - visible on md and below */}
+        <div className="lg:hidden flex items-center" style={{ gap: 'var(--grid-major)' }}>
+          <ViewportDebug />
           <Button
             style="ghost"
             color="primary"

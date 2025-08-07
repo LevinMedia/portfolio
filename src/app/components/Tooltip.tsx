@@ -4,6 +4,24 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // @ts-expect-error: No types for react-syntax-highlighter
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+// Create themes from originals but remove background properties to avoid conflicts
+const createCustomTheme = (originalTheme: any) => {
+  const customTheme = JSON.parse(JSON.stringify(originalTheme)); // Deep clone
+  
+  // Remove all background-related properties from all selectors
+  Object.keys(customTheme).forEach(selector => {
+    if (customTheme[selector] && typeof customTheme[selector] === 'object') {
+      delete customTheme[selector].background;
+      delete customTheme[selector].backgroundColor;
+    }
+  });
+  
+  return customTheme;
+};
+
+const customDarkTheme = createCustomTheme(vscDarkPlus);
+const customLightTheme = createCustomTheme(vs);
+
 interface TooltipProps {
   children: ReactElement;
   codeGenerator?: (props: Record<string, unknown>, children: React.ReactNode) => string;
@@ -81,11 +99,15 @@ const Tooltip: React.FC<TooltipProps> = ({
   const [anim, setAnim] = useState(false);
   const [typedLength, setTypedLength] = useState(0);
   const [isDark, setIsDark] = useState(true);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const timeout = useRef<NodeJS.Timeout | null>(null);
   const typingInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Detect theme changes
+  // Detect touch device and theme changes
   useEffect(() => {
+    // Detect if this is a touch device
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    
     const detectTheme = () => {
       const html = document.documentElement;
       const hasLight = html.classList.contains('light');
@@ -155,11 +177,11 @@ const Tooltip: React.FC<TooltipProps> = ({
 
   return (
     <span 
-      className={`relative ${fullWidth ? 'block w-full' : 'inline-block w-fit align-middle'}`}
-      onMouseEnter={handleEnter} 
-      onMouseLeave={handleLeave} 
-      onFocus={handleEnter} 
-      onBlur={handleLeave} 
+      className={`relative tooltip-container ${fullWidth ? 'block w-full' : 'inline-block w-fit align-middle'}`}
+      onMouseEnter={isTouchDevice ? undefined : handleEnter} 
+      onMouseLeave={isTouchDevice ? undefined : handleLeave} 
+      onFocus={isTouchDevice ? undefined : handleEnter} 
+      onBlur={isTouchDevice ? undefined : handleLeave} 
       tabIndex={-1}
     >
       {/* Animated border */}
@@ -187,37 +209,30 @@ const Tooltip: React.FC<TooltipProps> = ({
       {show && (
         <div className="absolute bottom-full left-1/2 sm:left-0 transform -translate-x-1/2 sm:translate-x-0 py-1 rounded bg-background border border-border shadow z-40 whitespace-pre-wrap animate-fade-in font-mono mb-2 max-w-[calc(100vw-2rem)] overflow-x-auto" style={{ fontSize: '10px', minWidth: 0, wordBreak: 'break-word', paddingLeft: 'var(--grid-major)', paddingRight: 'var(--grid-major)' }}>
           {tooltipType === 'code' ? (
-            <SyntaxHighlighter
-              language="jsx"
-              style={isDark ? vscDarkPlus : vs}
-              customStyle={{ 
-                background: 'transparent', 
-                margin: 0, 
-                padding: 0, 
-                fontSize: '10px', 
-                minWidth: 0, 
-                display: 'inline',
-                border: 'none',
-                outline: 'none'
-              }}
-              lineProps={{
-                style: { 
-                  border: 'none', 
-                  outline: 'none',
-                  margin: 0,
-                  padding: 0
-                }
-              }}
-              codeTagProps={{ 
-                style: { fontFamily: 'var(--font-geist-mono, monospace)' } 
-              }}
-              PreTag="span"
-              wrapLines={false}
-              showLineNumbers={false}
-            >
-              {code.slice(0, typedLength)}
+            <div style={{ display: 'inline' }}>
+              <SyntaxHighlighter
+                language="jsx"
+                style={isDark ? customDarkTheme : customLightTheme}
+                customStyle={{ 
+                  margin: 0, 
+                  padding: 0, 
+                  fontSize: '10px', 
+                  minWidth: 0, 
+                  display: 'inline',
+                  border: 'none',
+                  outline: 'none'
+                }}
+                codeTagProps={{ 
+                  style: { fontFamily: 'var(--font-geist-mono, monospace)' } 
+                }}
+                PreTag="span"
+                wrapLines={false}
+                showLineNumbers={false}
+              >
+                {code.slice(0, typedLength)}
+              </SyntaxHighlighter>
               {typedLength === code.length && <span className="blinking-cursor">|</span>}
-            </SyntaxHighlighter>
+            </div>
           ) : (
             <span className="text-foreground">
               {code.slice(0, typedLength)}

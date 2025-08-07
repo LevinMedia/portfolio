@@ -11,7 +11,7 @@ import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
 import LevinMediaLogo from "./components/LevinMediaLogo";
-import ViewportDebug from "./components/ViewportDebug";
+
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
 function HomeContent() {
@@ -214,12 +214,7 @@ function HomeContent() {
       </main>
       </div>
       
-      {/* Viewport Debug - positioned above navigation */}
-      <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] z-50">
-        <div className="flex justify-start" style={{ padding: 'var(--grid-major)' }}>
-          <ViewportDebug />
-        </div>
-      </div>
+
       
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] z-50">
         <Tooltip 

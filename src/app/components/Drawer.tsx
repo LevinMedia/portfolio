@@ -51,11 +51,10 @@ const Drawer: React.FC<DrawerProps> = ({
     <>
       {/* Drawer */}
       <div 
-        className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-background border border-blue-200/15 rounded-none transition-transform duration-300 ease-out w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] ${
+        className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-background border border-blue-200/15 rounded-none transition-transform duration-300 ease-out w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] drawer-container ${
           isOpen ? 'translate-y-[-64px]' : 'translate-y-full'
         }`}
         style={{
-          height: 'calc(100vh - 64px)', // Full height minus space for navigation to show above
           overflowY: 'auto',
           zIndex: 10,
           backgroundImage: `
