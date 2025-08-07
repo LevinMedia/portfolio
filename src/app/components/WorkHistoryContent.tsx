@@ -1,4 +1,6 @@
 import React from 'react'
+import Image from 'next/image'
+import LevinMediaLogo from './LevinMediaLogo'
 
 const WorkHistoryContent: React.FC = () => {
   return (
@@ -15,9 +17,19 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-accent font-[family-name:var(--font-geist-mono)]">CaptivateIQ</h2>
-                <p className="text-sm text-foreground/50 mt-1">2023 - Present</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <Image
+                    src="/captivateiq_logo.jpeg"
+                    alt="CaptivateIQ logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-accent font-[family-name:var(--font-geist-mono)]">CaptivateIQ</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2023 - Present</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Remote / Full-time</p>
@@ -54,9 +66,19 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-secondary font-[family-name:var(--font-geist-mono)]">FloSports</h2>
-                <p className="text-sm text-foreground/50 mt-1">2022 - 2023</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <Image
+                    src="/flosports_logo.jpeg"
+                    alt="FloSports logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-secondary font-[family-name:var(--font-geist-mono)]">FloSports</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2022 - 2023</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Remote / Full-time</p>
@@ -84,9 +106,19 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-primary font-[family-name:var(--font-geist-mono)]">Automattic</h2>
-                <p className="text-sm text-foreground/50 mt-1">2018 - 2022</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <Image
+                    src="/automattic_logo.jpeg"
+                    alt="Automattic logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-primary font-[family-name:var(--font-geist-mono)]">Automattic</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2018 - 2022</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Remote / Full-time</p>
@@ -123,9 +155,19 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-destructive font-[family-name:var(--font-geist-mono)]">ShareThis</h2>
-                <p className="text-sm text-foreground/50 mt-1">2016 - 2018</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <Image
+                    src="/sharethis_logo.jpeg"
+                    alt="ShareThis logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-destructive font-[family-name:var(--font-geist-mono)]">ShareThis</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2016 - 2018</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Remote / Full-time</p>
@@ -153,9 +195,19 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-accent font-[family-name:var(--font-geist-mono)]">USA TODAY Sports Media Group</h2>
-                <p className="text-sm text-foreground/50 mt-1">2011 - 2016</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <Image
+                    src="/usatsportts_logo.jpeg"
+                    alt="USA TODAY Sports logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-accent font-[family-name:var(--font-geist-mono)]">USA TODAY Sports</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2011 - 2016</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Hybrid / Full-time</p>
@@ -201,9 +253,14 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-primary font-[family-name:var(--font-geist-mono)]">Levin Media</h2>
-                <p className="text-sm text-foreground/50 mt-1">2006 - 2011</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <LevinMediaLogo size={48} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-primary font-[family-name:var(--font-geist-mono)]">Levin Media</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2006 - 2011</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Self-employed / Freelance</p>
@@ -231,9 +288,19 @@ const WorkHistoryContent: React.FC = () => {
           
           <section className="ml-20 bg-background border border-neutral-100/6 p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-secondary font-[family-name:var(--font-geist-mono)]">Armada Skis</h2>
-                <p className="text-sm text-foreground/50 mt-1">2002 - 2006</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                  <Image
+                    src="/armada_logo.jpg"
+                    alt="Armada Skis logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-secondary font-[family-name:var(--font-geist-mono)]">Armada Skis</h2>
+                  <p className="text-sm text-foreground/50 mt-1">2002 - 2006</p>
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-foreground/60">Costa Mesa, CA / Full-time</p>

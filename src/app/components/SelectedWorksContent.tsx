@@ -1,4 +1,5 @@
 import React from 'react'
+import Image from 'next/image'
 
 const SelectedWorksContent: React.FC = () => {
   return (
@@ -8,10 +9,11 @@ const SelectedWorksContent: React.FC = () => {
                   {/* Analytics */}
         <div className="relative border border-blue-200/15 rounded-none col-span-2" style={{ padding: 'var(--grid-major)' }}>
           <div className="relative aspect-square overflow-hidden cursor-pointer">
-            <img 
+            <Image 
               src="/Analytics.jpg" 
               alt="WooCommerce Analytics"
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+              fill
+              className="object-cover hover:scale-110 transition-transform duration-500"
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <h3 className="text-white text-sm font-medium font-[family-name:var(--font-geist-mono)] text-center px-2 bg-black/50 rounded-sm">WooCommerce Analytics</h3>
@@ -22,10 +24,11 @@ const SelectedWorksContent: React.FC = () => {
         {/* Color Gradients */}
         <div className="relative border border-blue-200/15 rounded-none col-span-2" style={{ padding: 'var(--grid-major)' }}>
           <div className="relative aspect-square overflow-hidden cursor-pointer">
-            <img 
+            <Image 
               src="/gradientsthumb.jpg" 
               alt="Accessible Color Palettes"
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+              fill
+              className="object-cover hover:scale-110 transition-transform duration-500"
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <h3 className="text-white text-sm font-medium font-[family-name:var(--font-geist-mono)] text-center px-2 bg-black/50 rounded-sm">Accessible Color Palettes</h3>
@@ -36,10 +39,11 @@ const SelectedWorksContent: React.FC = () => {
         {/* Share Buttons */}
         <div className="relative border border-blue-200/15 rounded-none col-span-2" style={{ padding: 'var(--grid-major)' }}>
           <div className="relative aspect-square overflow-hidden cursor-pointer">
-            <img 
+            <Image 
               src="/buttons_preview.jpg" 
               alt="ShareThis Share Buttons"
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+              fill
+              className="object-cover hover:scale-110 transition-transform duration-500"
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <h3 className="text-white text-sm font-medium font-[family-name:var(--font-geist-mono)] text-center px-2 bg-black/50 rounded-sm">ShareThis Share Buttons</h3>
@@ -50,10 +54,11 @@ const SelectedWorksContent: React.FC = () => {
         {/* Audience Builder */}
         <div className="relative border border-blue-200/15 rounded-none col-span-2" style={{ padding: 'var(--grid-major)' }}>
           <div className="relative aspect-square overflow-hidden cursor-pointer">
-            <img 
+            <Image 
               src="/AudienceThumb.jpg" 
               alt="ShareThis Audience Builder"
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+              fill
+              className="object-cover hover:scale-110 transition-transform duration-500"
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <h3 className="text-white text-sm font-medium font-[family-name:var(--font-geist-mono)] text-center px-2 bg-black/50 rounded-sm">ShareThis Audience Builder</h3>

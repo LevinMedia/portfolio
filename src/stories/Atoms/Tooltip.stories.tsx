@@ -1,12 +1,12 @@
 import React from 'react'
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/nextjs'
 import Tooltip from '../../app/components/Tooltip'
 import Button from '../../app/components/Button'
 import Navigation, { NavigationItem } from '../../app/components/Navigation'
 import { CommandLineIcon, HeartIcon, StarIcon, BriefcaseIcon, QuestionMarkCircleIcon, ChartBarSquareIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 
 // Custom code generator for NavigationItem
-function getNavigationItemCode(props: any, children: React.ReactNode) {
+function getNavigationItemCode(props: Record<string, unknown>) {
   const propOrder = [
     'icon', 'label', 'href', 'onClick'
   ];
@@ -102,7 +102,7 @@ export const Default: Story = {
 
 export const WithCustomCodeGenerator: Story = {
   render: () => {
-    const customCodeGenerator = (props: any) => {
+    const customCodeGenerator = (props: Record<string, unknown>) => {
       return `<CustomButton style="${props.style}" color="${props.color}" />`
     }
 
@@ -502,7 +502,7 @@ export const NavigationItemStandalone: Story = {
 }
 
 // Custom code generator for Navigation
-function getNavigationCode(props: any, children: React.ReactNode) {
+function getNavigationCode() {
   // Navigation component currently only takes children, so no props to display
   return `<Navigation>`;
 }

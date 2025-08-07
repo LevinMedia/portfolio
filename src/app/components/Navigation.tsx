@@ -42,7 +42,7 @@ interface NavigationProps {
 export default function Navigation({ children }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const childrenArray = Array.isArray(children) ? children : [children]
-  const logoElement = childrenArray[0] // First child is the logo/CircleInSquare
+  const logoElement = childrenArray[0] // First child is the logo/LevinMediaLogo
   const navigationItems = childrenArray.slice(1) // Rest are navigation items
 
   const handleMobileMenuOpen = () => {

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 const meta: Meta = {
   title: 'Foundations/Themes',
@@ -111,7 +111,6 @@ const ThemeSwatches = ({ theme }: { theme: 'light' | 'dark' }) => {
 
 export const LightTheme: Story = {
   render: () => <ThemeSwatches theme="light" />,
-  name: 'Light Theme',
   parameters: {
     layout: 'fullscreen',
   },
@@ -119,7 +118,6 @@ export const LightTheme: Story = {
 
 export const DarkTheme: Story = {
   render: () => <ThemeSwatches theme="dark" />,
-  name: 'Dark Theme', 
   parameters: {
     layout: 'fullscreen',
   },

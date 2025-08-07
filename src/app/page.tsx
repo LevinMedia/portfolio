@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Button from "./components/Button";
 import ButtonTooltip from "./components/ButtonTooltip";
 import Navigation, { NavigationItem } from "./components/Navigation";
@@ -9,11 +10,11 @@ import Drawer from "./components/Drawer";
 import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
-import CircleInSquare from "./components/CircleInSquare";
+import LevinMediaLogo from "./components/LevinMediaLogo";
 import ViewportDebug from "./components/ViewportDebug";
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
@@ -127,10 +128,11 @@ export default function Home() {
           borderColor="stroke-accent"
         >
           <div className="relative border border-blue-200/15 rounded-none w-full lg:w-[328px] lg:h-[328px] lg:flex-shrink-0 aspect-square" style={{ padding: 'var(--grid-major)' }}>
-            <img 
+            <Image 
               src="/Levin_Home.jpg" 
               alt="David Levin"
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           </div>
         </Tooltip>
@@ -217,7 +219,7 @@ export default function Home() {
         <Tooltip 
                       codeGenerator={() => {
             return `<Navigation>
-  <CircleInSquare size={32} onClick={() => window.location.href = '/'} />
+  <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />
   <NavigationItem icon={<QuestionMarkCircleIcon />} label="About David" onClick={handleAboutOpen} />
   <NavigationItem icon={<ChartBarSquareIcon />} label="Stats" />
@@ -230,7 +232,7 @@ export default function Home() {
           fullWidth={true}
         >
           <Navigation>
-            <CircleInSquare size={32} onClick={() => window.location.href = '/'} />
+            <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
             <NavigationItem 
               icon={<BriefcaseIcon className="w-5 h-5" />}
               label="Work history"
@@ -289,3 +291,11 @@ export default function Home() {
       </div>
     );
   }
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
+  );
+}
