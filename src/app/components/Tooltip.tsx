@@ -65,8 +65,8 @@ function getDefaultCode(props: Record<string, unknown>, children: React.ReactNod
   
   if (React.isValidElement(children)) {
     const childType = children.type;
-          if (typeof childType === 'function') {
-        componentName = (childType as { displayName?: string; name?: string }).displayName || (childType as { name?: string }).name || 'Component';
+        if (typeof childType === 'function') {
+      componentName = (childType as { displayName?: string; name?: string }).displayName || (childType as { name?: string }).name || 'Component';
     } else if (typeof childType === 'string') {
       componentName = childType;
     }
@@ -207,7 +207,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       
       {/* Tooltip */}
       {show && (
-        <div className="absolute bottom-full left-1/2 sm:left-0 transform -translate-x-1/2 sm:translate-x-0 py-1 rounded bg-background border border-border shadow z-40 whitespace-pre-wrap animate-fade-in font-mono mb-2 max-w-[calc(100vw-2rem)] overflow-x-auto" style={{ fontSize: '10px', minWidth: 0, wordBreak: 'break-word', paddingLeft: 'var(--grid-major)', paddingRight: 'var(--grid-major)' }}>
+        <div className="absolute bottom-full left-1/2 sm:left-0 transform -translate-x-1/2 sm:translate-x-0 py-1 rounded bg-background border border-border shadow z-40 whitespace-pre animate-fade-in font-mono mb-2 max-w-[calc(100vw-2rem)] overflow-x-auto" style={{ fontSize: '10px', minWidth: 0, paddingLeft: 'var(--grid-major)', paddingRight: 'var(--grid-major)', whiteSpace: 'pre' }}>
           {tooltipType === 'code' ? (
             <div style={{ display: 'inline' }}>
               <SyntaxHighlighter
@@ -223,19 +223,19 @@ const Tooltip: React.FC<TooltipProps> = ({
                   outline: 'none'
                 }}
                 codeTagProps={{ 
-                  style: { fontFamily: 'var(--font-geist-mono, monospace)' } 
+                  style: { fontFamily: 'var(--font-geist-mono, monospace)', whiteSpace: 'pre' } 
                 }}
                 PreTag="span"
                 wrapLines={false}
                 showLineNumbers={false}
               >
-                {code.slice(0, typedLength)}
+                {(code.endsWith('\n') ? code.slice(0, -1) : code).slice(0, typedLength)}
               </SyntaxHighlighter>
               {typedLength === code.length && <span className="blinking-cursor">|</span>}
             </div>
           ) : (
-            <span className="text-foreground">
-              {code.slice(0, typedLength)}
+            <span className="text-foreground whitespace-pre">
+              {(code.endsWith('\n') ? code.slice(0, -1) : code).slice(0, typedLength)}
               {typedLength === code.length && <span className="blinking-cursor">|</span>}
             </span>
           )}

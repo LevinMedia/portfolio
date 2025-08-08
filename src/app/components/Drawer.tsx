@@ -85,14 +85,16 @@ const Drawer: React.FC<DrawerProps> = ({
             {icon && <div className="flex items-center">{icon}</div>}
             <h2 className="text-xl font-semibold text-foreground font-[family-name:var(--font-geist-mono)]">{title}</h2>
             {showLinkedInButton && linkedInUrl && (
-              <Button
-                style="outline"
-                color="primary"
-                size="xsmall"
-                onClick={() => window.open(linkedInUrl, '_blank')}
-              >
-                View on LinkedIn
-              </Button>
+              <div className="hidden sm:block">
+                <Button
+                  style="outline"
+                  color="primary"
+                  size="xsmall"
+                  onClick={() => window.open(linkedInUrl, '_blank')}
+                >
+                  View on LinkedIn
+                </Button>
+              </div>
             )}
           </div>
           

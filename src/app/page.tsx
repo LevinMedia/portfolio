@@ -11,6 +11,7 @@ import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
 import LevinMediaLogo from "./components/LevinMediaLogo";
+import Howdy from "./components/Howdy";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
@@ -113,106 +114,7 @@ function HomeContent() {
       backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
       backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
     }}>
-      <div className="row-start-2 col-span-6 flex flex-col lg:flex-row items-center lg:items-start" style={{ gap: 'var(--grid-major)' }}>
-        {/* Image Box */}
-        <Tooltip 
-          codeGenerator={() => {
-            return `<img 
-  src="/Levin_Home.jpg" 
-  alt="David Levin"
-  className="w-full h-full object-cover"
-/>`
-          }} 
-          borderRadius={0}
-          showBorder={true}
-          borderColor="stroke-accent"
-        >
-          <div 
-            className="relative border border-blue-200/15 rounded-none lg:flex-shrink-0 mx-auto lg:mx-0 image-container" 
-            style={{ 
-              padding: 'var(--grid-major)'
-            }}
-          >
-            <Image 
-              src="/Levin_Home.jpg" 
-              alt="David Levin"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-        </Tooltip>
-
-        <main className="relative flex flex-col items-center sm:items-start border border-blue-200/15 rounded-none w-full lg:flex-grow" style={{ gap: 'var(--grid-major)', padding: 'var(--grid-major)' }}>
-        <Tooltip 
-          codeGenerator={() => {
-            return `<div className="w-full text-2xl sm:text-5xl font-extrabold tracking-wide text-foreground font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>
-  Hi, I&apos;m David 👋
-</div>`
-          }} 
-          borderRadius={0}
-          showBorder={true}
-          borderColor="stroke-accent"
-          fullWidth={true}
-        >
-          <div className="w-full text-2xl sm:text-5xl font-extrabold tracking-wide text-foreground font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>Hi, I&apos;m David 👋</div>
-        </Tooltip>
-        <Tooltip 
-          codeGenerator={() => {
-            return `<ul className="w-full list-none text-xs sm:text-sm/6 text-left font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>
-  <li className="tracking-[-.01em] flex items-start gap-2" style={{ marginBottom: 'var(--grid-major)' }}>
-    <span className="text-lg">👷</span>
-    <span>I orchestrate software architecture & design.</span>
-  </li>
-  <li className="tracking-[-.01em] flex items-start gap-2">
-    <span className="text-lg">🚀</span>
-    <span>Fancy that, right? Lets make awesome happen.</span>
-  </li>
-</ul>`
-          }} 
-          borderRadius={0}
-          showBorder={true}
-          borderColor="stroke-accent"
-          fullWidth={true}
-        >
-          <ul className="w-full list-none text-xs sm:text-sm/6 text-left font-[family-name:var(--font-geist-mono)] border border-blue-200/10 rounded-none" style={{ padding: 'var(--grid-major)' }}>
-            <li className="tracking-[-.01em] flex items-start gap-2" style={{ marginBottom: 'var(--grid-major)' }}>
-              <span className="text-lg">👷</span>
-              <span>I orchestrate software architecture & design.</span>
-            </li>
-            <li className="tracking-[-.01em] flex items-start gap-2">
-              <span className="text-lg">🚀</span>
-              <span>Fancy that, right? Lets make awesome happen.</span>
-            </li>
-          </ul>
-        </Tooltip>
-
-        <div className="w-full flex items-stretch flex-row border border-blue-200/15 rounded-none" style={{ gap: 'var(--grid-major)', padding: 'var(--grid-major)' }}>
-                          <ButtonTooltip>
-                  <Button
-                    style="solid"
-                    color="primary"
-                    size="small"
-                    className="sm:h-10 sm:px-4 sm:text-sm"
-                    iconLeft={<CommandLineIcon className="w-5 h-5" />}
-                    onClick={handleSelectedWorksOpen}
-                  >
-                    View selected work
-                  </Button>
-                </ButtonTooltip>
-          <ButtonTooltip>
-            <Button
-              style="outline"
-              color="primary"
-              size="small"
-              className="sm:h-10 sm:px-4 sm:text-sm"
-            >
-              Site settings
-            </Button>
-          </ButtonTooltip>
-        </div>
-      </main>
-      </div>
+      <Howdy onSelectedWorksClick={handleSelectedWorksOpen} />
       
 
       
@@ -221,6 +123,7 @@ function HomeContent() {
                       codeGenerator={() => {
             return `<Navigation>
   <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
+  <ViewportDebug />
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />
   <NavigationItem icon={<QuestionMarkCircleIcon />} label="About David" onClick={handleAboutOpen} />
   <NavigationItem icon={<ChartBarSquareIcon />} label="Stats" />
@@ -241,7 +144,7 @@ function HomeContent() {
             />
             <NavigationItem 
               icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
-              label="About David"
+              label="About"
               onClick={handleAboutOpen}
             />
             <NavigationItem 
@@ -272,7 +175,7 @@ function HomeContent() {
         <Drawer
           isOpen={isAboutOpen}
           onClose={handleAboutClose}
-          title="About David"
+          title="About"
           icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
         >
           <AboutContent />
