@@ -16,7 +16,7 @@
   --grid-opacity-dark: 0.15;
   
   /* Vibrant theme colors - light mode versions */
-  --primary: #c026d3;           /* Slightly darker purple for light mode */
+  --primary: #C614E1;           /* Brand primary */
   --primary-foreground: #ffffff;
   --secondary: #ec4899;         /* Slightly darker pink for light mode */
   --secondary-foreground: #ffffff;
@@ -26,7 +26,7 @@
   /* Status colors */
   --destructive: #dc2626;       /* Slightly darker red for light mode */
   --destructive-foreground: #ffffff;
-  --ring: #c026d3;              /* Match primary */
+  --ring: #C614E1;              /* Match primary */
   --radius: 0.5rem;
 }
 
@@ -62,7 +62,7 @@
     --input: #36363b;             /* same as muted */
     
     /* Theme colors */
-    --primary: #d946ef;           /* oklch(55% 0.288 302.321) */
+    --primary: #C614E1;           /* Brand primary */
     --primary-foreground: #ffffff; /* oklch(100% 0 0) */
     --secondary: #f471b5;         /* oklch(65% 0.241 354.308) */
     --secondary-foreground: #ffffff;
@@ -72,7 +72,7 @@
     /* Status colors */
     --destructive: #f87171;       /* oklch(71% 0.194 13.428) */
     --destructive-foreground: #ffffff;
-    --ring: #d946ef;              /* same as primary */
+    --ring: #C614E1;              /* same as primary */
   }
 }
 
@@ -86,7 +86,7 @@
   --input: #36363b;             /* same as muted */
   
   /* Theme colors */
-  --primary: #d946ef;           /* oklch(55% 0.288 302.321) */
+  --primary: #C614E1;           /* Brand primary */
   --primary-foreground: #ffffff; /* oklch(100% 0 0) */
   --secondary: #f471b5;         /* oklch(65% 0.241 354.308) */
   --secondary-foreground: #ffffff;
@@ -96,7 +96,7 @@
   /* Status colors */
   --destructive: #f87171;       /* oklch(71% 0.194 13.428) */
   --destructive-foreground: #ffffff;
-  --ring: #d946ef;              /* same as primary */
+  --ring: #C614E1;              /* same as primary */
 }
 
 /* Image container responsive sizing */

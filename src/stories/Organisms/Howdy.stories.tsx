@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import Howdy from '../../app/components/Howdy';
+import type { Meta, StoryObj } from '@storybook/nextjs'
+import Howdy from '../../app/components/Howdy'
 
 const meta: Meta<typeof Howdy> = {
   title: 'Organisms/Howdy',

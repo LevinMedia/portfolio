@@ -1,9 +1,7 @@
 'use client'
+
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
-import Button from "./components/Button";
-import ButtonTooltip from "./components/ButtonTooltip";
 import Navigation, { NavigationItem } from "./components/Navigation";
 import Tooltip from "./components/Tooltip";
 import Drawer from "./components/Drawer";
