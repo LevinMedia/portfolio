@@ -102,10 +102,12 @@ export default function Howdy({ onSelectedWorksClick, onSiteSettingsClick }: How
       {/* Image Box */}
       <Tooltip 
         codeGenerator={() => {
-          return `<img 
-  src="${data.image_src}" 
+          return `<Image 
+  src="[profile-image-url]" 
   alt="${data.image_alt}"
-  className="w-full h-full object-cover"
+  fill
+  className="object-cover"
+  priority
 />`
         }} 
         borderRadius={0}
