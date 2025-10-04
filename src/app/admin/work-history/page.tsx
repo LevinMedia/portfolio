@@ -435,18 +435,6 @@ export default function WorkHistoryAdmin() {
                                   }
                                 }}
                               />
-                              {/* Fallback img tag for debugging */}
-                              <img
-                                src={companyForm.company_logo_url}
-                                alt="Company logo (fallback)"
-                                className="absolute inset-0 w-full h-full object-contain opacity-0"
-                                onError={() => {
-                                  console.error('Fallback img failed to load:', companyForm.company_logo_url)
-                                }}
-                                onLoad={() => {
-                                  console.log('Fallback img loaded successfully:', companyForm.company_logo_url)
-                                }}
-                              />
                             </>
                           )}
                         </div>
