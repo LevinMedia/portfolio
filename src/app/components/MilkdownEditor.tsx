@@ -10,7 +10,6 @@ import { clipboard } from '@milkdown/plugin-clipboard'
 import { cursor } from '@milkdown/plugin-cursor'
 import { tooltip } from '@milkdown/plugin-tooltip'
 import { slash } from '@milkdown/plugin-slash'
-import { menu } from '@milkdown/plugin-menu'
 import { emoji } from '@milkdown/plugin-emoji'
 
 interface MilkdownEditorProps {
@@ -46,7 +45,6 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
       .use(cursor)
       .use(tooltip)
       .use(slash)
-      .use(menu)
       .use(emoji)
       .create()
 
