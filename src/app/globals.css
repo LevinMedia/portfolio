@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@milkdown/theme-nord/style.css";
 
 :root {
   /* Light theme */
