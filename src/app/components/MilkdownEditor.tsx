@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Editor, rootCtx, defaultValueCtx } from '@milkdown/core'
+import { Editor, rootCtx, defaultValueCtx, editorViewCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
 import { nord } from '@milkdown/theme-nord'
@@ -9,6 +9,7 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { history } from '@milkdown/plugin-history'
 import { clipboard } from '@milkdown/plugin-clipboard'
 import { cursor } from '@milkdown/plugin-cursor'
+import { slash } from '@milkdown/plugin-slash'
 
 interface MilkdownEditorProps {
   value: string
@@ -47,12 +48,20 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
         console.log('🚀 Starting Milkdown initialization...')
         console.log('📦 Container ref:', containerRef.current)
 
-        const editor = Editor.make()
+        const editor = await Editor.make()
           .config(nord)
           .config((ctx) => {
             console.log('⚙️ Configuring editor context...')
             ctx.set(rootCtx, containerRef.current!)
             ctx.set(defaultValueCtx, value || '')
+            
+            // Set up change listener IMMEDIATELY in config
+            ctx.get(listenerCtx).markdownUpdated((ctx, markdown) => {
+              if (isActive) {
+                console.log('📝 Markdown updated')
+                onChange(markdown)
+              }
+            })
           })
           .use(commonmark)
           .use(gfm)
@@ -60,31 +69,18 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
           .use(history)
           .use(clipboard)
           .use(cursor)
+          .use(slash)
+          .create()
 
-        console.log('🔧 Plugins configured, creating editor...')
-        
-        const createdEditor = await editor.create()
-        
         console.log('✅ Editor created successfully!')
 
         if (!isActive) {
           console.log('⚠️ Component unmounted, destroying editor')
-          createdEditor.destroy()
+          editor.destroy()
           return
         }
 
-        // Set up the change listener
-        createdEditor.action((ctx) => {
-          const listener = ctx.get(listenerCtx)
-          listener.markdownUpdated((ctx, markdown, prevMarkdown) => {
-            if (markdown !== prevMarkdown) {
-              console.log('📝 Markdown updated')
-              onChange(markdown)
-            }
-          })
-        })
-
-        editorRef.current = createdEditor
+        editorRef.current = editor
         setIsReady(true)
         clearTimeout(timeoutId)
         console.log('🎉 Milkdown is ready!')
