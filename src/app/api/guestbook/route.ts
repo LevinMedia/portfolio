@@ -29,8 +29,12 @@ export async function POST(request: NextRequest) {
     const { name, message, socialLinks } = await request.json()
 
     // Validate required fields
-    if (!name || !message) {
-      return NextResponse.json({ error: 'Name and message are required' }, { status: 400 })
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+    
+    if (!message || !message.trim()) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
     // Validate name length

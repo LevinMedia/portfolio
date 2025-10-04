@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { HeartIcon, PaperAirplaneIcon, UserIcon } from '@heroicons/react/24/outline'
+import { HeartIcon, PaperAirplaneIcon, UserIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import MilkdownEditor from './MilkdownEditor'
+import Button from './Button'
 
 interface SocialLinks {
   linkedin?: string
@@ -33,6 +34,7 @@ export default function Guestbook() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [likedEntries, setLikedEntries] = useState<Set<string>>(new Set())
+  const [isFormVisible, setIsFormVisible] = useState(false)
   const [formData, setFormData] = useState<GuestbookFormData>({
     name: '',
     message: '',
@@ -75,6 +77,8 @@ export default function Guestbook() {
     setError('')
     setSuccess('')
 
+    console.log('📤 Submitting form data:', formData)
+
     try {
       const response = await fetch('/api/guestbook', {
         method: 'POST',
@@ -98,7 +102,8 @@ export default function Guestbook() {
             instagram: ''
           }
         })
-        // Refresh entries to show the new one
+        // Collapse form and refresh entries
+        setIsFormVisible(false)
         await fetchEntries()
       } else {
         setError(data.error || 'Failed to add message')
@@ -161,15 +166,23 @@ export default function Guestbook() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <p className="text-muted-foreground">
-          Leave a message on my wall! 🎨✨
-        </p>
-      </div>
+      {/* Big Button to Show Form */}
+      {!isFormVisible && (
+        <Button
+          onClick={() => setIsFormVisible(true)}
+          style="outline"
+          color="primary"
+          size="large"
+          fullWidth
+          iconLeft={<PencilSquareIcon className="w-5 h-5" />}
+        >
+          Leave a message on my wall
+        </Button>
+      )}
 
       {/* Add New Entry Form */}
-      <div className="bg-background border border-border/20 rounded-lg p-6 shadow-lg" style={{ 
+      {isFormVisible && (
+        <div className="bg-background border border-border/20 rounded-lg p-6 shadow-lg" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -262,7 +275,14 @@ export default function Guestbook() {
           )}
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setIsFormVisible(false)}
+              className="px-6 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors font-medium"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={isSubmitting}
@@ -283,6 +303,7 @@ export default function Guestbook() {
           </div>
         </form>
       </div>
+      )}
 
       {/* Guestbook Entries */}
       <div className="space-y-6">
@@ -338,7 +359,27 @@ export default function Guestbook() {
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
+                    h1: ({ children }) => <h1 className="text-3xl font-bold text-foreground mb-4 mt-6">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-2xl font-bold text-foreground mb-3 mt-5">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-xl font-semibold text-foreground mb-3 mt-4">{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-lg font-semibold text-foreground mb-2 mt-3">{children}</h4>,
+                    h5: ({ children }) => <h5 className="text-base font-semibold text-foreground mb-2 mt-3">{children}</h5>,
+                    h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2">{children}</h6>,
                     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                    blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">{children}</blockquote>,
+                    img: ({ src, alt }) => {
+                      if (!src) return null
+                      return (
+                        <img 
+                          src={src} 
+                          alt={alt || ''} 
+                          className="max-w-full h-auto rounded-md my-4"
+                          loading="lazy"
+                        />
+                      )
+                    },
                     strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
                     em: ({ children }) => <em className="italic text-foreground">{children}</em>,
                     code: ({ children }) => (
@@ -347,17 +388,12 @@ export default function Guestbook() {
                       </code>
                     ),
                     pre: ({ children }) => (
-                      <pre className="bg-muted p-3 rounded-lg overflow-x-auto text-sm font-mono text-foreground">
+                      <pre className="bg-muted p-4 rounded-md overflow-x-auto my-4">
                         {children}
                       </pre>
                     ),
                     a: ({ href, children }) => (
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 underline"
-                      >
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
                         {children}
                       </a>
                     )
