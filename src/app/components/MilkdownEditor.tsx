@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Editor, rootCtx, defaultValueCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
@@ -18,37 +18,40 @@ interface MilkdownEditorProps {
 }
 
 export default function MilkdownEditor({ value, onChange, placeholder, className }: MilkdownEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null)
-  const editorInstanceRef = useRef<Editor | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<Editor | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Callback ref to ensure we know when the DOM element is actually ready
+  const refCallback = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      console.log('✅ DOM node is ready!', node)
+      containerRef.current = node
+      setIsMounted(true)
+    }
+  }, [])
 
   useEffect(() => {
-    let isMounted = true
+    if (!isMounted || !containerRef.current) {
+      console.log('⏳ Waiting for mount...', { isMounted, hasRef: !!containerRef.current })
+      return
+    }
+
+    let isActive = true
     let timeoutId: NodeJS.Timeout
 
     const initEditor = async () => {
-      // Wait for next tick to ensure ref is attached
-      await new Promise(resolve => setTimeout(resolve, 0))
-
-      if (!editorRef.current) {
-        console.error('❌ Editor ref is still null after waiting')
-        if (isMounted) {
-          setError('Editor container not ready')
-        }
-        return
-      }
-
       try {
         console.log('🚀 Starting Milkdown initialization...')
-        console.log('📦 Editor ref exists:', !!editorRef.current)
-        console.log('📦 Editor ref element:', editorRef.current.tagName)
+        console.log('📦 Container ref:', containerRef.current)
 
         const editor = Editor.make()
           .config(nord)
           .config((ctx) => {
             console.log('⚙️ Configuring editor context...')
-            ctx.set(rootCtx, editorRef.current!)
+            ctx.set(rootCtx, containerRef.current!)
             ctx.set(defaultValueCtx, value || '')
           })
           .use(commonmark)
@@ -64,7 +67,7 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
         
         console.log('✅ Editor created successfully!')
 
-        if (!isMounted) {
+        if (!isActive) {
           console.log('⚠️ Component unmounted, destroying editor')
           createdEditor.destroy()
           return
@@ -81,46 +84,45 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
           })
         })
 
-        editorInstanceRef.current = createdEditor
+        editorRef.current = createdEditor
         setIsReady(true)
         clearTimeout(timeoutId)
         console.log('🎉 Milkdown is ready!')
 
       } catch (err) {
         console.error('❌ Milkdown initialization failed:', err)
-        console.error('Error details:', err)
-        if (isMounted) {
-          setError(String(err))
+        if (isActive) {
+          setError(err instanceof Error ? err.message : String(err))
         }
       }
     }
 
     // Set a timeout to show error after 5 seconds
     timeoutId = setTimeout(() => {
-      if (!isReady && isMounted) {
+      if (!isReady && isActive) {
         console.error('⏱️ Milkdown initialization timeout')
         setError('Editor initialization timeout')
       }
     }, 5000)
 
-    // Start initialization
-    initEditor()
+    // Start initialization with a small delay
+    setTimeout(initEditor, 100)
 
     return () => {
       console.log('🧹 Cleaning up editor...')
-      isMounted = false
+      isActive = false
       clearTimeout(timeoutId)
-      if (editorInstanceRef.current) {
+      if (editorRef.current) {
         try {
-          editorInstanceRef.current.destroy()
+          editorRef.current.destroy()
           console.log('✅ Editor destroyed')
         } catch (err) {
           console.error('Error destroying editor:', err)
         }
-        editorInstanceRef.current = null
+        editorRef.current = null
       }
     }
-  }, []) // Only run once on mount
+  }, [isMounted, onChange, value])
 
   if (error) {
     return (
@@ -145,16 +147,22 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
 
   if (!isReady) {
     return (
-      <div className={`border border-border rounded-md p-3 bg-background ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-4 bg-muted rounded mb-2"></div>
-          <div className="h-4 bg-muted rounded mb-2"></div>
-          <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-muted rounded w-1/2"></div>
+      <div className={`border border-border rounded-md bg-background overflow-hidden ${className}`}>
+        <div 
+          ref={refCallback}
+          className="milkdown-editor prose prose-sm max-w-none dark:prose-invert p-3"
+          style={{ minHeight: '200px' }}
+        >
+          <div className="animate-pulse">
+            <div className="h-4 bg-muted rounded mb-2"></div>
+            <div className="h-4 bg-muted rounded mb-2"></div>
+            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3 text-center animate-pulse">
+            Loading Milkdown editor...
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground mt-3 text-center animate-pulse">
-          Loading Milkdown editor...
-        </p>
       </div>
     )
   }
@@ -162,7 +170,7 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
   return (
     <div className={`border border-border rounded-md bg-background overflow-hidden ${className}`}>
       <div 
-        ref={editorRef}
+        ref={refCallback}
         className="milkdown-editor prose prose-sm max-w-none dark:prose-invert"
         style={{ minHeight: '200px' }}
       />
