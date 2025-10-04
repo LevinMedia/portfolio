@@ -9,7 +9,7 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { history } from '@milkdown/plugin-history'
 import { clipboard } from '@milkdown/plugin-clipboard'
 import { cursor } from '@milkdown/plugin-cursor'
-import { slash } from '@milkdown/plugin-slash'
+import { slashFactory } from '@milkdown/plugin-slash'
 
 interface MilkdownEditorProps {
   value: string
@@ -69,7 +69,7 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
           .use(history)
           .use(clipboard)
           .use(cursor)
-          .use(slash)
+          .use(slashFactory())
           .create()
 
         console.log('✅ Editor created successfully!')
