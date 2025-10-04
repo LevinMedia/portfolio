@@ -4,10 +4,10 @@ import bcrypt from 'bcrypt'
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json()
+    const { email, password } = await request.json()
 
-    if (!username || !password) {
-      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const { data: user, error } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('username', username)
+      .eq('email', email)
       .eq('is_active', true)
       .single()
 

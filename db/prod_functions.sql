@@ -49,6 +49,14 @@ CREATE TABLE IF NOT EXISTS admin_users (
     last_login TIMESTAMPTZ
 );
 
+-- Setup state tracking table
+CREATE TABLE IF NOT EXISTS setup_state (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    setup_completed BOOLEAN DEFAULT false,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =====================================================
 -- WORK HISTORY TABLE SCHEMA
 -- =====================================================
@@ -147,12 +155,14 @@ ON work_positions(company_id, position_order DESC);
 
 -- Enable RLS on all tables
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE setup_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_positions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE howdy_content ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist (to avoid conflicts on re-runs)
 DROP POLICY IF EXISTS "Service role only - admin_users" ON admin_users;
+DROP POLICY IF EXISTS "Service role only - setup_state" ON setup_state;
 DROP POLICY IF EXISTS "Service role only - work_companies" ON work_companies;
 DROP POLICY IF EXISTS "Service role only - work_positions" ON work_positions;
 DROP POLICY IF EXISTS "Service role only - howdy_content" ON howdy_content;
@@ -160,6 +170,10 @@ DROP POLICY IF EXISTS "Service role only - howdy_content" ON howdy_content;
 -- Create policies that only allow service role access
 -- Admin Users - Service Role Only
 CREATE POLICY "Service role only - admin_users" ON admin_users
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- Setup State - Service Role Only
+CREATE POLICY "Service role only - setup_state" ON setup_state
     FOR ALL USING (auth.role() = 'service_role');
 
 -- Work Companies - Service Role Only
@@ -288,6 +302,42 @@ BEGIN
             NULL::TEXT,
             false;
     END IF;
+END;
+$$;
+
+-- =====================================================
+-- SECURE SETUP FUNCTIONS
+-- =====================================================
+
+-- Function to check if setup is completed
+CREATE OR REPLACE FUNCTION prod_is_setup_completed()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM setup_state 
+        WHERE setup_completed = true
+    );
+END;
+$$;
+
+-- Function to mark setup as completed
+CREATE OR REPLACE FUNCTION prod_mark_setup_completed()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Insert or update setup state
+    INSERT INTO setup_state (setup_completed, completed_at)
+    VALUES (true, NOW())
+    ON CONFLICT (id) DO UPDATE SET
+        setup_completed = true,
+        completed_at = NOW();
+    
+    RETURN true;
 END;
 $$;
 
