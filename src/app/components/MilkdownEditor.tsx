@@ -8,11 +8,10 @@ import '@milkdown/crepe/theme/common/style.css'
 interface MilkdownEditorProps {
   value: string
   onChange: (value: string) => void
-  placeholder?: string
   className?: string
 }
 
-export default function MilkdownEditor({ value, onChange, placeholder, className }: MilkdownEditorProps) {
+export default function MilkdownEditor({ value, onChange, className }: MilkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const crepeRef = useRef<Crepe | null>(null)
   const onChangeRef = useRef(onChange)

@@ -5,8 +5,7 @@ import {
   BoldIcon, 
   ItalicIcon, 
   ListBulletIcon, 
-  LinkIcon,
-  FaceSmileIcon
+  LinkIcon
 } from '@heroicons/react/24/outline'
 
 interface RichTextEditorProps {

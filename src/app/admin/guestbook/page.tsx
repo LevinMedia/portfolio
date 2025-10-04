@@ -39,7 +39,7 @@ export default function GuestbookAdmin() {
       } else {
         setError('Failed to load guestbook entries')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load guestbook entries')
     } finally {
       setIsLoading(false)
@@ -73,7 +73,7 @@ export default function GuestbookAdmin() {
       } else {
         setError(data.error || 'Failed to update entry')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to update entry')
     } finally {
       setIsUpdating(null)
@@ -99,7 +99,7 @@ export default function GuestbookAdmin() {
       } else {
         setError(data.error || 'Failed to delete entry')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to delete entry')
     } finally {
       setIsUpdating(null)
@@ -284,7 +284,7 @@ export default function GuestbookAdmin() {
               </div>
 
               {/* Social Links */}
-              {Object.entries(entry.social_links).some(([_, url]) => url) && (
+              {Object.entries(entry.social_links).some(([, url]) => url) && (
                 <div className="flex items-center space-x-4 pt-4 border-t border-border/20">
                   <span className="text-xs text-muted-foreground">Social Links:</span>
                   {Object.entries(entry.social_links).map(([platform, url]) => 

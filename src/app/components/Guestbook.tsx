@@ -59,7 +59,7 @@ export default function Guestbook() {
       } else {
         setError('Failed to load guestbook entries')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load guestbook entries')
     } finally {
       setIsLoading(false)
@@ -108,7 +108,7 @@ export default function Guestbook() {
       } else {
         setError(data.error || 'Failed to add message')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to add message')
     } finally {
       setIsSubmitting(false)
@@ -404,7 +404,7 @@ export default function Guestbook() {
               </div>
 
               {/* Social Links */}
-              {Object.entries(entry.social_links).some(([_, url]) => url) && (
+              {Object.entries(entry.social_links).some(([, url]) => url) && (
                 <div className="flex items-center space-x-4 pt-4 border-t border-border/20">
                   <span className="text-xs text-muted-foreground">Connect:</span>
                   {Object.entries(entry.social_links).map(([platform, url]) => 
