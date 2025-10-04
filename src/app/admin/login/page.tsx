@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
@@ -11,6 +11,25 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    // Check if admin user exists, if not redirect to secure setup
+    const checkAdminExists = async () => {
+      try {
+        const response = await fetch('/api/admin/secure-setup')
+        const data = await response.json()
+        
+        if (response.ok && !data.setupCompleted) {
+          // No admin exists, redirect to secure setup
+          router.push('/admin/secure-setup')
+        }
+      } catch (error) {
+        console.error('Error checking admin existence:', error)
+      }
+    }
+
+    checkAdminExists()
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

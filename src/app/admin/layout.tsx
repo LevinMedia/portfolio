@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     // Skip authentication check for setup and login pages
-    if (pathname === '/admin/setup' || pathname === '/admin/login') {
+    if (pathname === '/admin/setup' || pathname === '/admin/login' || pathname === '/admin/secure-setup') {
       return
     }
 
