@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [router, pathname])
 
   // For setup and login pages, render without admin layout
-  if (pathname === '/admin/setup' || pathname === '/admin/login') {
+  if (pathname === '/admin/setup' || pathname === '/admin/login' || pathname === '/admin/secure-setup') {
     return <>{children}</>
   }
 

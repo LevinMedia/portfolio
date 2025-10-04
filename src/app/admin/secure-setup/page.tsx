@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircleIcon, ExclamationTriangleIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import Input from '@/app/components/ui/Input'
 
 interface SetupStatus {
   setupCompleted: boolean
@@ -62,17 +61,20 @@ export default function SecureSetup() {
 
       const data = await response.json()
 
-      if (response.ok) {
-        setSuccess(true)
-        // Redirect to login after a short delay
-        setTimeout(() => {
-          router.push('/admin/login')
-        }, 2000)
-      } else {
+      if (!response.ok) {
         setError(data.error || 'Setup failed')
+        return
       }
+
+      setSuccess(true)
+      
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        router.push('/admin/login')
+      }, 3000)
+
     } catch {
-      setError('Setup failed. Please try again.')
+      setError('An error occurred. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -140,14 +142,15 @@ export default function SecureSetup() {
           }}>
             <div className="text-center">
               <CheckCircleIcon className="mx-auto h-12 w-12 text-green-500 mb-4" />
-              <p className="text-foreground mb-4">
-                The admin system has already been set up and is secure.
+              <h3 className="text-lg font-medium text-foreground mb-2">Setup Already Complete</h3>
+              <p className="text-muted-foreground mb-4">
+                The admin setup has already been completed. You can now log in with your admin credentials.
               </p>
-              <Link
-                href="/admin/login"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+              <Link 
+                href="/admin/login" 
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
               >
-                Go to Admin Login
+                Go to Login
               </Link>
             </div>
           </div>
@@ -200,29 +203,38 @@ export default function SecureSetup() {
               </p>
             </div>
           ) : (
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">
-                <Input
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="Enter your email address"
-                  required
-                />
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    className="block w-full px-3 py-2 border border-border rounded-md shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+                    placeholder="Enter your email address"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
                     Password
                   </label>
                   <div className="relative">
                     <input
+                      id="password"
+                      name="password"
                       type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
                       className="block w-full px-3 py-2 pr-10 border border-border rounded-md shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
                       placeholder="Enter a secure password (min 8 characters)"
-                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       minLength={8}
                     />
                     <button
@@ -262,12 +274,6 @@ export default function SecureSetup() {
                 >
                   {isSubmitting ? 'Creating Admin Account...' : 'Create Admin Account'}
                 </button>
-              </div>
-
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">
-                  This is a one-time setup. Once completed, this page will no longer be accessible.
-                </p>
               </div>
             </form>
           )}
