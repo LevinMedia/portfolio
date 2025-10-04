@@ -24,6 +24,8 @@ export default function CrepeEditor({ value, onChange, placeholder, className }:
     // Clear any existing content
     editorRef.current.innerHTML = ''
 
+    console.log('Initializing Crepe editor...')
+
     const crepe = new Crepe({
       root: editorRef.current,
       defaultValue: value || '',
@@ -32,27 +34,41 @@ export default function CrepeEditor({ value, onChange, placeholder, className }:
 
     crepeRef.current = crepe
 
+    // Add a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('Crepe editor timeout - falling back to textarea')
+      setIsLoading(false)
+      setError('Editor failed to load - using fallback')
+    }, 5000)
+
     crepe.create().then(() => {
+      clearTimeout(timeout)
       setIsLoading(false)
       setError(null)
       console.log('Crepe editor created successfully')
       
       // Set up change listener
-      crepe.editor?.action((ctx) => {
-        const listener = ctx.get('listenerCtx')
-        if (listener) {
-          listener.markdownUpdated = (ctx, markdown) => {
-            onChange(markdown)
+      try {
+        crepe.editor?.action((ctx) => {
+          const listener = ctx.get('listenerCtx')
+          if (listener) {
+            listener.markdownUpdated = (ctx, markdown) => {
+              onChange(markdown)
+            }
           }
-        }
-      })
+        })
+      } catch (e) {
+        console.error('Error setting up change listener:', e)
+      }
     }).catch((error) => {
+      clearTimeout(timeout)
       console.error('Failed to create Crepe editor:', error)
       setError('Failed to load editor')
       setIsLoading(false)
     })
 
     return () => {
+      clearTimeout(timeout)
       if (crepeRef.current) {
         try {
           crepeRef.current.destroy()
@@ -77,16 +93,17 @@ export default function CrepeEditor({ value, onChange, placeholder, className }:
 
   if (error) {
     return (
-      <div className={`border border-border rounded-md p-3 bg-background ${className}`}>
-        <div className="text-center text-muted-foreground">
-          <p>Failed to load editor. Please refresh the page.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-          >
-            Refresh
-          </button>
+      <div className={`border border-border rounded-md bg-background ${className}`}>
+        <div className="p-3 text-center text-muted-foreground border-b border-border/20">
+          <p className="text-sm">Using fallback editor</p>
         </div>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || 'Write your message here... (Markdown supported!)'}
+          className="w-full p-3 border-0 bg-transparent resize-none focus:outline-none min-h-[200px]"
+          rows={8}
+        />
       </div>
     )
   }
