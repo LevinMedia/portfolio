@@ -5,7 +5,7 @@ import { HeartIcon, PaperAirplaneIcon, UserIcon } from '@heroicons/react/24/outl
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import MilkdownEditor from './MilkdownEditor'
+import CrepeEditor from './CrepeEditor'
 
 interface SocialLinks {
   linkedin?: string
@@ -200,7 +200,7 @@ export default function Guestbook() {
               Your Message
             </label>
             <div className="relative">
-              <MilkdownEditor
+              <CrepeEditor
                 value={formData.message}
                 onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
                 placeholder="Write your message here... Use / for commands!"

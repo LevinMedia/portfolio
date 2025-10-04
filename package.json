@@ -13,18 +13,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
-    "@milkdown/core": "^7.16.0",
-    "@milkdown/ctx": "^7.16.0",
-    "@milkdown/plugin-clipboard": "^7.16.0",
-    "@milkdown/plugin-cursor": "^7.16.0",
-    "@milkdown/plugin-emoji": "^7.16.0",
-    "@milkdown/plugin-history": "^7.16.0",
-    "@milkdown/plugin-listener": "^7.16.0",
-    "@milkdown/plugin-menu": "^6.5.4",
-    "@milkdown/plugin-slash": "^7.16.0",
-    "@milkdown/plugin-tooltip": "^7.16.0",
-    "@milkdown/preset-commonmark": "^7.16.0",
-    "@milkdown/theme-nord": "^7.16.0",
+    "@milkdown/crepe": "^7.16.0",
     "@supabase/supabase-js": "^2.54.0",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
@@ -37,7 +26,9 @@
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
     "react-easy-crop": "^5.5.3",
-    "react-syntax-highlighter": "^15.6.1"
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.0.1",
