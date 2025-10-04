@@ -622,3 +622,141 @@ INSERT INTO work_positions (id, company_id, position_title, position_description
 ON CONFLICT (id) DO NOTHING;
 
 -- =====================================================
+-- GUESTBOOK TABLE AND FUNCTIONS
+-- =====================================================
+
+-- Create guestbook entries table
+CREATE TABLE IF NOT EXISTS guestbook_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    message TEXT NOT NULL, -- Markdown content
+    social_links JSONB DEFAULT '{}', -- {linkedin: "", threads: "", twitter: "", instagram: ""}
+    is_approved BOOLEAN DEFAULT true, -- For moderation if needed
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create index for chronological ordering
+CREATE INDEX IF NOT EXISTS idx_guestbook_entries_created_at ON guestbook_entries(created_at DESC);
+
+-- Enable RLS
+ALTER TABLE guestbook_entries ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public read access - guestbook_entries" ON guestbook_entries;
+DROP POLICY IF EXISTS "Service role full access - guestbook_entries" ON guestbook_entries;
+
+-- Create RLS policies
+CREATE POLICY "Public read access - guestbook_entries" ON guestbook_entries
+    FOR SELECT USING (is_approved = true);
+
+CREATE POLICY "Service role full access - guestbook_entries" ON guestbook_entries
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- Function to get guestbook entries (public)
+CREATE OR REPLACE FUNCTION prod_get_guestbook_entries()
+RETURNS TABLE (
+    id UUID,
+    name TEXT,
+    message TEXT,
+    social_links JSONB,
+    created_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ge.id,
+        ge.name,
+        ge.message,
+        ge.social_links,
+        ge.created_at
+    FROM guestbook_entries ge
+    WHERE ge.is_approved = true
+    ORDER BY ge.created_at DESC;
+END;
+$$;
+
+-- Function to create guestbook entry (public)
+CREATE OR REPLACE FUNCTION prod_create_guestbook_entry(
+    p_name TEXT,
+    p_message TEXT,
+    p_social_links JSONB DEFAULT '{}'
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    entry_id UUID;
+BEGIN
+    INSERT INTO guestbook_entries (name, message, social_links)
+    VALUES (p_name, p_message, p_social_links)
+    RETURNING id INTO entry_id;
+    
+    RETURN entry_id;
+END;
+$$;
+
+-- Function to get all guestbook entries (admin)
+CREATE OR REPLACE FUNCTION prod_get_all_guestbook_entries()
+RETURNS TABLE (
+    id UUID,
+    name TEXT,
+    message TEXT,
+    social_links JSONB,
+    is_approved BOOLEAN,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ge.id,
+        ge.name,
+        ge.message,
+        ge.social_links,
+        ge.is_approved,
+        ge.created_at,
+        ge.updated_at
+    FROM guestbook_entries ge
+    ORDER BY ge.created_at DESC;
+END;
+$$;
+
+-- Function to update guestbook entry approval status (admin)
+CREATE OR REPLACE FUNCTION prod_update_guestbook_entry_status(
+    p_entry_id UUID,
+    p_is_approved BOOLEAN
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE guestbook_entries 
+    SET is_approved = p_is_approved, updated_at = NOW()
+    WHERE id = p_entry_id;
+    
+    RETURN FOUND;
+END;
+$$;
+
+-- Function to delete guestbook entry (admin)
+CREATE OR REPLACE FUNCTION prod_delete_guestbook_entry(p_entry_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM guestbook_entries WHERE id = p_entry_id;
+    RETURN FOUND;
+END;
+$$;
+
+-- =====================================================

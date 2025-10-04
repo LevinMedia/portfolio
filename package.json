@@ -17,12 +17,15 @@
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
+    "emoji-picker-react": "^4.14.0",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
     "react-easy-crop": "^5.5.3",
-    "react-syntax-highlighter": "^15.6.1"
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.0.1",
