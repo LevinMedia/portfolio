@@ -5,7 +5,7 @@ import { HeartIcon, PaperAirplaneIcon, UserIcon } from '@heroicons/react/24/outl
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import EmojiPicker from 'emoji-picker-react'
+import MilkdownEditor from './MilkdownEditor'
 
 interface SocialLinks {
   linkedin?: string
@@ -32,7 +32,6 @@ export default function Guestbook() {
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [likedEntries, setLikedEntries] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState<GuestbookFormData>({
     name: '',
@@ -111,14 +110,6 @@ export default function Guestbook() {
     }
   }
 
-  // Handle emoji selection
-  const onEmojiClick = (emojiObject: any) => {
-    setFormData(prev => ({
-      ...prev,
-      message: prev.message + emojiObject.emoji
-    }))
-    setShowEmojiPicker(false)
-  }
 
   // Handle like toggle
   const toggleLike = (entryId: string) => {
@@ -209,45 +200,21 @@ export default function Guestbook() {
               Your Message
             </label>
             <div className="relative">
-              <textarea
+              <MilkdownEditor
                 value={formData.message}
-                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                className="block w-full px-3 py-2 pr-10 border border-border rounded-md shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors resize-none font-mono"
-                placeholder="Write your message here... (Markdown supported!)
-
-**Bold text** with double asterisks
-*Italic text* with single asterisks
-[Link text](https://example.com)
-- Bullet points
-1. Numbered lists
-
-Add emojis with the button! 😊"
-                rows={8}
-                required
-                maxLength={5000}
+                onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
+                placeholder="Write your message here... Use / for commands!"
+                className="min-h-[200px]"
               />
-              <button
-                type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                title="Add emoji"
-              >
-                😊
-              </button>
             </div>
-            {showEmojiPicker && (
-              <div className="absolute z-10 mt-2">
-                <EmojiPicker onEmojiClick={onEmojiClick} />
-              </div>
-            )}
-            <div className="flex justify-between items-center mt-1">
+            <div className="flex justify-between items-center mt-2">
               <p className="text-xs text-muted-foreground">
-                {formData.message.length}/5000 characters • Markdown supported
+                {formData.message.length}/5000 characters • Use / for formatting commands
               </p>
               <div className="flex space-x-2 text-xs text-muted-foreground">
-                <span>**bold**</span>
-                <span>*italic*</span>
-                <span>[link](url)</span>
+                <span>Type / for commands</span>
+                <span>Ctrl+B for bold</span>
+                <span>Ctrl+I for italic</span>
               </div>
             </div>
           </div>
@@ -367,10 +334,9 @@ Add emojis with the button! 😊"
               </div>
 
               {/* Message Content */}
-              <div className="prose prose-sm max-w-none mb-4">
+              <div className="prose prose-sm max-w-none mb-4 text-foreground">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  className="text-foreground"
                   components={{
                     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
                     strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,

@@ -250,10 +250,9 @@ export default function GuestbookAdmin() {
               </div>
 
               {/* Message Content */}
-              <div className="prose prose-sm max-w-none mb-4">
+              <div className="prose prose-sm max-w-none mb-4 text-foreground">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  className="text-foreground"
                   components={{
                     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
                     strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
