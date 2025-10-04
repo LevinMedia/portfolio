@@ -24,24 +24,31 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!editorRef.current) {
-      console.error('Editor ref is null')
-      return
-    }
-
     let isMounted = true
     let timeoutId: NodeJS.Timeout
 
     const initEditor = async () => {
+      // Wait for next tick to ensure ref is attached
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      if (!editorRef.current) {
+        console.error('❌ Editor ref is still null after waiting')
+        if (isMounted) {
+          setError('Editor container not ready')
+        }
+        return
+      }
+
       try {
         console.log('🚀 Starting Milkdown initialization...')
         console.log('📦 Editor ref exists:', !!editorRef.current)
+        console.log('📦 Editor ref element:', editorRef.current.tagName)
 
         const editor = Editor.make()
           .config(nord)
           .config((ctx) => {
             console.log('⚙️ Configuring editor context...')
-            ctx.set(rootCtx, editorRef.current)
+            ctx.set(rootCtx, editorRef.current!)
             ctx.set(defaultValueCtx, value || '')
           })
           .use(commonmark)
@@ -81,7 +88,7 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
 
       } catch (err) {
         console.error('❌ Milkdown initialization failed:', err)
-        console.error('Error details:', JSON.stringify(err, null, 2))
+        console.error('Error details:', err)
         if (isMounted) {
           setError(String(err))
         }
@@ -114,21 +121,6 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
       }
     }
   }, []) // Only run once on mount
-
-  // Update content when value prop changes (after initial mount)
-  useEffect(() => {
-    if (isReady && editorInstanceRef.current) {
-      try {
-        editorInstanceRef.current.action((ctx) => {
-          const view = ctx.get(rootCtx)
-          // Only update if the markdown is different
-          // This prevents infinite loops
-        })
-      } catch (err) {
-        console.error('Error updating content:', err)
-      }
-    }
-  }, [value, isReady])
 
   if (error) {
     return (
@@ -177,4 +169,3 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
     </div>
   )
 }
-
