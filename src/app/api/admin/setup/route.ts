@@ -20,16 +20,17 @@ export async function POST() {
       return NextResponse.json({ message: 'Admin user already exists' })
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash('TheLetterA!', 10)
+    // Hash the password from environment variable
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'TheLetterA!'
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10)
 
     // Create admin user
     const { data, error } = await supabase
       .from('admin_users')
       .insert({
-        username: 'Admin',
+        username: process.env.DEFAULT_ADMIN_USERNAME || 'Admin',
         password_hash: hashedPassword,
-        email: 'admin@levinmedia.com',
+        email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@levinmedia.com',
         is_active: true
       })
       .select()

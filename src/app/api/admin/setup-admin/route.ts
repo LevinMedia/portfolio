@@ -23,8 +23,9 @@ export async function POST() {
     // First, let's run the database schema setup
     console.log('Setting up database schema...')
     
-    // Hash the default password
-    const hashedPassword = await bcrypt.hash('TheLetterA!', 10)
+    // Hash the default password from environment variable
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'TheLetterA!'
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10)
     console.log('Generated password hash for Admin user')
 
     // Check if admin user already exists
@@ -48,9 +49,9 @@ export async function POST() {
     const { data, error } = await supabase
       .from('admin_users')
       .insert({
-        username: 'Admin',
+        username: process.env.DEFAULT_ADMIN_USERNAME || 'Admin',
         password_hash: hashedPassword,
-        email: 'admin@levinmedia.com',
+        email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@levinmedia.com',
         is_active: true
       })
       .select()
@@ -72,8 +73,8 @@ export async function POST() {
         is_active: data.is_active
       },
       loginCredentials: {
-        username: 'Admin',
-        password: 'TheLetterA!'
+        username: process.env.DEFAULT_ADMIN_USERNAME || 'Admin',
+        password: process.env.DEFAULT_ADMIN_PASSWORD || 'TheLetterA!'
       }
     })
 

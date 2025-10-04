@@ -18,7 +18,7 @@ This guide will help you set up and use the admin interface for your LevinMedia 
 1. Go to `/admin/login`
 2. Use the credentials:
    - **Username:** `Admin`
-   - **Password:** `TheLetterA!`
+   - **Password:** `[Set in environment variables]`
 
 ## 📋 Admin Features
 
@@ -185,7 +185,7 @@ work_positions (
 
 #### "Invalid credentials" error
 - Double-check username is exactly "Admin" (case-sensitive)
-- Ensure password is exactly "TheLetterA!" (case-sensitive)
+- Ensure password matches your environment variable `DEFAULT_ADMIN_PASSWORD`
 - Try running setup again if needed
 
 #### Database connection errors

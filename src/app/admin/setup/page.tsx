@@ -102,7 +102,7 @@ export default function AdminSetup() {
                 <div className="mt-3 bg-muted p-3 rounded-md border border-border/20">
                   <div className="text-sm">
                     <div><strong className="text-foreground">Username:</strong> <span className="text-muted-foreground">Admin</span></div>
-                    <div><strong className="text-foreground">Password:</strong> <span className="text-muted-foreground">TheLetterA!</span></div>
+                    <div><strong className="text-foreground">Password:</strong> <span className="text-muted-foreground">[Check your environment variables]</span></div>
                   </div>
                 </div>
               </div>
