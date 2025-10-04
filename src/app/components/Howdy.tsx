@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Tooltip from './Tooltip'
-import { CommandLineIcon } from '@heroicons/react/24/outline'
+import { CommandLineIcon, CogIcon } from '@heroicons/react/24/outline'
 import Button from './Button'
 import ButtonTooltip from './ButtonTooltip'
 import { useEffect, useState } from 'react'
@@ -17,9 +17,10 @@ interface HowdyData {
 
 interface HowdyProps {
   onSelectedWorksClick?: () => void
+  onSiteSettingsClick?: () => void
 }
 
-export default function Howdy({ onSelectedWorksClick }: HowdyProps) {
+export default function Howdy({ onSelectedWorksClick, onSiteSettingsClick }: HowdyProps) {
   const [data, setData] = useState<HowdyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -196,6 +197,8 @@ ${listItemsHtml}
               color="primary"
               size="small"
               className="sm:h-10 sm:px-4 sm:text-sm"
+              iconLeft={<CogIcon className="w-5 h-5" />}
+              onClick={onSiteSettingsClick}
             >
               Site settings
             </Button>

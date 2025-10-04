@@ -8,10 +8,11 @@ import Drawer from "./components/Drawer";
 import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
+import SiteSettingsContent from "./components/SiteSettingsContent";
 import LevinMediaLogo from "./components/LevinMediaLogo";
 import Howdy from "./components/Howdy";
 
-import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
+import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
 function HomeContent() {
   const router = useRouter();
@@ -19,6 +20,7 @@ function HomeContent() {
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false);
+  const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
 
   // Check URL parameters on mount
   useEffect(() => {
@@ -84,6 +86,19 @@ function HomeContent() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  // Handle opening site settings drawer
+  const handleSiteSettingsOpen = () => {
+    setIsSiteSettingsOpen(true);
+    setIsWorkHistoryOpen(false); // Close other drawers
+    setIsAboutOpen(false);
+    setIsSelectedWorksOpen(false);
+  };
+
+  // Handle closing site settings drawer
+  const handleSiteSettingsClose = () => {
+    setIsSiteSettingsOpen(false);
+  };
+
   // Handle closing selected works drawer
   const handleSelectedWorksClose = () => {
     setIsSelectedWorksOpen(false);
@@ -112,7 +127,7 @@ function HomeContent() {
       backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
       backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
     }}>
-      <Howdy onSelectedWorksClick={handleSelectedWorksOpen} />
+      <Howdy onSelectedWorksClick={handleSelectedWorksOpen} onSiteSettingsClick={handleSiteSettingsOpen} />
       
 
       
@@ -189,6 +204,18 @@ function HomeContent() {
           maxWidth=""
         >
           <SelectedWorksContent />
+        </Drawer>
+
+        {/* Site Settings Drawer */}
+        <Drawer
+          isOpen={isSiteSettingsOpen}
+          onClose={handleSiteSettingsClose}
+          title="Site Settings"
+          icon={<CogIcon className="w-6 h-6" />}
+          contentPadding="p-4"
+          maxWidth="max-w-4xl"
+        >
+          <SiteSettingsContent />
         </Drawer>
       </div>
     );
