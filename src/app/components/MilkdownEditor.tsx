@@ -1,17 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Editor, rootCtx, defaultValueCtx } from '@milkdown/core'
-import { commonmark } from '@milkdown/preset-commonmark'
-import { gfm } from '@milkdown/preset-gfm'
-import { nord } from '@milkdown/theme-nord'
-import { listener, listenerCtx } from '@milkdown/plugin-listener'
-import { history } from '@milkdown/plugin-history'
-import { clipboard } from '@milkdown/plugin-clipboard'
-import { cursor } from '@milkdown/plugin-cursor'
-import { emoji } from '@milkdown/plugin-emoji'
-
-import '@milkdown/theme-nord/style.css'
 
 interface MilkdownEditorProps {
   value: string
@@ -22,20 +11,43 @@ interface MilkdownEditorProps {
 
 export default function MilkdownEditor({ value, onChange, placeholder, className }: MilkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
-  const editorInstanceRef = useRef<Editor | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [editor, setEditor] = useState<any>(null)
 
   useEffect(() => {
-    if (!editorRef.current) return
-
     let isMounted = true
+    let editorInstance: any = null
+
+    // Set a timeout to show fallback if editor doesn't load
+    const timeout = setTimeout(() => {
+      console.log('Milkdown timeout - showing fallback')
+      if (isMounted) {
+        setIsLoading(false)
+      }
+    }, 2000)
 
     const initEditor = async () => {
       try {
-        console.log('Initializing Milkdown editor...')
+        console.log('Starting Milkdown initialization...')
+        
+        // Dynamic import to avoid SSR issues
+        const { Editor, rootCtx, defaultValueCtx } = await import('@milkdown/core')
+        const { commonmark } = await import('@milkdown/preset-commonmark')
+        const { gfm } = await import('@milkdown/preset-gfm')
+        const { nord } = await import('@milkdown/theme-nord')
+        const { listener, listenerCtx } = await import('@milkdown/plugin-listener')
+        const { history } = await import('@milkdown/plugin-history')
+        const { clipboard } = await import('@milkdown/plugin-clipboard')
+        const { cursor } = await import('@milkdown/plugin-cursor')
+        
+        console.log('Milkdown modules loaded')
 
-        const editor = await Editor.make()
+        if (!editorRef.current || !isMounted) {
+          console.log('Editor ref not ready or unmounted')
+          return
+        }
+
+        editorInstance = await Editor.make()
           .config((ctx) => {
             ctx.set(rootCtx, editorRef.current)
             ctx.set(defaultValueCtx, value || '')
@@ -43,6 +55,7 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
             // Set up change listener
             ctx.get(listenerCtx).markdownUpdated((ctx, markdown) => {
               if (isMounted) {
+                console.log('Markdown updated:', markdown)
                 onChange(markdown)
               }
             })
@@ -54,54 +67,41 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
           .use(history)
           .use(clipboard)
           .use(cursor)
-          .use(emoji)
           .create()
 
+        console.log('Milkdown editor created successfully!')
+        
         if (isMounted) {
-          editorInstanceRef.current = editor
+          clearTimeout(timeout)
+          setEditor(editorInstance)
           setIsLoading(false)
-          console.log('Milkdown editor initialized successfully')
         }
       } catch (err) {
-        console.error('Failed to initialize Milkdown:', err)
+        console.error('Milkdown initialization error:', err)
         if (isMounted) {
-          setError('Failed to load editor')
+          clearTimeout(timeout)
           setIsLoading(false)
         }
       }
     }
 
-    initEditor()
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      initEditor()
+    }, 100)
 
     return () => {
       isMounted = false
-      if (editorInstanceRef.current) {
+      clearTimeout(timeout)
+      if (editorInstance) {
         try {
-          editorInstanceRef.current.destroy()
+          editorInstance.destroy()
         } catch (err) {
           console.error('Error destroying editor:', err)
         }
-        editorInstanceRef.current = null
       }
     }
   }, [])
-
-  if (error) {
-    return (
-      <div className={`border border-border rounded-md bg-background ${className}`}>
-        <div className="p-3 text-center text-muted-foreground border-b border-border/20">
-          <p className="text-sm">Editor failed to load</p>
-        </div>
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || 'Write your message here...'}
-          className="w-full p-3 border-0 bg-transparent resize-none focus:outline-none min-h-[200px]"
-          rows={8}
-        />
-      </div>
-    )
-  }
 
   if (isLoading) {
     return (
@@ -111,6 +111,29 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
           <div className="h-4 bg-muted rounded mb-2"></div>
           <div className="h-4 bg-muted rounded w-3/4"></div>
         </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center">Loading editor...</p>
+      </div>
+    )
+  }
+
+  // If editor failed to load, show a functional textarea fallback
+  if (!editor) {
+    console.log('Using textarea fallback')
+    return (
+      <div className={`border border-border rounded-md bg-background ${className}`}>
+        <div className="p-2 text-center text-xs text-muted-foreground border-b border-border/20 bg-muted/20">
+          Simple editor (Markdown supported)
+        </div>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || 'Write your message here... (Markdown supported)'}
+          className="w-full p-3 border-0 bg-transparent resize-none focus:outline-none min-h-[200px] font-mono text-sm"
+          rows={8}
+        />
+        <div className="p-2 text-xs text-muted-foreground border-t border-border/20">
+          Tip: Use **bold**, *italic*, [links](url), images, etc.
+        </div>
       </div>
     )
   }
@@ -119,7 +142,7 @@ export default function MilkdownEditor({ value, onChange, placeholder, className
     <div className={`border border-border rounded-md bg-background overflow-hidden ${className}`}>
       <div 
         ref={editorRef} 
-        className="milkdown-editor p-3 min-h-[200px] prose prose-sm max-w-none dark:prose-invert"
+        className="milkdown-editor min-h-[200px]"
       />
     </div>
   )

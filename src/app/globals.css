@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@milkdown/theme-nord/style.css";
 
 :root {
   /* Light theme */
@@ -239,4 +238,56 @@ body {
 .react-easy-crop_Image {
   max-width: none;
   max-height: none;
+}
+
+/* Milkdown Editor Styles */
+.milkdown-editor {
+  padding: 1rem;
+}
+
+.milkdown-editor .ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+
+.milkdown-editor .ProseMirror p {
+  margin: 0.5rem 0;
+}
+
+.milkdown-editor .ProseMirror h1,
+.milkdown-editor .ProseMirror h2,
+.milkdown-editor .ProseMirror h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.milkdown-editor .ProseMirror ul,
+.milkdown-editor .ProseMirror ol {
+  padding-left: 1.5rem;
+}
+
+.milkdown-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  margin-left: 0;
+  color: var(--muted-foreground);
+}
+
+.milkdown-editor .ProseMirror code {
+  background: var(--muted);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.milkdown-editor .ProseMirror pre {
+  background: var(--muted);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.milkdown-editor .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
 }
