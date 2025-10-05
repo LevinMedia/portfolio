@@ -21,10 +21,12 @@
 -- Drop existing functions if they exist
 -- (No functions to drop yet)
 
+-- NOTE: We DO NOT drop admin_users or setup_state tables to preserve authentication!
+-- Only drop content tables that can be safely recreated
+
 -- Drop existing tables if they exist (in reverse dependency order)
 DROP TABLE IF EXISTS work_positions CASCADE;
 DROP TABLE IF EXISTS work_companies CASCADE;
-DROP TABLE IF EXISTS admin_users CASCADE;
 
 -- Drop existing indexes if they exist
 DROP INDEX IF EXISTS idx_work_companies_display_order;

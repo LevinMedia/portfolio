@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import MilkdownEditor from '@/app/components/MilkdownEditor'
 import ThumbnailCropper from '@/app/components/ThumbnailCropper'
-import ImageUploader from '@/app/components/ImageUploader'
+import SimpleImageUploader from '@/app/components/SimpleImageUploader'
 import Input from '@/app/components/ui/Input'
 
 interface SelectedWork {
@@ -294,7 +294,7 @@ export default function SelectedWorkAdmin() {
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Feature Image (16:9) *
                 </label>
-                <ImageUploader
+                <SimpleImageUploader
                   onImageUpload={handleImageUpload}
                   currentImage={formData.feature_image_url}
                   folder="selected-works"
