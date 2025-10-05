@@ -2,8 +2,6 @@
 
 > Built with Next.js, Supabase, and a whole lot of coffee. Deployed on Vercel. This is my personal portfolio site, but I've open sourced it so anyone can check it out or tinker! 🎉 PRs welcome, see the contributing section below.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LevinMedia/portfolio)
-
 ## ✨ Features
 
 - 🎭 **Theme System** - Light/Dark mode with custom color preferences
