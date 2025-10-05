@@ -9,6 +9,7 @@ import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
 import SiteSettingsContent from "./components/SiteSettingsContent";
+import Guestbook from "./components/Guestbook";
 import LevinMediaLogo from "./components/LevinMediaLogo";
 import Howdy from "./components/Howdy";
 
@@ -21,15 +22,18 @@ function HomeContent() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false);
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
+  const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
 
   // Check URL parameters on mount
   useEffect(() => {
     const showWorkHistory = searchParams.get('work-history') === 'true';
     const showAbout = searchParams.get('about') === 'true';
     const showSelectedWorks = searchParams.get('selected-works') === 'true';
+    const showGuestbook = searchParams.get('guestbook') === 'true';
     setIsWorkHistoryOpen(showWorkHistory);
     setIsAboutOpen(showAbout);
     setIsSelectedWorksOpen(showSelectedWorks);
+    setIsGuestbookOpen(showGuestbook);
   }, [searchParams]);
 
   // Handle opening work history drawer
@@ -108,6 +112,29 @@ function HomeContent() {
     router.push(newUrl, { scroll: false });
   };
 
+  // Handle opening guestbook drawer
+  const handleGuestbookOpen = () => {
+    setIsGuestbookOpen(true);
+    setIsWorkHistoryOpen(false); // Close work history drawer
+    setIsAboutOpen(false); // Close about drawer
+    setIsSelectedWorksOpen(false); // Close selected works drawer
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('guestbook', 'true');
+    params.delete('work-history'); // Remove work history parameter
+    params.delete('about'); // Remove about parameter
+    params.delete('selected-works'); // Remove selected works parameter
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Handle closing guestbook drawer
+  const handleGuestbookClose = () => {
+    setIsGuestbookOpen(false);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('guestbook');
+    const newUrl = params.toString() ? `?${params.toString()}` : '/';
+    router.push(newUrl, { scroll: false });
+  };
+
   return (
     <div className="grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
       gridTemplateRows: 'var(--grid-major) 1fr 0',
@@ -140,7 +167,7 @@ function HomeContent() {
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />
   <NavigationItem icon={<QuestionMarkCircleIcon />} label="About David" onClick={handleAboutOpen} />
   <NavigationItem icon={<ChartBarSquareIcon />} label="Stats" />
-  <NavigationItem icon={<PencilSquareIcon />} label="Sign the guest book" />
+  <NavigationItem icon={<PencilSquareIcon />} label="Guestbook" onClick={handleGuestbookOpen} />
 </Navigation>`
           }} 
           borderRadius={0}
@@ -166,7 +193,8 @@ function HomeContent() {
             />
             <NavigationItem 
               icon={<PencilSquareIcon className="w-5 h-5" />}
-              label="Sign the guest book"
+              label="Guestbook"
+              onClick={handleGuestbookOpen}
             />
           </Navigation>
         </Tooltip>
@@ -216,6 +244,18 @@ function HomeContent() {
           maxWidth="max-w-4xl"
         >
           <SiteSettingsContent />
+        </Drawer>
+
+        {/* Guestbook Drawer */}
+        <Drawer
+          isOpen={isGuestbookOpen}
+          onClose={handleGuestbookClose}
+          title="Guestbook"
+          icon={<PencilSquareIcon className="w-6 h-6" />}
+          contentPadding="p-4"
+          maxWidth="max-w-4xl"
+        >
+          <Guestbook />
         </Drawer>
       </div>
     );

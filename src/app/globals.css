@@ -239,3 +239,264 @@ body {
   max-width: none;
   max-height: none;
 }
+
+/* Milkdown Editor Styles */
+.milkdown-editor {
+  padding: 1rem;
+}
+
+/* Crepe Editor - Allow slash menu to overflow */
+.crepe-editor,
+.crepe-editor .milkdown,
+.crepe-editor .ProseMirror {
+  overflow: visible !important;
+}
+
+/* Ensure slash menu portal renders above everything */
+.crepe [data-floating-ui-portal],
+[data-floating-ui-portal] {
+  z-index: 9999 !important;
+}
+
+/* Force floating UI elements to use theme */
+[data-floating-ui-portal] > * {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid rgba(var(--border-rgb, 203, 213, 225), 0.2) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-floating-ui-portal] svg {
+  color: var(--foreground) !important;
+  fill: var(--foreground) !important;
+}
+
+[data-floating-ui-portal] button {
+  color: var(--foreground) !important;
+}
+
+[data-floating-ui-portal] button:hover {
+  background: var(--muted) !important;
+}
+
+/* Crepe Editor Theme - Match site theme */
+.crepe-editor .milkdown,
+.crepe-editor .milkdown * {
+  color: var(--foreground) !important;
+}
+
+.crepe-editor .milkdown {
+  background: var(--background);
+}
+
+.crepe-editor .ProseMirror {
+  background: transparent;
+  color: var(--foreground);
+  padding: 1rem;
+  min-height: 200px;
+}
+
+/* Force all Crepe UI elements to use theme colors */
+.crepe-editor div[class*="crepe"],
+.crepe-editor div[class*="milkdown"],
+.crepe-editor div[data-tippy-root] {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid rgba(203, 213, 225, 0.2) !important;
+}
+
+.crepe-editor div[class*="crepe"] svg,
+.crepe-editor div[class*="milkdown"] svg {
+  color: var(--foreground) !important;
+  fill: var(--foreground) !important;
+}
+
+/* Target floating menus from Milkdown */
+body > div[style*="position: absolute"],
+body > div[style*="position: fixed"] {
+  background: var(--background) !important;
+  border: 1px solid rgba(203, 213, 225, 0.2) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+body > div[style*="position: absolute"] *,
+body > div[style*="position: fixed"] * {
+  color: var(--foreground) !important;
+}
+
+.crepe-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Crepe toolbar styling */
+.crepe-editor .milkdown-menu,
+.crepe-editor [role="toolbar"] {
+  background: var(--background) !important;
+  border: 1px solid rgba(var(--border-rgb, 203, 213, 225), 0.2) !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.crepe-editor .milkdown-menu-item,
+.crepe-editor [role="toolbar"] button {
+  color: var(--foreground) !important;
+}
+
+.crepe-editor .milkdown-menu-item:hover,
+.crepe-editor [role="toolbar"] button:hover {
+  background: var(--muted) !important;
+}
+
+.crepe-editor .milkdown-menu-item[data-active="true"],
+.crepe-editor [role="toolbar"] button[data-active="true"] {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+/* Toolbar icons */
+.crepe-editor [role="toolbar"] svg,
+.crepe-editor .milkdown-menu svg {
+  color: var(--foreground) !important;
+  fill: currentColor;
+}
+
+/* Slash menu styling */
+.crepe-editor .slash-menu,
+.crepe-editor [role="menu"],
+.crepe-editor [role="listbox"] {
+  background: var(--background) !important;
+  border: 1px solid rgba(var(--border-rgb, 203, 213, 225), 0.2) !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  padding: 0.5rem;
+}
+
+.crepe-editor .slash-menu-item,
+.crepe-editor [role="menuitem"],
+.crepe-editor [role="option"] {
+  color: var(--foreground) !important;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.crepe-editor .slash-menu-item:hover,
+.crepe-editor [role="menuitem"]:hover,
+.crepe-editor [role="option"]:hover,
+.crepe-editor .slash-menu-item[data-active="true"],
+.crepe-editor [role="menuitem"][data-active="true"],
+.crepe-editor [role="option"][aria-selected="true"] {
+  background: var(--muted) !important;
+}
+
+/* Markdown elements in editor */
+.crepe-editor .ProseMirror h1,
+.crepe-editor .ProseMirror h2,
+.crepe-editor .ProseMirror h3,
+.crepe-editor .ProseMirror h4,
+.crepe-editor .ProseMirror h5,
+.crepe-editor .ProseMirror h6 {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.crepe-editor .ProseMirror strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.crepe-editor .ProseMirror em {
+  color: var(--foreground);
+}
+
+.crepe-editor .ProseMirror code {
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, monospace;
+}
+
+.crepe-editor .ProseMirror pre {
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.crepe-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.crepe-editor .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.crepe-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+/* Selection color */
+.crepe-editor .ProseMirror ::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.milkdown-editor .ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+
+.milkdown-editor .ProseMirror p {
+  margin: 0.5rem 0;
+}
+
+.milkdown-editor .ProseMirror h1,
+.milkdown-editor .ProseMirror h2,
+.milkdown-editor .ProseMirror h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.milkdown-editor .ProseMirror ul,
+.milkdown-editor .ProseMirror ol {
+  padding-left: 1.5rem;
+}
+
+.milkdown-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  margin-left: 0;
+  color: var(--muted-foreground);
+}
+
+.milkdown-editor .ProseMirror code {
+  background: var(--muted);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.milkdown-editor .ProseMirror pre {
+  background: var(--muted);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.milkdown-editor .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+}
