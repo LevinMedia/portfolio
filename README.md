@@ -5,12 +5,12 @@
 ## ✨ Features
 
 - 🎭 **Theme System** - Light/Dark mode with custom color preferences
-- 📝 **Guestbook** - MySpace-style guestbook with Milkdown WYSIWYG editor
+- 📝 **Guestbook** - guestbook with Milkdown WYSIWYG editor
 - 🖼️ **Image Uploads** - Drag & drop images with Supabase storage
 - 🔒 **Admin Panel** - Secure admin interface for content management
 - 📊 **Work History** - Dynamic work history with company logos
 - 🎨 **Design System** - Custom component library with Storybook
-- 📱 **Responsive** - Mobile-first design with beautiful grid backgrounds
+- 📱 **Responsive** - Mobile-friendly front to back, inside and out
 
 ## 🚀 Quick Start
 
