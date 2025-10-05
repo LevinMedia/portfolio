@@ -216,7 +216,6 @@ export default function Guestbook() {
               <MilkdownEditor
                 value={formData.message}
                 onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
-                placeholder="Write your message here... Use / for commands!"
                 className="min-h-[200px]"
               />
             </div>
