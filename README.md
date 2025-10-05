@@ -1,6 +1,6 @@
 # 🎨 Levin Media Portfolio
 
-> My personal portfolio site, built with Next.js, Supabase, and a whole lot of creativity. Open sourced for anyone to tinker with! 🎉
+> Bbuilt with Next.js, Supabase, and a whole lot of coffee. Deployed on Vercel. This is my personal portfolio site, but I've open sourced it so anyone can check it out or tinker! 🎉 PRs welcome :D 
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LevinMedia/portfolio)
 
@@ -142,7 +142,7 @@ The image uploader includes cropping functionality powered by `react-easy-crop`.
 ## 🔐 Admin Features
 
 The admin panel (`/admin`) includes:
-- **Howdy Content** - Edit homepage greeting with WYSIWYG
+- **Howdy Content** - Edit homepage greeting
 - **Work History** - Manage companies and positions
 - **Guestbook** - Moderate messages (approve/reject/delete)
 - **Site Settings** - Theme and design system controls
@@ -181,8 +181,6 @@ For production deployment (Vercel, etc.), set these environment variables in you
 
 ## 🤝 Contributing
 
-This is my personal portfolio, but I've open sourced it so anyone can tinker! 
-
 **PRs are welcome!** 🎉
 
 Whether it's:
@@ -203,18 +201,13 @@ Feel free to fork, experiment, and submit a pull request!
 
 ## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is licensed under the GNU General Public License v2.0 or later - the same license as WordPress.
+
+See the [LICENSE](LICENSE) file for details.
+
+**TL;DR**: You're free to use, modify, and distribute this code. If you distribute modified versions, you must also make your source code available under the GPL v2.
 
 ## 💬 Questions?
 
 Feel free to [open an issue](https://github.com/LevinMedia/portfolio/issues) if you have questions or run into problems!
 
-## 🙏 Acknowledgments
-
-Built with ❤️ by [David Levin](https://levinmedia.com)
-
-Special thanks to the open source community for the amazing tools that made this possible!
-
----
-
-**Now go build something awesome!** 🚀✨
