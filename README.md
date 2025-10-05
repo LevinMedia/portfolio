@@ -97,9 +97,10 @@ On first run, visit `/admin` - you'll be redirected to a one-time secure setup p
 
 - **[Next.js 15](https://nextjs.org)** - React framework with App Router
 - **[Supabase](https://supabase.com)** - Backend, database, auth, and storage
+- **[Vercel](https://vercel.com)** - deployed on vercel
 - **[Tailwind CSS v4](https://tailwindcss.com)** - Utility-first styling
 - **[Milkdown](https://milkdown.dev)** - WYSIWYG markdown editor
-- **[Storybook](https://storybook.js.org)** - Component development
+- **[Storybook](https://storybook.js.org)** - Component library
 - **[TypeScript](https://www.typescriptlang.org)** - Type safety
 
 ## 🛠️ Available Scripts
@@ -126,7 +127,7 @@ The site uses CSS variables for theming. Edit `src/app/globals.css` to customize
 }
 ```
 
-Access theme controls at `/site-settings` (linked from the Howdy component).
+Access theme controls at `/site-settings` (linked from the Howdy component). Visitors have control over theming. Preferences are stored in local storage for their sesssion. 
 
 ## 🖼️ Image Management
 
