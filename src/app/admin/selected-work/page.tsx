@@ -5,7 +5,7 @@ import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroico
 import MilkdownEditor from '@/app/components/MilkdownEditor'
 import ThumbnailCropper from '@/app/components/ThumbnailCropper'
 import ImageUploader from '@/app/components/ImageUploader'
-import Input from '@/app/components/Input'
+import Input from '@/app/components/ui/Input'
 
 interface SelectedWork {
   id: string
