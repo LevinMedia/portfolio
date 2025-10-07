@@ -15,6 +15,18 @@
     display: none !important;
   }
 
+  /* Hide add/plus block button and block handle toolbars entirely */
+  .crepe-editor [data-add-button],
+  .crepe-editor .add-button,
+  .crepe-editor [class*='add-button'],
+  .crepe-editor [class*='block-handle'],
+  .crepe-editor .block-handle,
+  .crepe-editor [class*='plus'],
+  .crepe-editor [aria-label='Add'],
+  .crepe-editor [title*='Add'] {
+    display: none !important;
+  }
+
   /* Disable element dragging which ProseMirror may enable via draggable=true */
   .crepe-editor .ProseMirror [draggable="true"] {
     -webkit-user-drag: none !important;
@@ -23,9 +35,7 @@
 }
 
 /* Ensure only one .milkdown mount inside our guestbook editor wrapper */
-.gb-editor .milkdown ~ .milkdown {
-  display: none !important;
-}
+.gb-editor .milkdown ~ .milkdown { display: none !important; }
 
 
 :root {
