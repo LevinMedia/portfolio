@@ -38,21 +38,37 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
         isOpen={true}
         onClose={handleClose}
         title={
-          <span>
-            <span className="text-muted-foreground">Selected works</span>
-            {workTitle && (
-              <span 
-                className="transition-opacity duration-300 ease-in-out"
-                style={{ 
-                  opacity: isTitleVisible ? 0 : 1,
-                  display: 'inline'
-                }}
-              >
-                <span className="mx-2 text-muted-foreground">/</span>
-                <span>{workTitle}</span>
-              </span>
-            )}
-          </span>
+          <>
+            {/* Desktop: "Selected works / Title" pattern */}
+            <span className="hidden md:inline">
+              <span className="text-muted-foreground">Selected works</span>
+              {workTitle && (
+                <span 
+                  className="transition-opacity duration-300 ease-in-out"
+                  style={{ 
+                    opacity: isTitleVisible ? 0 : 1,
+                    display: 'inline'
+                  }}
+                >
+                  <span className="mx-2 text-muted-foreground">/</span>
+                  <span>{workTitle}</span>
+                </span>
+              )}
+            </span>
+            
+            {/* Mobile: Replace "Selected works" with title when scrolled */}
+            <span className="md:hidden">
+              {!isTitleVisible && workTitle ? (
+                <span className="transition-opacity duration-300 ease-in-out">
+                  {workTitle}
+                </span>
+              ) : (
+                <span className="text-muted-foreground transition-opacity duration-300 ease-in-out">
+                  Selected works
+                </span>
+              )}
+            </span>
+          </>
         }
         icon={<CommandLineIcon className="w-6 h-6" />}
         contentPadding="p-0"
