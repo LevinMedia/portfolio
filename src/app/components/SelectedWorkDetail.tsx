@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface SelectedWorkDetailProps {
   slug: string
   onTitleLoad?: (title: string) => void
+  onTitleVisibilityChange?: (isVisible: boolean) => void
 }
 
 interface SelectedWork {
@@ -18,10 +19,11 @@ interface SelectedWork {
   published_at: string
 }
 
-export default function SelectedWorkDetail({ slug, onTitleLoad }: SelectedWorkDetailProps) {
+export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilityChange }: SelectedWorkDetailProps) {
   const [work, setWork] = useState<SelectedWork | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
     const fetchWork = async () => {
@@ -46,6 +48,28 @@ export default function SelectedWorkDetail({ slug, onTitleLoad }: SelectedWorkDe
 
     fetchWork()
   }, [slug, onTitleLoad])
+
+  // Set up Intersection Observer to detect when title scrolls out of view
+  useEffect(() => {
+    if (!titleRef.current || !onTitleVisibilityChange) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Title is visible if it's intersecting
+        onTitleVisibilityChange(entry.isIntersecting)
+      },
+      {
+        threshold: 0,
+        rootMargin: '-80px 0px 0px 0px', // Account for drawer header height
+      }
+    )
+
+    observer.observe(titleRef.current)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [onTitleVisibilityChange, work])
 
 
   if (isLoading) {
@@ -84,7 +108,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad }: SelectedWorkDe
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8">
-          <h1 className="text-4xl font-bold text-white font-[family-name:var(--font-geist-mono)]">
+          <h1 ref={titleRef} className="text-4xl font-bold text-white font-[family-name:var(--font-geist-mono)]">
             {work.title}
           </h1>
         </div>

@@ -13,6 +13,7 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
   const { slug } = use(params)
   const router = useRouter()
   const [workTitle, setWorkTitle] = useState<string>('')
+  const [isTitleVisible, setIsTitleVisible] = useState(true)
 
   const handleClose = () => {
     router.push('/?selected-works=true')
@@ -40,10 +41,16 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
           <span>
             <span className="text-muted-foreground">Selected works</span>
             {workTitle && (
-              <>
+              <span 
+                className="transition-opacity duration-300 ease-in-out"
+                style={{ 
+                  opacity: isTitleVisible ? 0 : 1,
+                  display: 'inline'
+                }}
+              >
                 <span className="mx-2 text-muted-foreground">/</span>
                 <span>{workTitle}</span>
-              </>
+              </span>
             )}
           </span>
         }
@@ -52,7 +59,11 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
         maxWidth=""
       >
         <div className="px-4 pb-4">
-          <SelectedWorkDetail slug={slug} onTitleLoad={setWorkTitle} />
+          <SelectedWorkDetail 
+            slug={slug} 
+            onTitleLoad={setWorkTitle}
+            onTitleVisibilityChange={setIsTitleVisible}
+          />
         </div>
       </Drawer>
 
