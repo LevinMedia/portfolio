@@ -1,6 +1,6 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SelectedWorkDetail from '@/app/components/SelectedWorkDetail'
 import Drawer from '@/app/components/Drawer'
@@ -12,6 +12,7 @@ import { CommandLineIcon, BriefcaseIcon, QuestionMarkCircleIcon, ChartBarSquareI
 export default function SelectedWorkPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const router = useRouter()
+  const [workTitle, setWorkTitle] = useState<string>('')
 
   const handleClose = () => {
     router.push('/?selected-works=true')
@@ -35,13 +36,23 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
       <Drawer
         isOpen={true}
         onClose={handleClose}
-        title="Selected works"
+        title={
+          <span>
+            <span className="text-muted-foreground">Selected works</span>
+            {workTitle && (
+              <>
+                <span className="mx-2 text-muted-foreground">/</span>
+                <span>{workTitle}</span>
+              </>
+            )}
+          </span>
+        }
         icon={<CommandLineIcon className="w-6 h-6" />}
         contentPadding="p-0"
         maxWidth=""
       >
         <div className="px-4 pb-4">
-          <SelectedWorkDetail slug={slug} />
+          <SelectedWorkDetail slug={slug} onTitleLoad={setWorkTitle} />
         </div>
       </Drawer>
 

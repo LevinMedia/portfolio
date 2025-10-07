@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 
 interface SelectedWorkDetailProps {
   slug: string
+  onTitleLoad?: (title: string) => void
 }
 
 interface SelectedWork {
@@ -17,7 +18,7 @@ interface SelectedWork {
   published_at: string
 }
 
-export default function SelectedWorkDetail({ slug }: SelectedWorkDetailProps) {
+export default function SelectedWorkDetail({ slug, onTitleLoad }: SelectedWorkDetailProps) {
   const [work, setWork] = useState<SelectedWork | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,6 +30,10 @@ export default function SelectedWorkDetail({ slug }: SelectedWorkDetailProps) {
         if (response.ok) {
           const data = await response.json()
           setWork(data.work)
+          // Notify parent of the title
+          if (onTitleLoad && data.work?.title) {
+            onTitleLoad(data.work.title)
+          }
         } else {
           setError('Work not found')
         }
@@ -40,7 +45,7 @@ export default function SelectedWorkDetail({ slug }: SelectedWorkDetailProps) {
     }
 
     fetchWork()
-  }, [slug])
+  }, [slug, onTitleLoad])
 
 
   if (isLoading) {
