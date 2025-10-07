@@ -14,6 +14,7 @@ interface MilkdownEditorProps {
 export default function MilkdownEditor({ value, onChange, className }: MilkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const crepeRef = useRef<Crepe | null>(null)
+  const creatingRef = useRef(false)
   const onChangeRef = useRef(onChange)
 
   // Keep onChange ref up to date
@@ -22,14 +23,15 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
   }, [onChange])
 
   useEffect(() => {
-    if (!editorRef.current || crepeRef.current) return
+    if (!editorRef.current || crepeRef.current || creatingRef.current) return
 
-    let isCreating = false
+    creatingRef.current = true
     const initialValue = value
 
     const initEditor = async () => {
-      if (isCreating) return
-      isCreating = true
+      if (!editorRef.current) return
+      // Ensure the mount root is clean to avoid duplicate editors in StrictMode/dev
+      editorRef.current.innerHTML = ''
 
       try {
         const crepe = new Crepe({
@@ -85,9 +87,10 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
         await crepe.create()
         console.log('✅ Crepe editor created!')
         crepeRef.current = crepe
+        creatingRef.current = false
       } catch (err) {
         console.error('❌ Failed to create Crepe:', err)
-        isCreating = false
+        creatingRef.current = false
       }
     }
 
@@ -102,6 +105,7 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
         }
         crepeRef.current = null
       }
+      creatingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only initialize once on mount
