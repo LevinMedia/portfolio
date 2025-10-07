@@ -212,23 +212,14 @@ export default function Guestbook() {
             <label className="block text-sm font-medium text-foreground mb-2">
               Your Message
             </label>
-            <div className="relative">
+            <div className="relative gb-editor">
               <MilkdownEditor
                 value={formData.message}
                 onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
-                className="min-h-[200px]"
+                className="min-h-[160px] md:min-h-[200px]"
               />
             </div>
-            <div className="flex justify-between items-center mt-2">
-              <p className="text-xs text-muted-foreground">
-                {formData.message.length}/5000 characters • Use / for formatting commands
-              </p>
-              <div className="flex space-x-2 text-xs text-muted-foreground">
-                <span>Type / for commands</span>
-                <span>Ctrl+B for bold</span>
-                <span>Ctrl+I for italic</span>
-              </div>
-            </div>
+            {/* Helper text removed per request */}
           </div>
 
           {/* Social Links */}
