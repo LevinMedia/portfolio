@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 interface SelectedWork {
   id: string
@@ -17,11 +17,8 @@ interface SelectedWork {
   }
 }
 
-interface SelectedWorksContentProps {
-  onWorkClick?: (slug: string) => void
-}
-
-const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ onWorkClick }) => {
+const SelectedWorksContent: React.FC = () => {
+  const router = useRouter()
   const [works, setWorks] = useState<SelectedWork[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -71,7 +68,7 @@ const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ onWorkClick
           >
             <div
               className="relative aspect-square overflow-hidden cursor-pointer group"
-              onClick={() => onWorkClick?.(work.slug)}
+              onClick={() => router.push(`/selected-works/${work.slug}`)}
             >
               <div
                 className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"

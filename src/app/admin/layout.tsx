@@ -12,9 +12,7 @@ import {
   DocumentTextIcon,
   ChartBarIcon,
   BookOpenIcon,
-  HomeIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
+  HomeIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminLayoutProps {
@@ -33,7 +31,6 @@ const navigation = [
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [adminUser, setAdminUser] = useState<{ username: string; email: string } | null>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -143,7 +140,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )}
 
       {/* Desktop sidebar */}
-      <div className={`hidden md:flex md:flex-shrink-0 ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'} transition-all duration-300 h-full`}>
+      <div className="hidden md:flex md:flex-shrink-0 md:w-64 h-full">
         <div className="flex flex-col w-full h-full">
           <div className="flex flex-col h-full border-r border-border/20 bg-background" style={{ 
             backgroundImage: `
@@ -155,14 +152,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           }}>
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-4">
-                {!sidebarCollapsed && (
-                  <h1 className="text-xl font-bold text-foreground font-[family-name:var(--font-geist-mono)]">Admin Panel</h1>
-                )}
-                {sidebarCollapsed && (
-                  <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">A</span>
-                  </div>
-                )}
+                <h1 className="text-xl font-bold text-foreground font-[family-name:var(--font-geist-mono)]">Admin Panel</h1>
               </div>
               <nav className="mt-5 flex-1 px-2 space-y-1">
                 {navigation.map((item) => {
@@ -176,10 +166,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           ? 'bg-primary/10 text-primary'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
-                      title={sidebarCollapsed ? item.name : undefined}
                     >
                       <item.icon className="mr-3 flex-shrink-0 h-6 w-6" />
-                      {!sidebarCollapsed && item.name}
+                      {item.name}
                     </Link>
                   )
                 })}
@@ -194,12 +183,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </span>
                   </div>
                 </div>
-                {!sidebarCollapsed && (
-                  <div className="ml-3 flex-1">
-                    <div className="text-sm font-medium text-foreground">{adminUser.username}</div>
-                    <div className="text-xs text-muted-foreground">{adminUser.email}</div>
-                  </div>
-                )}
+                <div className="ml-3 flex-1">
+                  <div className="text-sm font-medium text-foreground">{adminUser.username}</div>
+                  <div className="text-xs text-muted-foreground">{adminUser.email}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -217,34 +204,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
-          <div className="flex-1 px-4 flex justify-between items-center">
-            <div className="flex items-center">
-              {/* Desktop collapse button */}
-              <button
-                type="button"
-                className="hidden md:block p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary transition-colors"
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              >
-                {sidebarCollapsed ? (
-                  <ChevronRightIcon className="h-5 w-5" />
-                ) : (
-                  <ChevronLeftIcon className="h-5 w-5" />
-                )}
-              </button>
-              <div className="ml-4">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {navigation.find(item => item.href === pathname)?.name || 'Admin Panel'}
-                </h2>
-              </div>
+          <div className="flex-1 px-4 flex justify-between items-center" id="admin-top-bar">
+            <div className="flex items-center" id="admin-page-title">
+              <h2 className="text-lg font-semibold text-foreground">
+                {navigation.find(item => item.href === pathname)?.name || 'Admin Panel'}
+              </h2>
             </div>
-            <div className="ml-4 flex items-center md:ml-6">
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-              >
-                <span className="sr-only">Logout</span>
-                <span className="text-sm font-medium">Logout</span>
-              </button>
+            <div className="ml-4 flex items-center md:ml-6" id="admin-top-bar-actions">
+              {/* Actions will be injected here by child pages */}
             </div>
           </div>
         </div>

@@ -8,7 +8,6 @@ import Drawer from "./components/Drawer";
 import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
-import SelectedWorkDetail from "./components/SelectedWorkDetail";
 import SiteSettingsContent from "./components/SiteSettingsContent";
 import Guestbook from "./components/Guestbook";
 import LevinMediaLogo from "./components/LevinMediaLogo";
@@ -22,7 +21,6 @@ function HomeContent() {
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false);
-  const [selectedWorkSlug, setSelectedWorkSlug] = useState<string | null>(null);
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
 
@@ -108,7 +106,6 @@ function HomeContent() {
   // Handle closing selected works drawer
   const handleSelectedWorksClose = () => {
     setIsSelectedWorksOpen(false);
-    setSelectedWorkSlug(null); // Reset selected work
     const params = new URLSearchParams(searchParams.toString());
     params.delete('selected-works');
     const newUrl = params.toString() ? `?${params.toString()}` : '/';
@@ -229,16 +226,12 @@ function HomeContent() {
         <Drawer
           isOpen={isSelectedWorksOpen}
           onClose={handleSelectedWorksClose}
-          title={selectedWorkSlug ? "Selected work" : "Selected works"}
+          title="Selected works"
           icon={<CommandLineIcon className="w-6 h-6" />}
-          contentPadding={selectedWorkSlug ? "p-4" : "p-0"}
-          maxWidth={selectedWorkSlug ? "max-w-4xl" : ""}
+          contentPadding="p-0"
+          maxWidth=""
         >
-          {selectedWorkSlug ? (
-            <SelectedWorkDetail slug={selectedWorkSlug} />
-          ) : (
-            <SelectedWorksContent onWorkClick={(slug) => setSelectedWorkSlug(slug)} />
-          )}
+          <SelectedWorksContent />
         </Drawer>
 
         {/* Site Settings Drawer */}
