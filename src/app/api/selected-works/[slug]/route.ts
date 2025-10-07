@@ -8,11 +8,12 @@ const supabase = createClient(
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params
     const { data, error } = await supabase.rpc('prod_get_selected_work_by_slug', {
-      p_slug: params.slug
+      p_slug: slug
     })
 
     if (error) {
