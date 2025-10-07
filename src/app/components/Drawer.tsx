@@ -81,9 +81,9 @@ const Drawer: React.FC<DrawerProps> = ({
             height: '64px'
           }}
         >
-          <div className="flex items-center gap-3">
-            {icon && <div className="flex items-center">{icon}</div>}
-            <h2 className="text-xl font-semibold text-foreground font-[family-name:var(--font-geist-mono)]">{title}</h2>
+          <div className="flex items-center gap-3 overflow-hidden">
+            {icon && <div className="flex items-center flex-shrink-0">{icon}</div>}
+            <h2 className="text-xl font-semibold text-foreground font-[family-name:var(--font-geist-mono)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</h2>
             {showLinkedInButton && linkedInUrl && (
               <div className="hidden sm:block">
                 <Button
