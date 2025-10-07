@@ -57,25 +57,12 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
             </span>
             
             {/* Mobile: Replace "Selected works" with title when scrolled */}
-            <span className="block md:hidden truncate">
-              <span 
-                className="transition-opacity duration-300 ease-in-out"
-                style={{ 
-                  opacity: isTitleVisible ? 1 : 0,
-                  display: isTitleVisible ? 'inline' : 'none'
-                }}
-              >
-                <span className="text-muted-foreground">Selected works</span>
-              </span>
-              <span 
-                className="transition-opacity duration-300 ease-in-out"
-                style={{ 
-                  opacity: !isTitleVisible && workTitle ? 1 : 0,
-                  display: !isTitleVisible && workTitle ? 'inline' : 'none'
-                }}
-              >
-                {workTitle}
-              </span>
+            <span className="md:hidden">
+              {isTitleVisible ? (
+                <span className="text-muted-foreground whitespace-nowrap">Selected works</span>
+              ) : (
+                workTitle && <span className="whitespace-nowrap">{workTitle}</span>
+              )}
             </span>
           </>
         }
