@@ -358,12 +358,12 @@ export default function Guestbook() {
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({ children }) => <h1 className="text-3xl font-bold text-foreground mb-4 mt-6">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-2xl font-bold text-foreground mb-3 mt-5">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-xl font-semibold text-foreground mb-3 mt-4">{children}</h3>,
-                    h4: ({ children }) => <h4 className="text-lg font-semibold text-foreground mb-2 mt-3">{children}</h4>,
-                    h5: ({ children }) => <h5 className="text-base font-semibold text-foreground mb-2 mt-3">{children}</h5>,
-                    h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2">{children}</h6>,
+                    h1: ({ children }) => <h1 className="text-3xl font-bold text-foreground mb-4 mt-6 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-2xl font-bold mb-3 mt-5 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--accent)' }}>{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-xl font-semibold mb-3 mt-4 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--secondary)' }}>{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-lg font-semibold text-foreground mb-2 mt-3 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h4>,
+                    h5: ({ children }) => <h5 className="text-base font-semibold text-foreground mb-2 mt-3 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h5>,
+                    h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h6>,
                     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
                     ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
                     ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
@@ -371,6 +371,7 @@ export default function Guestbook() {
                     img: ({ src, alt }) => {
                       if (!src) return null
                       return (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img 
                           src={src} 
                           alt={alt || ''} 

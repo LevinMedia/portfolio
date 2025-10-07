@@ -21,10 +21,12 @@
 -- Drop existing functions if they exist
 -- (No functions to drop yet)
 
+-- NOTE: We DO NOT drop admin_users or setup_state tables to preserve authentication!
+-- Only drop content tables that can be safely recreated
+
 -- Drop existing tables if they exist (in reverse dependency order)
 DROP TABLE IF EXISTS work_positions CASCADE;
 DROP TABLE IF EXISTS work_companies CASCADE;
-DROP TABLE IF EXISTS admin_users CASCADE;
 
 -- Drop existing indexes if they exist
 DROP INDEX IF EXISTS idx_work_companies_display_order;
@@ -620,6 +622,266 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
   ('550e8400-e29b-41d4-a716-446655440071', '550e8400-e29b-41d4-a716-446655440007', 'Art Director', 'Established the brand identity and creative direction for the most successful start up ski company in history. Responsible for all creative deliverables including hard goods graphics, soft goods graphics, and web development. Responsible for all sales and marketing materials including advertising, catalogs, posters, experiential trade show elements, and point of purchase graphics.', '2002-10-01', '2006-01-01', 1)
 ON CONFLICT (id) DO NOTHING;
+
+-- =====================================================
+-- SELECTED WORKS TABLE AND FUNCTIONS
+-- =====================================================
+
+-- Create selected works table
+CREATE TABLE IF NOT EXISTS selected_works (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE, -- URL-friendly version of title
+    content TEXT NOT NULL, -- Markdown content (same as guestbook)
+    
+    -- Images
+    feature_image_url TEXT NOT NULL, -- 16:9 feature image URL from Supabase Storage
+    thumbnail_crop JSONB DEFAULT '{"x": 0, "y": 0, "width": 100, "height": 100, "unit": "%"}', -- Crop settings for 1:1 thumbnail
+    
+    -- Metadata
+    is_published BOOLEAN DEFAULT false,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    published_at TIMESTAMPTZ
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_selected_works_slug ON selected_works(slug);
+CREATE INDEX IF NOT EXISTS idx_selected_works_published ON selected_works(is_published, display_order DESC);
+CREATE INDEX IF NOT EXISTS idx_selected_works_display_order ON selected_works(display_order DESC);
+
+-- Enable RLS
+ALTER TABLE selected_works ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public read access - selected_works" ON selected_works;
+DROP POLICY IF EXISTS "Service role full access - selected_works" ON selected_works;
+
+-- Create RLS policies
+CREATE POLICY "Public read access - selected_works" ON selected_works
+    FOR SELECT USING (is_published = true);
+
+CREATE POLICY "Service role full access - selected_works" ON selected_works
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- Function to get published selected works (public)
+CREATE OR REPLACE FUNCTION prod_get_selected_works()
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    display_order INTEGER,
+    published_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sw.id,
+        sw.title,
+        sw.slug,
+        sw.content,
+        sw.feature_image_url,
+        sw.thumbnail_crop,
+        sw.display_order,
+        sw.published_at
+    FROM selected_works sw
+    WHERE sw.is_published = true
+    ORDER BY sw.display_order DESC, sw.published_at DESC;
+END;
+$$;
+
+-- Function to get single selected work by slug (public)
+CREATE OR REPLACE FUNCTION prod_get_selected_work_by_slug(p_slug TEXT)
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    display_order INTEGER,
+    published_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sw.id,
+        sw.title,
+        sw.slug,
+        sw.content,
+        sw.feature_image_url,
+        sw.thumbnail_crop,
+        sw.display_order,
+        sw.published_at
+    FROM selected_works sw
+    WHERE sw.slug = p_slug AND sw.is_published = true
+    LIMIT 1;
+END;
+$$;
+
+-- Function to get all selected works (admin)
+CREATE OR REPLACE FUNCTION prod_get_all_selected_works()
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    is_published BOOLEAN,
+    display_order INTEGER,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
+    published_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sw.id,
+        sw.title,
+        sw.slug,
+        sw.content,
+        sw.feature_image_url,
+        sw.thumbnail_crop,
+        sw.is_published,
+        sw.display_order,
+        sw.created_at,
+        sw.updated_at,
+        sw.published_at
+    FROM selected_works sw
+    ORDER BY sw.display_order DESC, sw.created_at DESC;
+END;
+$$;
+
+-- Function to create or update selected work (admin)
+CREATE OR REPLACE FUNCTION prod_upsert_selected_work(
+    p_title TEXT,
+    p_slug TEXT,
+    p_content TEXT,
+    p_feature_image_url TEXT,
+    p_thumbnail_crop JSONB DEFAULT '{"x": 0, "y": 0, "width": 100, "height": 100, "unit": "%"}',
+    p_is_published BOOLEAN DEFAULT false,
+    p_display_order INTEGER DEFAULT 0,
+    p_work_id UUID DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result_id UUID;
+    v_published_at TIMESTAMPTZ;
+BEGIN
+    -- Set published_at if transitioning to published
+    IF p_is_published THEN
+        IF p_work_id IS NOT NULL THEN
+            -- Check if it was previously unpublished
+            SELECT published_at INTO v_published_at
+            FROM selected_works
+            WHERE id = p_work_id;
+            
+            IF v_published_at IS NULL THEN
+                v_published_at := NOW();
+            END IF;
+        ELSE
+            v_published_at := NOW();
+        END IF;
+    ELSE
+        v_published_at := NULL;
+    END IF;
+
+    IF p_work_id IS NOT NULL THEN
+        -- Update existing work
+        UPDATE selected_works 
+        SET 
+            title = p_title,
+            slug = p_slug,
+            content = p_content,
+            feature_image_url = p_feature_image_url,
+            thumbnail_crop = p_thumbnail_crop,
+            is_published = p_is_published,
+            display_order = p_display_order,
+            published_at = v_published_at,
+            updated_at = NOW()
+        WHERE id = p_work_id
+        RETURNING id INTO result_id;
+        
+        IF result_id IS NULL THEN
+            RAISE EXCEPTION 'Selected work with ID % not found', p_work_id;
+        END IF;
+    ELSE
+        -- Insert new work
+        INSERT INTO selected_works (
+            title, 
+            slug, 
+            content, 
+            feature_image_url, 
+            thumbnail_crop, 
+            is_published, 
+            display_order,
+            published_at
+        )
+        VALUES (
+            p_title, 
+            p_slug, 
+            p_content, 
+            p_feature_image_url, 
+            p_thumbnail_crop, 
+            p_is_published, 
+            p_display_order,
+            v_published_at
+        )
+        RETURNING id INTO result_id;
+    END IF;
+    
+    RETURN result_id;
+END;
+$$;
+
+-- Function to delete selected work (admin)
+CREATE OR REPLACE FUNCTION prod_delete_selected_work(p_work_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM selected_works WHERE id = p_work_id;
+    RETURN FOUND;
+END;
+$$;
+
+-- Function to update thumbnail crop only (admin)
+CREATE OR REPLACE FUNCTION prod_update_thumbnail_crop(
+    p_work_id UUID,
+    p_thumbnail_crop JSONB
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE selected_works 
+    SET 
+        thumbnail_crop = p_thumbnail_crop,
+        updated_at = NOW()
+    WHERE id = p_work_id;
+    
+    RETURN FOUND;
+END;
+$$;
 
 -- =====================================================
 -- GUESTBOOK TABLE AND FUNCTIONS

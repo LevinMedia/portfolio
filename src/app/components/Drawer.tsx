@@ -7,7 +7,7 @@ import Button from './Button'
 interface DrawerProps {
   isOpen: boolean
   onClose: () => void
-  title: string
+  title: string | React.ReactNode
   icon?: React.ReactNode
   showLinkedInButton?: boolean
   linkedInUrl?: string

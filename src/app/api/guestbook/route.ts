@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizeMarkdown, sanitizeText, sanitizeUrl } from '@/lib/sanitize'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,15 +48,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message must be less than 5000 characters' }, { status: 400 })
     }
 
-    // Validate social links structure
+    // Sanitize inputs to prevent XSS
+    const sanitizedName = sanitizeText(name)
+    const sanitizedMessage = sanitizeMarkdown(message)
+
+    // Validate social links structure and sanitize URLs
     const validSocialLinks = {
-      linkedin: socialLinks?.linkedin || '',
-      threads: socialLinks?.threads || '',
-      twitter: socialLinks?.twitter || '',
-      instagram: socialLinks?.instagram || ''
+      linkedin: sanitizeUrl(socialLinks?.linkedin || ''),
+      threads: sanitizeUrl(socialLinks?.threads || ''),
+      twitter: sanitizeUrl(socialLinks?.twitter || ''),
+      instagram: sanitizeUrl(socialLinks?.instagram || '')
     }
 
-    // Validate social links are URLs if provided
+    // Validate social links are URLs if provided (after sanitization)
     const urlPattern = /^https?:\/\/.+/i
     for (const [platform, url] of Object.entries(validSocialLinks)) {
       if (url && !urlPattern.test(url)) {
@@ -63,10 +68,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the guestbook entry
+    // Create the guestbook entry with sanitized data
     const { data: entryId, error } = await supabase.rpc('prod_create_guestbook_entry', {
-      p_name: name.trim(),
-      p_message: message.trim(),
+      p_name: sanitizedName,
+      p_message: sanitizedMessage,
       p_social_links: validSocialLinks
     })
 

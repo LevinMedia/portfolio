@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sanitizeText } from '@/lib/sanitize'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,12 +36,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
 
+    // Sanitize all text inputs to prevent XSS
     const updateData = {
-      image_src,
-      image_alt,
-      greeting,
-      li_1,
-      li_2,
+      image_src: sanitizeText(image_src || ''),
+      image_alt: sanitizeText(image_alt || ''),
+      greeting: sanitizeText(greeting || ''),
+      li_1: sanitizeText(li_1 || ''),
+      li_2: sanitizeText(li_2 || ''),
       updated_at: new Date().toISOString()
     }
 

@@ -22,72 +22,89 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
   }, [onChange])
 
   useEffect(() => {
-    if (!editorRef.current) return
+    if (!editorRef.current || crepeRef.current) return
 
-    const crepe = new Crepe({
-      root: editorRef.current,
-      defaultValue: value || '',
-      featureConfigs: {
-        [Crepe.Feature.ImageBlock]: {
-          onUpload: async (file: File) => {
-            console.log('🖼️ ImageBlock onUpload called!')
-            console.log('📤 Uploading image:', file.name, 'Size:', file.size, 'Type:', file.type)
-            
-            try {
-              const formData = new FormData()
-              formData.append('file', file)
-              formData.append('folder', 'guestbook')
+    let isCreating = false
+    const initialValue = value
 
-              console.log('📡 Sending upload request...')
-              const response = await fetch('/api/admin/upload-image', {
-                method: 'POST',
-                body: formData,
-              })
+    const initEditor = async () => {
+      if (isCreating) return
+      isCreating = true
 
-              console.log('📡 Upload response status:', response.status)
+      try {
+        const crepe = new Crepe({
+          root: editorRef.current!,
+          defaultValue: initialValue || '',
+          featureConfigs: {
+            [Crepe.Feature.ImageBlock]: {
+              onUpload: async (file: File) => {
+                console.log('🖼️ ImageBlock onUpload called!')
+                console.log('📤 Uploading image:', file.name, 'Size:', file.size, 'Type:', file.type)
+                
+                try {
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  formData.append('folder', 'selected-works')
 
-              if (!response.ok) {
-                const errorData = await response.json()
-                console.error('❌ Upload failed:', errorData)
-                throw new Error(errorData.error || 'Upload failed')
-              }
+                  console.log('📡 Sending upload request...')
+                  const response = await fetch('/api/admin/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                  })
 
-              const data = await response.json()
-              console.log('✅ Image uploaded successfully!')
-              console.log('🔗 Image URL:', data.url)
-              return data.url
-            } catch (error) {
-              console.error('❌ Image upload failed:', error)
-              throw error
-            }
+                  console.log('📡 Upload response status:', response.status)
+
+                  if (!response.ok) {
+                    const errorData = await response.json()
+                    console.error('❌ Upload failed:', errorData)
+                    throw new Error(errorData.error || 'Upload failed')
+                  }
+
+                  const data = await response.json()
+                  console.log('✅ Image uploaded successfully!')
+                  console.log('🔗 Image URL:', data.url)
+                  return data.url
+                } catch (error) {
+                  console.error('❌ Image upload failed:', error)
+                  throw error
+                }
+              },
+            },
           },
-        },
-      },
-    })
+        })
 
-    // Set up listener BEFORE creating the editor
-    crepe.on((listener) => {
-      listener.markdownUpdated((ctx, markdown) => {
-        console.log('📝 Milkdown markdown updated:', markdown)
-        onChangeRef.current(markdown)
-      })
-    })
+        // Set up listener BEFORE creating the editor
+        crepe.on((listener) => {
+          listener.markdownUpdated((ctx, markdown) => {
+            if (onChangeRef.current) {
+              onChangeRef.current(markdown)
+            }
+          })
+        })
 
-    crepe.create().then(() => {
-      console.log('✅ Crepe editor created with image upload!')
-    }).catch((err) => {
-      console.error('❌ Failed to create Crepe:', err)
-    })
+        await crepe.create()
+        console.log('✅ Crepe editor created!')
+        crepeRef.current = crepe
+      } catch (err) {
+        console.error('❌ Failed to create Crepe:', err)
+        isCreating = false
+      }
+    }
 
-    crepeRef.current = crepe
+    initEditor()
 
     return () => {
       if (crepeRef.current) {
-        crepeRef.current.destroy()
+        try {
+          crepeRef.current.destroy()
+        } catch (err) {
+          console.error('Error destroying editor:', err)
+        }
         crepeRef.current = null
       }
     }
-  }, []) // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only initialize once on mount
 
   return (
     <div className={`crepe-editor border border-border rounded-md bg-background ${className}`} style={{ overflow: 'visible', position: 'relative', zIndex: 1 }}>
