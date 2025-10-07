@@ -56,14 +56,10 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
               )}
             </span>
             
-            {/* Mobile: Replace "Selected works" with title when scrolled */}
-            <span className="md:hidden">
-              {isTitleVisible ? (
-                <span className="text-muted-foreground whitespace-nowrap">Selected works</span>
-              ) : (
-                workTitle && <span className="whitespace-nowrap">{workTitle}</span>
-              )}
-            </span>
+            {/* Mobile: Show nothing until title scrolls into sticky state; when shown, use 16px */}
+            {(!isTitleVisible && workTitle) ? (
+              <span className="md:hidden text-base" style={{ whiteSpace: 'nowrap' }}>{workTitle}</span>
+            ) : null}
           </>
         }
         icon={<CommandLineIcon className="w-6 h-6" />}
