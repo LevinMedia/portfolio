@@ -23,7 +23,51 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var savedTheme = localStorage.getItem('site-theme');
+                  var mode = 'system';
+                  
+                  if (savedTheme) {
+                    var parsed = JSON.parse(savedTheme);
+                    mode = parsed.mode || 'system';
+                  }
+                  
+                  if (mode === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                  } else if (mode === 'light') {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.classList.remove('dark');
+                  } else {
+                    var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (systemPrefersDark) {
+                      document.documentElement.classList.add('dark');
+                      document.documentElement.classList.remove('light');
+                    } else {
+                      document.documentElement.classList.add('light');
+                      document.documentElement.classList.remove('dark');
+                    }
+                  }
+                  
+                  // Apply custom colors if saved
+                  if (savedTheme) {
+                    var parsed = JSON.parse(savedTheme);
+                    if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+                    if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
+                    if (parsed.accentColor) document.documentElement.style.setProperty('--accent', parsed.accentColor);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
