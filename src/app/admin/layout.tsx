@@ -55,11 +55,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return <>{children}</>
   }
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_user')
-    router.push('/admin/login')
-  }
-
   if (!adminUser) {
     return null // Will redirect to login
   }

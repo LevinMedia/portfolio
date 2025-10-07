@@ -54,6 +54,7 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
     if (!isNew) {
       fetchWork()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, id])
 
   const fetchWork = async () => {

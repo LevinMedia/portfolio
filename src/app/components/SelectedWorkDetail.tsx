@@ -99,7 +99,7 @@ export default function SelectedWorkDetail({ slug }: SelectedWorkDetailProps) {
               h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h6>,
               p: ({ children, node }) => {
                 // Check if this paragraph only contains an image
-                const hasImage = node?.children?.some((child: any) => child.tagName === 'img')
+                const hasImage = node?.children?.some((child: { tagName?: string }) => child.tagName === 'img')
                 if (hasImage) {
                   return <div className="mb-4 last:mb-0 text-foreground">{children}</div>
                 }
@@ -113,6 +113,7 @@ export default function SelectedWorkDetail({ slug }: SelectedWorkDetailProps) {
                 if (!src) return null
                 return (
                   <div className="my-6 md:-mx-32">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={src} 
                       alt={alt || ''} 

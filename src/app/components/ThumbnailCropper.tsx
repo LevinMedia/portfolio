@@ -19,7 +19,6 @@ export default function ThumbnailCropper({
 }: ThumbnailCropperProps) {
   const [crop, setCrop] = useState<Point>({ x: initialCrop?.x || 0, y: initialCrop?.y || 0 })
   const [zoom, setZoom] = useState(1)
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
 
   const onCropChangeInternal = useCallback((location: Point) => {
     setCrop(location)
@@ -27,8 +26,6 @@ export default function ThumbnailCropper({
 
   const onCropCompleteInternal = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
-      setCroppedAreaPixels(croppedAreaPixels)
-      
       // Convert to percentage-based crop for storage
       onCropChange({
         x: croppedArea.x,

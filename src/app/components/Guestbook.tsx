@@ -370,6 +370,7 @@ export default function Guestbook() {
                     blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">{children}</blockquote>,
                     img: ({ src, alt }) => {
                       if (!src) return null
+                      // eslint-disable-next-line @next/next/no-img-element
                       return (
                         <img 
                           src={src} 
