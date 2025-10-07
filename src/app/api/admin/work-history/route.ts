@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizeText, sanitizeUrl } from '@/lib/sanitize'
 
 export async function GET() {
   try {
@@ -46,21 +47,21 @@ export async function POST(request: NextRequest) {
     let result
 
     if (type === 'company') {
-      // Add new company
+      // Add new company (sanitize inputs)
       result = await supabase.rpc('prod_upsert_work_company', {
-        p_company_name: data.company_name,
-        p_company_logo_url: data.company_logo_url || null,
-        p_employment_type: data.employment_type || null,
+        p_company_name: sanitizeText(data.company_name),
+        p_company_logo_url: sanitizeUrl(data.company_logo_url || '') || null,
+        p_employment_type: sanitizeText(data.employment_type || '') || null,
         p_display_order: data.display_order || 0,
         p_company_id: null
       })
     } else if (type === 'position') {
-      // Add new position
+      // Add new position (sanitize inputs)
       result = await supabase.rpc('prod_upsert_work_position', {
         p_company_id: data.company_id,
-        p_position_title: data.position_title,
+        p_position_title: sanitizeText(data.position_title),
         p_start_date: data.start_date,
-        p_position_description: data.position_description || null,
+        p_position_description: sanitizeText(data.position_description || '') || null,
         p_end_date: data.end_date || null,
         p_position_order: data.position_order || 0,
         p_position_id: null
@@ -100,21 +101,21 @@ export async function PUT(request: NextRequest) {
     let result
 
     if (type === 'company') {
-      // Update company
+      // Update company (sanitize inputs)
       result = await supabase.rpc('prod_upsert_work_company', {
-        p_company_name: data.company_name,
-        p_company_logo_url: data.company_logo_url || null,
-        p_employment_type: data.employment_type || null,
+        p_company_name: sanitizeText(data.company_name),
+        p_company_logo_url: sanitizeUrl(data.company_logo_url || '') || null,
+        p_employment_type: sanitizeText(data.employment_type || '') || null,
         p_display_order: data.display_order || 0,
         p_company_id: id
       })
     } else if (type === 'position') {
-      // Update position
+      // Update position (sanitize inputs)
       result = await supabase.rpc('prod_upsert_work_position', {
         p_company_id: data.company_id,
-        p_position_title: data.position_title,
+        p_position_title: sanitizeText(data.position_title),
         p_start_date: data.start_date,
-        p_position_description: data.position_description || null,
+        p_position_description: sanitizeText(data.position_description || '') || null,
         p_end_date: data.end_date || null,
         p_position_order: data.position_order || 0,
         p_position_id: id

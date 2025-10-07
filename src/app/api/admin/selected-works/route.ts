@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sanitizeText, sanitizeMarkdown } from '@/lib/sanitize'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,11 +53,17 @@ export async function POST(request: Request) {
       )
     }
 
+    // Sanitize inputs to prevent XSS
+    const sanitizedTitle = sanitizeText(title)
+    const sanitizedSlug = sanitizeText(slug).toLowerCase().replace(/[^a-z0-9-]/g, '-')
+    const sanitizedContent = sanitizeMarkdown(content)
+    const sanitizedImageUrl = sanitizeText(feature_image_url)
+
     const { data, error } = await supabase.rpc('prod_upsert_selected_work', {
-      p_title: title,
-      p_slug: slug,
-      p_content: content,
-      p_feature_image_url: feature_image_url,
+      p_title: sanitizedTitle,
+      p_slug: sanitizedSlug,
+      p_content: sanitizedContent,
+      p_feature_image_url: sanitizedImageUrl,
       p_thumbnail_crop: thumbnail_crop || { x: 0, y: 0, width: 100, height: 100, unit: '%' },
       p_is_published: is_published || false,
       p_display_order: display_order || 0,
