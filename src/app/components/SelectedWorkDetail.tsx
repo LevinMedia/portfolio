@@ -128,7 +128,8 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
               h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h6>,
               p: ({ children, node }) => {
                 // Check if this paragraph only contains an image
-                const hasImage = node?.children?.some((child: { tagName?: string }) => child.tagName === 'img')
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const hasImage = node?.children?.some((child: any) => child.tagName === 'img')
                 if (hasImage) {
                   return <div className="mb-4 last:mb-0 text-foreground">{children}</div>
                 }
