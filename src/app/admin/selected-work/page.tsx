@@ -18,6 +18,7 @@ interface SelectedWork {
     unit: string
   }
   is_published: boolean
+  is_private: boolean
   display_order: number
   created_at: string
   updated_at: string
@@ -134,6 +135,11 @@ export default function SelectedWorkAdmin() {
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                             <EyeSlashIcon className="w-3 h-3 mr-1" />
                             Draft
+                          </span>
+                        )}
+                        {work.is_private && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                            🔒 Private
                           </span>
                         )}
                       </div>

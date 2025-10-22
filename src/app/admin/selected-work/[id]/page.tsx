@@ -21,6 +21,7 @@ interface SelectedWork {
     unit: string
   }
   is_published: boolean
+  is_private: boolean
   display_order: number
 }
 
@@ -38,6 +39,7 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
     feature_image_url: '',
     thumbnail_crop: { x: 50, y: 50, width: 100, height: 100, unit: '%' }, // Center crop
     is_published: false,
+    is_private: false,
     display_order: 0
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -71,6 +73,7 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
             feature_image_url: work.feature_image_url,
             thumbnail_crop: work.thumbnail_crop,
             is_published: work.is_published,
+            is_private: work.is_private,
             display_order: work.display_order
           })
         }
@@ -294,17 +297,31 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
                 />
               </div>
             </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_published"
-                checked={formData.is_published}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_published: e.target.checked }))}
-                className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
-              />
-              <label htmlFor="is_published" className="ml-2 block text-sm text-foreground font-medium">
-                Published
-              </label>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_published"
+                  checked={formData.is_published}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_published: e.target.checked }))}
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                />
+                <label htmlFor="is_published" className="ml-2 block text-sm text-foreground font-medium">
+                  Published
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_private"
+                  checked={formData.is_private}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_private: e.target.checked }))}
+                  className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-border rounded"
+                />
+                <label htmlFor="is_private" className="ml-2 block text-sm text-foreground font-medium">
+                  🔒 Private
+                </label>
+              </div>
             </div>
           </div>
         </div>
