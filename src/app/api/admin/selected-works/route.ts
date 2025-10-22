@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       feature_image_url,
       thumbnail_crop,
       is_published,
+      is_private,
       display_order
     } = body
 
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
       p_feature_image_url: sanitizedImageUrl,
       p_thumbnail_crop: thumbnail_crop || { x: 0, y: 0, width: 100, height: 100, unit: '%' },
       p_is_published: is_published || false,
+      p_is_private: is_private || false,
       p_display_order: display_order || 0,
       p_work_id: id || null
     })

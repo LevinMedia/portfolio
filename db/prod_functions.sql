@@ -18,22 +18,16 @@
 -- CLEANUP EXISTING OBJECTS (for clean updates)
 -- =====================================================
 
--- Drop existing functions if they exist
--- (No functions to drop yet)
+-- Drop existing functions if they exist (to handle signature changes)
+DROP FUNCTION IF EXISTS prod_get_all_selected_works();
+DROP FUNCTION IF EXISTS prod_get_selected_works();
+DROP FUNCTION IF EXISTS prod_get_selected_work_by_slug(TEXT);
+DROP FUNCTION IF EXISTS prod_upsert_selected_work(TEXT, TEXT, TEXT, TEXT, JSONB, BOOLEAN, BOOLEAN, INTEGER, UUID);
 
--- NOTE: We DO NOT drop admin_users or setup_state tables to preserve authentication!
--- Only drop content tables that can be safely recreated
+-- NOTE: We DO NOT drop admin_users, setup_state, or work history tables to preserve data!
+-- Tables use CREATE TABLE IF NOT EXISTS to safely handle existing data
 
--- Drop existing tables if they exist (in reverse dependency order)
-DROP TABLE IF EXISTS work_positions CASCADE;
-DROP TABLE IF EXISTS work_companies CASCADE;
-
--- Drop existing indexes if they exist
-DROP INDEX IF EXISTS idx_work_companies_display_order;
-DROP INDEX IF EXISTS idx_work_companies_name;
-DROP INDEX IF EXISTS idx_work_positions_company_date;
-DROP INDEX IF EXISTS idx_work_positions_dates;
-DROP INDEX IF EXISTS idx_work_positions_order;
+-- NOTE: Indexes will be created with IF NOT EXISTS below, no need to drop them
 
 -- =====================================================
 -- ADMIN AUTHENTICATION SCHEMA
@@ -573,7 +567,11 @@ $$;
 -- =====================================================
 -- SAMPLE WORK HISTORY DATA
 -- =====================================================
-
+-- 
+-- NOTE: This sample data is commented out to prevent overwriting existing work history.
+-- Uncomment and modify if you need to seed a fresh database.
+--
+/*
 -- Insert real work history companies
 INSERT INTO work_companies (id, company_name, company_logo_url, employment_type, display_order) VALUES
   ('550e8400-e29b-41d4-a716-446655440001', 'CaptivateIQ', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/captivateiq_logo.jpeg', 'Remote / Full-time', 1),
@@ -622,6 +620,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
   ('550e8400-e29b-41d4-a716-446655440071', '550e8400-e29b-41d4-a716-446655440007', 'Art Director', 'Established the brand identity and creative direction for the most successful start up ski company in history. Responsible for all creative deliverables including hard goods graphics, soft goods graphics, and web development. Responsible for all sales and marketing materials including advertising, catalogs, posters, experiential trade show elements, and point of purchase graphics.', '2002-10-01', '2006-01-01', 1)
 ON CONFLICT (id) DO NOTHING;
+*/
 
 -- =====================================================
 -- SELECTED WORKS TABLE AND FUNCTIONS
@@ -640,11 +639,24 @@ CREATE TABLE IF NOT EXISTS selected_works (
     
     -- Metadata
     is_published BOOLEAN DEFAULT false,
+    is_private BOOLEAN DEFAULT false, -- Private works are only accessible via direct URL
     display_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     published_at TIMESTAMPTZ
 );
+
+-- Add is_private column if it doesn't exist (for existing databases)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'selected_works' 
+        AND column_name = 'is_private'
+    ) THEN
+        ALTER TABLE selected_works ADD COLUMN is_private BOOLEAN DEFAULT false;
+    END IF;
+END $$;
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_selected_works_slug ON selected_works(slug);
@@ -681,6 +693,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+    -- Only return published works that are NOT private
+    -- Private works are only accessible via direct URL (prod_get_selected_work_by_slug)
     RETURN QUERY
     SELECT 
         sw.id,
@@ -692,12 +706,13 @@ BEGIN
         sw.display_order,
         sw.published_at
     FROM selected_works sw
-    WHERE sw.is_published = true
+    WHERE sw.is_published = true AND sw.is_private = false
     ORDER BY sw.display_order DESC, sw.published_at DESC;
 END;
 $$;
 
 -- Function to get single selected work by slug (public)
+-- This allows access to private works via direct URL
 CREATE OR REPLACE FUNCTION prod_get_selected_work_by_slug(p_slug TEXT)
 RETURNS TABLE (
     id UUID,
@@ -713,6 +728,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+    -- Returns work if published, regardless of is_private status
+    -- This enables direct URL access to private works
     RETURN QUERY
     SELECT 
         sw.id,
@@ -739,6 +756,7 @@ RETURNS TABLE (
     feature_image_url TEXT,
     thumbnail_crop JSONB,
     is_published BOOLEAN,
+    is_private BOOLEAN,
     display_order INTEGER,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
@@ -757,6 +775,7 @@ BEGIN
         sw.feature_image_url,
         sw.thumbnail_crop,
         sw.is_published,
+        sw.is_private,
         sw.display_order,
         sw.created_at,
         sw.updated_at,
@@ -774,6 +793,7 @@ CREATE OR REPLACE FUNCTION prod_upsert_selected_work(
     p_feature_image_url TEXT,
     p_thumbnail_crop JSONB DEFAULT '{"x": 0, "y": 0, "width": 100, "height": 100, "unit": "%"}',
     p_is_published BOOLEAN DEFAULT false,
+    p_is_private BOOLEAN DEFAULT false,
     p_display_order INTEGER DEFAULT 0,
     p_work_id UUID DEFAULT NULL
 )
@@ -813,6 +833,7 @@ BEGIN
             feature_image_url = p_feature_image_url,
             thumbnail_crop = p_thumbnail_crop,
             is_published = p_is_published,
+            is_private = p_is_private,
             display_order = p_display_order,
             published_at = v_published_at,
             updated_at = NOW()
@@ -830,7 +851,8 @@ BEGIN
             content, 
             feature_image_url, 
             thumbnail_crop, 
-            is_published, 
+            is_published,
+            is_private, 
             display_order,
             published_at
         )
@@ -840,7 +862,8 @@ BEGIN
             p_content, 
             p_feature_image_url, 
             p_thumbnail_crop, 
-            p_is_published, 
+            p_is_published,
+            p_is_private, 
             p_display_order,
             v_published_at
         )

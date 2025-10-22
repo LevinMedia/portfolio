@@ -1,16 +1,18 @@
 # 🎨 Levin Media Portfolio
 
-> Built with Next.js, Supabase, and a whole lot of coffee. Deployed on Vercel. This is my personal portfolio site, but I've open sourced it so anyone can check it out or tinker! 🎉 PRs welcome, see the contributing section below.
+> Bbuilt with Next.js, Supabase, and a whole lot of coffee. Deployed on Vercel. This is my personal portfolio site, but I've open sourced it so anyone can check it out or tinker! 🎉 PRs welcome :D 
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LevinMedia/portfolio)
 
 ## ✨ Features
 
 - 🎭 **Theme System** - Light/Dark mode with custom color preferences
-- 📝 **Guestbook** - guestbook with Milkdown WYSIWYG editor
+- 📝 **Guestbook** - MySpace-style guestbook with Milkdown WYSIWYG editor
 - 🖼️ **Image Uploads** - Drag & drop images with Supabase storage
 - 🔒 **Admin Panel** - Secure admin interface for content management
 - 📊 **Work History** - Dynamic work history with company logos
 - 🎨 **Design System** - Custom component library with Storybook
-- 📱 **Responsive** - Mobile-friendly front to back, inside and out
+- 📱 **Responsive** - Mobile-first design with beautiful grid backgrounds
 
 ## 🚀 Quick Start
 
@@ -97,10 +99,9 @@ On first run, visit `/admin` - you'll be redirected to a one-time secure setup p
 
 - **[Next.js 15](https://nextjs.org)** - React framework with App Router
 - **[Supabase](https://supabase.com)** - Backend, database, auth, and storage
-- **[Vercel](https://vercel.com)** - deployed on vercel
 - **[Tailwind CSS v4](https://tailwindcss.com)** - Utility-first styling
 - **[Milkdown](https://milkdown.dev)** - WYSIWYG markdown editor
-- **[Storybook](https://storybook.js.org)** - Component library
+- **[Storybook](https://storybook.js.org)** - Component development
 - **[TypeScript](https://www.typescriptlang.org)** - Type safety
 
 ## 🛠️ Available Scripts
@@ -127,7 +128,7 @@ The site uses CSS variables for theming. Edit `src/app/globals.css` to customize
 }
 ```
 
-Access theme controls at `/site-settings` (linked from the Howdy component). Visitors have control over theming. Preferences are stored in local storage for their sesssion. 
+Access theme controls at `/site-settings` (linked from the Howdy component).
 
 ## 🖼️ Image Management
 
