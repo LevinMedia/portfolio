@@ -83,14 +83,14 @@ export default function Navigation({ children }: NavigationProps) {
         {/* Logo - always visible */}
         {logoElement}
         
-        {/* Navigation items - hidden on md and below */}
-        <div className="hidden lg:flex items-center" style={{ gap: 'var(--grid-major)' }}>
+        {/* Navigation items - hidden on lg and below, visible on xl+ */}
+        <div className="hidden xl:flex items-center" style={{ gap: 'var(--grid-major)' }}>
           <ViewportDebug />
           {navigationItems}
         </div>
         
-        {/* Mobile navigation - visible on md and below */}
-        <div className="lg:hidden flex items-center" style={{ gap: 'var(--grid-major)' }}>
+        {/* Mobile navigation - visible on lg and below, hidden on xl+ */}
+        <div className="xl:hidden flex items-center" style={{ gap: 'var(--grid-major)' }}>
           <ViewportDebug />
           <Button
             style="ghost"
