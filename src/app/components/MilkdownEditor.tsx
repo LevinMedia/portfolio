@@ -87,11 +87,24 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
 
     creatingRef.current = true
     const initialValue = value
+    let mounted = true
 
     const initEditor = async () => {
-      if (!editorRef.current) return
+      if (!editorRef.current || !mounted) {
+        creatingRef.current = false
+        return
+      }
+      
       // Ensure the mount root is clean to avoid duplicate editors in StrictMode/dev
       editorRef.current.innerHTML = ''
+
+      // Small delay to ensure DOM is ready and avoid race conditions
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      if (!mounted || !editorRef.current) {
+        creatingRef.current = false
+        return
+      }
 
       try {
         const crepe = new Crepe({
@@ -100,21 +113,15 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
           featureConfigs: {
             [Crepe.Feature.ImageBlock]: {
               onUpload: async (file: File) => {
-                console.log('🖼️ ImageBlock onUpload called!')
-                console.log('📤 Uploading image:', file.name, 'Size:', file.size, 'Type:', file.type)
-                
                 try {
                   const formData = new FormData()
                   formData.append('file', file)
                   formData.append('folder', 'selected-works')
 
-                  console.log('📡 Sending upload request...')
                   const response = await fetch('/api/admin/upload-image', {
                     method: 'POST',
                     body: formData,
                   })
-
-                  console.log('📡 Upload response status:', response.status)
 
                   if (!response.ok) {
                     const errorData = await response.json()
@@ -123,8 +130,6 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
                   }
 
                   const data = await response.json()
-                  console.log('✅ Image uploaded successfully!')
-                  console.log('🔗 Image URL:', data.url)
                   return data.url
                 } catch (error) {
                   console.error('❌ Image upload failed:', error)
@@ -134,6 +139,12 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
             },
           },
         })
+
+        if (!mounted) {
+          crepe.destroy()
+          creatingRef.current = false
+          return
+        }
 
         // Set up listener BEFORE creating the editor
         crepe.on((listener) => {
@@ -145,8 +156,12 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
         })
 
         await crepe.create()
-        console.log('✅ Crepe editor created!')
-        crepeRef.current = crepe
+        
+        if (mounted) {
+          crepeRef.current = crepe
+        } else {
+          crepe.destroy()
+        }
         creatingRef.current = false
       } catch (err) {
         console.error('❌ Failed to create Crepe:', err)
@@ -157,6 +172,7 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
     initEditor()
 
     return () => {
+      mounted = false
       if (crepeRef.current) {
         try {
           crepeRef.current.destroy()
