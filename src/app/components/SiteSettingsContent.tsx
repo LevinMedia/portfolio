@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { SunIcon, MoonIcon, SwatchIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import Button from './Button'
 
 interface ThemeSettings {
   mode: 'light' | 'dark' | 'system'
@@ -352,16 +353,36 @@ export default function SiteSettingsContent() {
           {/* Button Preview */}
           <div>
             <h4 className="text-sm font-medium text-foreground mb-2">Button Preview</h4>
-            <div className="flex flex-wrap gap-2">
-              <button className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md font-medium text-sm">
-                Primary Button
-              </button>
-              <button className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md font-medium text-sm">
-                Secondary Button
-              </button>
-              <button className="px-3 py-1.5 bg-accent text-accent-foreground rounded-md font-medium text-sm">
-                Accent Button
-              </button>
+            <div className="space-y-3">
+              {/* Solid Buttons */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Solid</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button style="solid" color="primary" size="small" fullWidth>Primary</Button>
+                  <Button style="solid" color="secondary" size="small" fullWidth>Secondary</Button>
+                  <Button style="solid" color="accent" size="small" fullWidth>Accent</Button>
+                </div>
+              </div>
+              
+              {/* Outline Buttons */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Outline</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button style="outline" color="primary" size="small" fullWidth>Primary</Button>
+                  <Button style="outline" color="secondary" size="small" fullWidth>Secondary</Button>
+                  <Button style="outline" color="accent" size="small" fullWidth>Accent</Button>
+                </div>
+              </div>
+              
+              {/* Ghost Buttons */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Ghost</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button style="ghost" color="primary" size="small" fullWidth>Primary</Button>
+                  <Button style="ghost" color="secondary" size="small" fullWidth>Secondary</Button>
+                  <Button style="ghost" color="accent" size="small" fullWidth>Accent</Button>
+                </div>
+              </div>
             </div>
           </div>
 

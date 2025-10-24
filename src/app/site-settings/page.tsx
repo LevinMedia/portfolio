@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeftIcon, SunIcon, MoonIcon, SwatchIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import Button from '../components/Button'
 
 interface ThemeSettings {
   mode: 'light' | 'dark' | 'system'
@@ -387,16 +388,36 @@ export default function SiteSettings() {
               {/* Button Preview */}
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-3">Button Preview</h3>
-                <div className="flex flex-wrap gap-3">
-                  <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium">
-                    Primary Button
-                  </button>
-                  <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium">
-                    Secondary Button
-                  </button>
-                  <button className="px-4 py-2 bg-accent text-accent-foreground rounded-md font-medium">
-                    Accent Button
-                  </button>
+                <div className="space-y-4">
+                  {/* Solid Buttons */}
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-2">Solid</div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Button style="solid" color="primary" size="medium" fullWidth>Primary</Button>
+                      <Button style="solid" color="secondary" size="medium" fullWidth>Secondary</Button>
+                      <Button style="solid" color="accent" size="medium" fullWidth>Accent</Button>
+                    </div>
+                  </div>
+                  
+                  {/* Outline Buttons */}
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-2">Outline</div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Button style="outline" color="primary" size="medium" fullWidth>Primary</Button>
+                      <Button style="outline" color="secondary" size="medium" fullWidth>Secondary</Button>
+                      <Button style="outline" color="accent" size="medium" fullWidth>Accent</Button>
+                    </div>
+                  </div>
+                  
+                  {/* Ghost Buttons */}
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-2">Ghost</div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Button style="ghost" color="primary" size="medium" fullWidth>Primary</Button>
+                      <Button style="ghost" color="secondary" size="medium" fullWidth>Secondary</Button>
+                      <Button style="ghost" color="accent" size="medium" fullWidth>Accent</Button>
+                    </div>
+                  </div>
                 </div>
               </div>
 

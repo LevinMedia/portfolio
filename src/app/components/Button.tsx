@@ -60,10 +60,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
     
     const sizeStyles = {
-      xsmall: `h-6 px-2 text-xs ${fullWidth ? 'rounded-none' : 'rounded-sm'}`,
-      small: `h-8 px-3 text-sm ${fullWidth ? 'rounded-none' : 'rounded-md'}`,
-      medium: `h-10 px-4 text-sm ${fullWidth ? 'rounded-none' : 'rounded-md'}`,
-      large: `h-12 px-6 text-base ${fullWidth ? 'rounded-none' : 'rounded-lg'}`
+      xsmall: 'h-6 px-2 text-xs rounded-sm',
+      small: 'h-8 px-3 text-sm rounded-md',
+      medium: 'h-10 px-4 text-sm rounded-md',
+      large: 'h-12 px-6 text-base rounded-lg'
     }
     
     return (
