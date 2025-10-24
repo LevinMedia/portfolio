@@ -1,5 +1,54 @@
 @import "tailwindcss";
 
+/* Video.js Player Customization */
+.video-js {
+  font-family: inherit;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.video-js .vjs-big-play-button {
+  border: none;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  font-size: 3em;
+  left: 50%;
+  top: 50%;
+  margin-left: -40px;
+  margin-top: -40px;
+}
+
+.video-js .vjs-big-play-button:hover {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.video-js .vjs-control-bar {
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.video-js .vjs-progress-control .vjs-play-progress {
+  background-color: var(--primary, #3b82f6);
+}
+
+.video-js .vjs-progress-control .vjs-load-progress {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .video-js .vjs-big-play-button {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .video-js .vjs-big-play-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
 /* Guestbook / Milkdown mobile usability tweaks */
 @media (max-width: 1279px) {
   /* Reduce padding inside Milkdown editor content area for smaller screens */
