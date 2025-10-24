@@ -163,11 +163,13 @@ function HomeContent() {
                       codeGenerator={() => {
             return `<Navigation>
   <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
+  <NavigationItem icon={<CommandLineIcon />} label="Selected works" onClick={handleSelectedWorksOpen} />
   <ViewportDebug />
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />
-  <NavigationItem icon={<QuestionMarkCircleIcon />} label="About David" onClick={handleAboutOpen} />
+  <NavigationItem icon={<QuestionMarkCircleIcon />} label="About" onClick={handleAboutOpen} />
   <NavigationItem icon={<ChartBarSquareIcon />} label="Stats" />
   <NavigationItem icon={<PencilSquareIcon />} label="Guestbook" onClick={handleGuestbookOpen} />
+  <NavigationItem icon={<CogIcon />} label="Site settings" onClick={handleSiteSettingsOpen} />
 </Navigation>`
           }} 
           borderRadius={0}
@@ -177,6 +179,11 @@ function HomeContent() {
         >
           <Navigation>
             <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
+            <NavigationItem 
+              icon={<CommandLineIcon className="w-5 h-5" />}
+              label="Selected works"
+              onClick={handleSelectedWorksOpen}
+            />
             <NavigationItem 
               icon={<BriefcaseIcon className="w-5 h-5" />}
               label="Work history"
@@ -195,6 +202,11 @@ function HomeContent() {
               icon={<PencilSquareIcon className="w-5 h-5" />}
               label="Guestbook"
               onClick={handleGuestbookOpen}
+            />
+            <NavigationItem 
+              icon={<CogIcon className="w-5 h-5" />}
+              label="Site settings"
+              onClick={handleSiteSettingsOpen}
             />
           </Navigation>
         </Tooltip>
