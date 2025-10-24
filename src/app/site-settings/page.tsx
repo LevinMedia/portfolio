@@ -19,7 +19,7 @@ const defaultTheme: ThemeSettings = {
 }
 
 const colorPresets = [
-  { name: 'Purple', primary: '#C614E1', secondary: '#ec4899', accent: '#0891b2' },
+  { name: 'Party', primary: '#C614E1', secondary: '#ec4899', accent: '#0891b2' },
   { name: 'Blue', primary: '#3b82f6', secondary: '#1d4ed8', accent: '#06b6d4' },
   { name: 'Green', primary: '#10b981', secondary: '#059669', accent: '#34d399' },
   { name: 'Orange', primary: '#f59e0b', secondary: '#d97706', accent: '#fb923c' },
