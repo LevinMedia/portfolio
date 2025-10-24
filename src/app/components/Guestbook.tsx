@@ -306,7 +306,7 @@ export default function Guestbook() {
           entries.map((entry) => (
             <div
               key={entry.id}
-              className="bg-background border border-border/20 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow"
+              className="bg-background border border-border/20 p-6"
               style={{ 
                 backgroundImage: `
                   linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
