@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SunIcon, MoonIcon, SwatchIcon } from '@heroicons/react/24/outline'
+import { SunIcon, MoonIcon, SwatchIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 
 interface ThemeSettings {
   mode: 'light' | 'dark' | 'system'
@@ -94,6 +94,12 @@ export default function SiteSettingsContent() {
       secondaryColor: preset.secondary,
       accentColor: preset.accent
     }))
+  }
+
+  const isPresetSelected = (preset: typeof colorPresets[0]) => {
+    return theme.primaryColor.toLowerCase() === preset.primary.toLowerCase() &&
+           theme.secondaryColor.toLowerCase() === preset.secondary.toLowerCase() &&
+           theme.accentColor.toLowerCase() === preset.accent.toLowerCase()
   }
 
   // Calculate contrast ratio between two colors
@@ -212,29 +218,43 @@ export default function SiteSettingsContent() {
           Color Presets
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {colorPresets.map((preset) => (
-            <button
-              key={preset.name}
-              onClick={() => applyPreset(preset)}
-              className="p-3 rounded-lg border border-border/20 hover:border-border/40 transition-all group"
-            >
-              <div className="flex space-x-1 mb-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: preset.primary }}
-                />
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: preset.secondary }}
-                />
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: preset.accent }}
-                />
-              </div>
-              <div className="text-sm font-medium text-foreground">{preset.name}</div>
-            </button>
-          ))}
+          {colorPresets.map((preset) => {
+            const isSelected = isPresetSelected(preset)
+            return (
+              <button
+                key={preset.name}
+                onClick={() => applyPreset(preset)}
+                className={`relative p-3 rounded-lg border-2 transition-all group ${
+                  isSelected 
+                    ? 'border-primary bg-primary/10 shadow-lg' 
+                    : 'border-border/20 hover:border-border/40'
+                }`}
+              >
+                {isSelected && (
+                  <div className="absolute -top-2 -right-2 bg-primary rounded-full p-0.5">
+                    <CheckCircleIcon className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="flex space-x-1 mb-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: preset.primary }}
+                  />
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: preset.secondary }}
+                  />
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: preset.accent }}
+                  />
+                </div>
+                <div className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                  {preset.name}
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
