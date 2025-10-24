@@ -56,7 +56,7 @@ export default function MilkdownEditor({ value, onChange, className }: MilkdownE
       try {
         await navigator.clipboard.writeText(videoMarkdown)
         alert(`Video uploaded successfully!\n\nThe video markdown has been copied to your clipboard. Paste it in the editor where you want the video to appear:\n\n${videoMarkdown}`)
-      } catch (clipboardError) {
+      } catch {
         // Fallback if clipboard API is not available
         alert(`Video uploaded successfully!\n\nCopy and paste this into the editor:\n\n${videoMarkdown}`)
       }
