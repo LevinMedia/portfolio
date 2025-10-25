@@ -38,14 +38,36 @@ function HomeContent() {
 
   // Handle opening work history drawer
   const handleWorkHistoryOpen = () => {
-    setIsWorkHistoryOpen(true);
-    setIsAboutOpen(false); // Close about drawer
-    setIsSelectedWorksOpen(false); // Close selected works drawer
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('work-history', 'true');
-    params.delete('about'); // Remove about parameter
-    params.delete('selected-works'); // Remove selected works parameter
-    router.push(`?${params.toString()}`, { scroll: false });
+    // Check if any drawer is currently open
+    const isAnyDrawerOpen = isAboutOpen || isSelectedWorksOpen || isSiteSettingsOpen || isGuestbookOpen;
+    
+    if (isAnyDrawerOpen) {
+      // Close all drawers first
+      setIsAboutOpen(false);
+      setIsSelectedWorksOpen(false);
+      setIsSiteSettingsOpen(false);
+      setIsGuestbookOpen(false);
+      
+      // Wait for slide-out animation to complete (300ms), then open new drawer
+      setTimeout(() => {
+        setIsWorkHistoryOpen(true);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('work-history', 'true');
+        params.delete('about');
+        params.delete('selected-works');
+        params.delete('guestbook');
+        router.push(`?${params.toString()}`, { scroll: false });
+      }, 300);
+    } else {
+      // No drawer open, open immediately
+      setIsWorkHistoryOpen(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('work-history', 'true');
+      params.delete('about');
+      params.delete('selected-works');
+      params.delete('guestbook');
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
   };
 
   // Handle closing work history drawer
@@ -59,14 +81,36 @@ function HomeContent() {
 
   // Handle opening about drawer
   const handleAboutOpen = () => {
-    setIsAboutOpen(true);
-    setIsWorkHistoryOpen(false); // Close work history drawer
-    setIsSelectedWorksOpen(false); // Close selected works drawer
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('about', 'true');
-    params.delete('work-history'); // Remove work history parameter
-    params.delete('selected-works'); // Remove selected works parameter
-    router.push(`?${params.toString()}`, { scroll: false });
+    // Check if any drawer is currently open
+    const isAnyDrawerOpen = isWorkHistoryOpen || isSelectedWorksOpen || isSiteSettingsOpen || isGuestbookOpen;
+    
+    if (isAnyDrawerOpen) {
+      // Close all drawers first
+      setIsWorkHistoryOpen(false);
+      setIsSelectedWorksOpen(false);
+      setIsSiteSettingsOpen(false);
+      setIsGuestbookOpen(false);
+      
+      // Wait for slide-out animation to complete (300ms), then open new drawer
+      setTimeout(() => {
+        setIsAboutOpen(true);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('about', 'true');
+        params.delete('work-history');
+        params.delete('selected-works');
+        params.delete('guestbook');
+        router.push(`?${params.toString()}`, { scroll: false });
+      }, 300);
+    } else {
+      // No drawer open, open immediately
+      setIsAboutOpen(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('about', 'true');
+      params.delete('work-history');
+      params.delete('selected-works');
+      params.delete('guestbook');
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
   };
 
   // Handle closing about drawer
@@ -80,22 +124,58 @@ function HomeContent() {
 
   // Handle opening selected works drawer
   const handleSelectedWorksOpen = () => {
-    setIsSelectedWorksOpen(true);
-    setIsWorkHistoryOpen(false); // Close work history drawer
-    setIsAboutOpen(false); // Close about drawer
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('selected-works', 'true');
-    params.delete('work-history'); // Remove work history parameter
-    params.delete('about'); // Remove about parameter
-    router.push(`?${params.toString()}`, { scroll: false });
+    // Check if any drawer is currently open
+    const isAnyDrawerOpen = isWorkHistoryOpen || isAboutOpen || isSiteSettingsOpen || isGuestbookOpen;
+    
+    if (isAnyDrawerOpen) {
+      // Close all drawers first
+      setIsWorkHistoryOpen(false);
+      setIsAboutOpen(false);
+      setIsSiteSettingsOpen(false);
+      setIsGuestbookOpen(false);
+      
+      // Wait for slide-out animation to complete (300ms), then open new drawer
+      setTimeout(() => {
+        setIsSelectedWorksOpen(true);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('selected-works', 'true');
+        params.delete('work-history');
+        params.delete('about');
+        params.delete('guestbook');
+        router.push(`?${params.toString()}`, { scroll: false });
+      }, 300);
+    } else {
+      // No drawer open, open immediately
+      setIsSelectedWorksOpen(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('selected-works', 'true');
+      params.delete('work-history');
+      params.delete('about');
+      params.delete('guestbook');
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
   };
 
   // Handle opening site settings drawer
   const handleSiteSettingsOpen = () => {
-    setIsSiteSettingsOpen(true);
-    setIsWorkHistoryOpen(false); // Close other drawers
-    setIsAboutOpen(false);
-    setIsSelectedWorksOpen(false);
+    // Check if any drawer is currently open
+    const isAnyDrawerOpen = isWorkHistoryOpen || isAboutOpen || isSelectedWorksOpen || isGuestbookOpen;
+    
+    if (isAnyDrawerOpen) {
+      // Close all drawers first
+      setIsWorkHistoryOpen(false);
+      setIsAboutOpen(false);
+      setIsSelectedWorksOpen(false);
+      setIsGuestbookOpen(false);
+      
+      // Wait for slide-out animation to complete (300ms), then open new drawer
+      setTimeout(() => {
+        setIsSiteSettingsOpen(true);
+      }, 300);
+    } else {
+      // No drawer open, open immediately
+      setIsSiteSettingsOpen(true);
+    }
   };
 
   // Handle closing site settings drawer
@@ -114,16 +194,36 @@ function HomeContent() {
 
   // Handle opening guestbook drawer
   const handleGuestbookOpen = () => {
-    setIsGuestbookOpen(true);
-    setIsWorkHistoryOpen(false); // Close work history drawer
-    setIsAboutOpen(false); // Close about drawer
-    setIsSelectedWorksOpen(false); // Close selected works drawer
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('guestbook', 'true');
-    params.delete('work-history'); // Remove work history parameter
-    params.delete('about'); // Remove about parameter
-    params.delete('selected-works'); // Remove selected works parameter
-    router.push(`?${params.toString()}`, { scroll: false });
+    // Check if any drawer is currently open
+    const isAnyDrawerOpen = isWorkHistoryOpen || isAboutOpen || isSelectedWorksOpen || isSiteSettingsOpen;
+    
+    if (isAnyDrawerOpen) {
+      // Close all drawers first
+      setIsWorkHistoryOpen(false);
+      setIsAboutOpen(false);
+      setIsSelectedWorksOpen(false);
+      setIsSiteSettingsOpen(false);
+      
+      // Wait for slide-out animation to complete (300ms), then open new drawer
+      setTimeout(() => {
+        setIsGuestbookOpen(true);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('guestbook', 'true');
+        params.delete('work-history');
+        params.delete('about');
+        params.delete('selected-works');
+        router.push(`?${params.toString()}`, { scroll: false });
+      }, 300);
+    } else {
+      // No drawer open, open immediately
+      setIsGuestbookOpen(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('guestbook', 'true');
+      params.delete('work-history');
+      params.delete('about');
+      params.delete('selected-works');
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
   };
 
   // Handle closing guestbook drawer
