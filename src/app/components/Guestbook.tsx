@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { HeartIcon, PaperAirplaneIcon, UserIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
-import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
+import { PaperAirplaneIcon, UserIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import MilkdownEditor from './MilkdownEditor'
@@ -33,7 +32,6 @@ export default function Guestbook() {
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [likedEntries, setLikedEntries] = useState<Set<string>>(new Set())
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [formData, setFormData] = useState<GuestbookFormData>({
     name: '',
@@ -113,20 +111,6 @@ export default function Guestbook() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-
-  // Handle like toggle
-  const toggleLike = (entryId: string) => {
-    setLikedEntries(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(entryId)) {
-        newSet.delete(entryId)
-      } else {
-        newSet.add(entryId)
-      }
-      return newSet
-    })
   }
 
   // Format date
@@ -217,6 +201,7 @@ export default function Guestbook() {
                 value={formData.message}
                 onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
                 className="min-h-[160px] md:min-h-[200px]"
+                allowVideo={false}
               />
             </div>
             {/* Helper text removed per request */}
@@ -306,7 +291,7 @@ export default function Guestbook() {
           entries.map((entry) => (
             <div
               key={entry.id}
-              className="bg-background border border-border/20 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow"
+              className="bg-background border border-border/20 p-6"
               style={{ 
                 backgroundImage: `
                   linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -317,7 +302,7 @@ export default function Guestbook() {
               }}
             >
               {/* Entry Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                     <span className="text-primary font-semibold">
@@ -329,19 +314,6 @@ export default function Guestbook() {
                     <p className="text-xs text-muted-foreground">{formatDate(entry.created_at)}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleLike(entry.id)}
-                  className="flex items-center space-x-1 text-muted-foreground hover:text-red-500 transition-colors"
-                >
-                  {likedEntries.has(entry.id) ? (
-                    <HeartSolidIcon className="h-5 w-5 text-red-500" />
-                  ) : (
-                    <HeartIcon className="h-5 w-5" />
-                  )}
-                  <span className="text-sm">
-                    {likedEntries.has(entry.id) ? 'Liked!' : 'Like'}
-                  </span>
-                </button>
               </div>
 
               {/* Message Content */}

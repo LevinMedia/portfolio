@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SunIcon, MoonIcon, SwatchIcon } from '@heroicons/react/24/outline'
+import { SunIcon, MoonIcon, SwatchIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import Button from './Button'
+import chroma from 'chroma-js'
 
 interface ThemeSettings {
   mode: 'light' | 'dark' | 'system'
@@ -13,26 +15,29 @@ interface ThemeSettings {
 const defaultTheme: ThemeSettings = {
   mode: 'system',
   primaryColor: '#C614E1',
-  secondaryColor: '#ec4899',
-  accentColor: '#0891b2'
+  secondaryColor: '#cc3f84',
+  accentColor: '#087d9a'
 }
 
 const colorPresets = [
-  { name: 'Purple', primary: '#C614E1', secondary: '#ec4899', accent: '#0891b2' },
-  { name: 'Blue', primary: '#3b82f6', secondary: '#1d4ed8', accent: '#06b6d4' },
-  { name: 'Green', primary: '#10b981', secondary: '#059669', accent: '#34d399' },
-  { name: 'Orange', primary: '#f59e0b', secondary: '#d97706', accent: '#fb923c' },
-  { name: 'Red', primary: '#ef4444', secondary: '#dc2626', accent: '#f87171' },
-  { name: 'Indigo', primary: '#6366f1', secondary: '#4f46e5', accent: '#8b5cf6' }
+  { name: 'Party', primary: '#c614e1', secondary: '#cc3f84', accent: '#087d9a' },
+  { name: 'Cosmos', primary: '#3370d5', secondary: '#8458ea', accent: '#9e670a' },
+  { name: 'Forest', primary: '#0a845d', secondary: '#087d9a', accent: '#dc2626' },
+  { name: 'United', primary: '#d23e10', secondary: '#dc2626', accent: '#3370d5' },
+  { name: 'Rose', primary: '#cf3b3b', secondary: '#cc3f84', accent: '#0a845d' }
 ]
 
 export default function SiteSettingsContent() {
   const [theme, setTheme] = useState<ThemeSettings>(defaultTheme)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [selectedPreset, setSelectedPreset] = useState<string>('Party')
 
   useEffect(() => {
     // Load theme from localStorage
     const savedTheme = localStorage.getItem('site-theme')
+    const savedPreset = localStorage.getItem('selected-preset')
+    
     if (savedTheme) {
       try {
         const parsedTheme = JSON.parse(savedTheme)
@@ -41,6 +46,11 @@ export default function SiteSettingsContent() {
         console.error('Error parsing saved theme:', error)
       }
     }
+    
+    if (savedPreset) {
+      setSelectedPreset(savedPreset)
+    }
+    
     setIsLoading(false)
   }, [])
 
@@ -50,6 +60,21 @@ export default function SiteSettingsContent() {
       localStorage.setItem('site-theme', JSON.stringify(theme))
     }
   }, [theme, isLoading])
+
+  useEffect(() => {
+    // Detect dark mode
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'))
+    }
+    
+    checkDarkMode()
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    
+    return () => observer.disconnect()
+  }, [])
 
   const applyTheme = (newTheme: ThemeSettings) => {
     const root = document.documentElement
@@ -84,54 +109,84 @@ export default function SiteSettingsContent() {
   }
 
   const handleColorChange = (colorType: 'primary' | 'secondary' | 'accent', color: string) => {
-    setTheme(prev => ({ ...prev, [colorType]: color }))
+    setSelectedPreset('Custom') // Automatically switch to Custom when manually changing colors
+    
+    const newTheme = { 
+      ...theme, 
+      [`${colorType}Color`]: color 
+    }
+    setTheme(newTheme)
+    
+    // Apply immediately to the site
+    const root = document.documentElement
+    root.style.setProperty(`--${colorType}`, color)
+    
+    // Save to localStorage immediately
+    localStorage.setItem('site-theme', JSON.stringify(newTheme))
+    localStorage.setItem('selected-preset', 'Custom')
   }
 
   const applyPreset = (preset: typeof colorPresets[0]) => {
+    setSelectedPreset(preset.name)
     setTheme(prev => ({
       ...prev,
       primaryColor: preset.primary,
       secondaryColor: preset.secondary,
       accentColor: preset.accent
     }))
+    localStorage.setItem('selected-preset', preset.name)
   }
 
-  // Calculate contrast ratio between two colors
-  const getContrastRatio = (color1: string, color2: string): number => {
-    const getLuminance = (color: string): number => {
-      // Convert hex to RGB
-      const hex = color.replace('#', '')
-      const r = parseInt(hex.substr(0, 2), 16) / 255
-      const g = parseInt(hex.substr(2, 2), 16) / 255
-      const b = parseInt(hex.substr(4, 2), 16) / 255
+  const handleCustom = () => {
+    // Switch to custom mode, keeping current colors
+    setSelectedPreset('Custom')
+    localStorage.setItem('selected-preset', 'Custom')
+  }
 
-      // Apply gamma correction
-      const [rs, gs, bs] = [r, g, b].map(c => 
-        c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
-      )
+  const isPresetSelected = (presetName: string) => {
+    return selectedPreset === presetName
+  }
 
-      // Calculate relative luminance
-      return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+  const getContrastRatio = (foreground: string, background: string): number => {
+    try {
+      return chroma.contrast(foreground, background)
+    } catch {
+      return 0
     }
-
-    const lum1 = getLuminance(color1)
-    const lum2 = getLuminance(color2)
-    const brightest = Math.max(lum1, lum2)
-    const darkest = Math.min(lum1, lum2)
-    
-    return (brightest + 0.05) / (darkest + 0.05)
   }
 
-  // Get contrast ratio status
-  const getContrastStatus = (ratio: number): { status: string; color: string; description: string } => {
+  const getA11yLevel = (ratio: number): { level: string; color: string } => {
     if (ratio >= 7) {
-      return { status: 'AAA', color: 'text-green-600', description: 'Excellent (AAA)' }
+      return { level: 'AAA', color: 'text-green-600 dark:text-green-400' }
     } else if (ratio >= 4.5) {
-      return { status: 'AA', color: 'text-blue-600', description: 'Good (AA)' }
+      return { level: 'AA', color: 'text-blue-600 dark:text-blue-400' }
     } else if (ratio >= 3) {
-      return { status: 'A', color: 'text-yellow-600', description: 'Acceptable (A)' }
+      return { level: 'A', color: 'text-yellow-600 dark:text-yellow-400' }
     } else {
-      return { status: 'Fail', color: 'text-red-600', description: 'Poor (Fail)' }
+      return { level: 'FAIL', color: 'text-red-600 dark:text-red-400' }
+    }
+  }
+
+  const adjustForDarkMode = (color: string): string => {
+    // In dark mode, outline/ghost buttons get brightness-125 filter
+    if (isDarkMode) {
+      try {
+        return chroma(color).brighten(0.25).hex()
+      } catch {
+        return color
+      }
+    }
+    return color
+  }
+
+  const getButtonTextColor = (bgColor: string): string => {
+    try {
+      const whiteContrast = chroma.contrast(bgColor, '#ffffff')
+      const darkContrast = chroma.contrast(bgColor, '#09090b')
+      // Use dark text if it has better contrast than white
+      return darkContrast > whiteContrast ? '#09090b' : '#ffffff'
+    } catch {
+      return '#ffffff'
     }
   }
 
@@ -212,33 +267,81 @@ export default function SiteSettingsContent() {
           Color Presets
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {colorPresets.map((preset) => (
-            <button
-              key={preset.name}
-              onClick={() => applyPreset(preset)}
-              className="p-3 rounded-lg border border-border/20 hover:border-border/40 transition-all group"
-            >
-              <div className="flex space-x-1 mb-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: preset.primary }}
-                />
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: preset.secondary }}
-                />
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: preset.accent }}
-                />
+          {colorPresets.map((preset) => {
+            const isSelected = isPresetSelected(preset.name)
+            return (
+              <button
+                key={preset.name}
+                onClick={() => applyPreset(preset)}
+                className={`relative p-3 rounded-lg border-2 transition-all group ${
+                  isSelected 
+                    ? 'border-primary bg-primary/10 shadow-lg' 
+                    : 'border-border/20 hover:border-border/40'
+                }`}
+              >
+                {isSelected && (
+                  <div className="absolute -top-2 -right-2 bg-primary rounded-full p-0.5">
+                    <CheckCircleIcon className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="flex space-x-1 mb-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: preset.primary }}
+                  />
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: preset.secondary }}
+                  />
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: preset.accent }}
+                  />
+                </div>
+                <div className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                  {preset.name}
+                </div>
+              </button>
+            )
+          })}
+          
+          {/* Custom Preset */}
+          <button
+            onClick={handleCustom}
+            className={`relative p-3 rounded-lg border-2 transition-all group ${
+              isPresetSelected('Custom')
+                ? 'border-primary bg-primary/10 shadow-lg' 
+                : 'border-border/20 hover:border-border/40'
+            }`}
+          >
+            {isPresetSelected('Custom') && (
+              <div className="absolute -top-2 -right-2 bg-primary rounded-full p-0.5">
+                <CheckCircleIcon className="w-5 h-5 text-primary-foreground" />
               </div>
-              <div className="text-sm font-medium text-foreground">{preset.name}</div>
-            </button>
-          ))}
+            )}
+            <div className="flex space-x-1 mb-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: theme.primaryColor }}
+              />
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: theme.secondaryColor }}
+              />
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: theme.accentColor }}
+              />
+            </div>
+            <div className={`text-sm font-medium ${isPresetSelected('Custom') ? 'text-primary' : 'text-foreground'}`}>
+              Custom
+            </div>
+          </button>
         </div>
       </div>
 
-      {/* Custom Colors */}
+      {/* Custom Colors - Only show when Custom preset is selected */}
+      {isPresetSelected('Custom') && (
       <div className="bg-background border border-border/20 rounded-lg p-4" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -315,8 +418,9 @@ export default function SiteSettingsContent() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Preview & Contrast Analysis */}
+      {/* Button Preview */}
       <div className="bg-background border border-border/20 rounded-lg p-4" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -326,107 +430,170 @@ export default function SiteSettingsContent() {
         backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
       }}>
         <h3 className="text-lg font-semibold text-foreground mb-3 font-[family-name:var(--font-geist-mono)]">
-          Preview & Contrast Analysis
+          Button Preview
         </h3>
-        <div className="space-y-4">
-          {/* Button Preview */}
-          <div>
-            <h4 className="text-sm font-medium text-foreground mb-2">Button Preview</h4>
-            <div className="flex flex-wrap gap-2">
-              <button className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md font-medium text-sm">
-                Primary Button
-              </button>
-              <button className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md font-medium text-sm">
-                Secondary Button
-              </button>
-              <button className="px-3 py-1.5 bg-accent text-accent-foreground rounded-md font-medium text-sm">
-                Accent Button
-              </button>
-            </div>
-          </div>
-
-          {/* Contrast Ratio Analysis */}
-          <div>
-            <h4 className="text-sm font-medium text-foreground mb-2">Contrast Ratio Analysis</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Primary Button Contrast */}
-              <div className="p-2 bg-muted/50 rounded-lg border border-border/20">
-                <div className="text-xs text-muted-foreground mb-1">Primary Button</div>
-                <div className="text-xs font-medium text-foreground mb-1">
-                  {theme.primaryColor} on #ffffff
-                </div>
-                {(() => {
-                  const ratio = getContrastRatio(theme.primaryColor, '#ffffff')
-                  const status = getContrastStatus(ratio)
-                  return (
-                    <div className="space-y-1">
-                      <div className={`text-xs font-medium ${status.color}`}>
-                        {status.status} - {ratio.toFixed(2)}:1
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {status.description}
-                      </div>
+        <div className="space-y-3">
+              {/* Solid Buttons */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Solid</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Button key={theme.primaryColor} style="solid" color="primary" size="small" fullWidth>Primary</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const textColor = getButtonTextColor(theme.primaryColor)
+                        const ratio = getContrastRatio(textColor, theme.primaryColor)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {textColor} / {theme.primaryColor} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
                     </div>
-                  )
-                })()}
-              </div>
-
-              {/* Secondary Button Contrast */}
-              <div className="p-2 bg-muted/50 rounded-lg border border-border/20">
-                <div className="text-xs text-muted-foreground mb-1">Secondary Button</div>
-                <div className="text-xs font-medium text-foreground mb-1">
-                  {theme.secondaryColor} on #ffffff
-                </div>
-                {(() => {
-                  const ratio = getContrastRatio(theme.secondaryColor, '#ffffff')
-                  const status = getContrastStatus(ratio)
-                  return (
-                    <div className="space-y-1">
-                      <div className={`text-xs font-medium ${status.color}`}>
-                        {status.status} - {ratio.toFixed(2)}:1
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {status.description}
-                      </div>
+                  </div>
+                  <div>
+                    <Button key={theme.secondaryColor} style="solid" color="secondary" size="small" fullWidth>Secondary</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const textColor = getButtonTextColor(theme.secondaryColor)
+                        const ratio = getContrastRatio(textColor, theme.secondaryColor)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {textColor} / {theme.secondaryColor} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
                     </div>
-                  )
-                })()}
-              </div>
-
-              {/* Accent Button Contrast */}
-              <div className="p-2 bg-muted/50 rounded-lg border border-border/20">
-                <div className="text-xs text-muted-foreground mb-1">Accent Button</div>
-                <div className="text-xs font-medium text-foreground mb-1">
-                  {theme.accentColor} on #ffffff
-                </div>
-                {(() => {
-                  const ratio = getContrastRatio(theme.accentColor, '#ffffff')
-                  const status = getContrastStatus(ratio)
-                  return (
-                    <div className="space-y-1">
-                      <div className={`text-xs font-medium ${status.color}`}>
-                        {status.status} - {ratio.toFixed(2)}:1
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {status.description}
-                      </div>
+                  </div>
+                  <div>
+                    <Button key={theme.accentColor} style="solid" color="accent" size="small" fullWidth>Accent</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const textColor = getButtonTextColor(theme.accentColor)
+                        const ratio = getContrastRatio(textColor, theme.accentColor)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {textColor} / {theme.accentColor} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
                     </div>
-                  )
-                })()}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Accessibility Guidelines */}
-          <div className="p-3 bg-muted/30 rounded-lg border border-border/20">
-            <h4 className="text-sm font-medium text-foreground mb-2">Accessibility Guidelines</h4>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div>• <strong>AAA:</strong> 7:1 or higher (excellent for all users)</div>
-              <div>• <strong>AA:</strong> 4.5:1 or higher (good for most users)</div>
-              <div>• <strong>A:</strong> 3:1 or higher (acceptable for large text)</div>
-              <div>• <strong>Fail:</strong> Below 3:1 (poor accessibility)</div>
-            </div>
-          </div>
+              
+              {/* Outline Buttons */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Outline</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Button key={`outline-${theme.primaryColor}`} style="outline" color="primary" size="small" fullWidth>Primary</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const bg = isDarkMode ? '#09090b' : '#ffffff'
+                        const color = adjustForDarkMode(theme.primaryColor)
+                        const ratio = getContrastRatio(color, bg)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {theme.primaryColor} / {bg} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <Button key={`outline-${theme.secondaryColor}`} style="outline" color="secondary" size="small" fullWidth>Secondary</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const bg = isDarkMode ? '#09090b' : '#ffffff'
+                        const color = adjustForDarkMode(theme.secondaryColor)
+                        const ratio = getContrastRatio(color, bg)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {theme.secondaryColor} / {bg} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <Button key={`outline-${theme.accentColor}`} style="outline" color="accent" size="small" fullWidth>Accent</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const bg = isDarkMode ? '#09090b' : '#ffffff'
+                        const color = adjustForDarkMode(theme.accentColor)
+                        const ratio = getContrastRatio(color, bg)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {theme.accentColor} / {bg} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Ghost Buttons */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Ghost</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Button key={`ghost-${theme.primaryColor}`} style="ghost" color="primary" size="small" fullWidth>Primary</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const bg = isDarkMode ? '#09090b' : '#ffffff'
+                        const color = adjustForDarkMode(theme.primaryColor)
+                        const ratio = getContrastRatio(color, bg)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {theme.primaryColor} / {bg} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <Button key={`ghost-${theme.secondaryColor}`} style="ghost" color="secondary" size="small" fullWidth>Secondary</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const bg = isDarkMode ? '#09090b' : '#ffffff'
+                        const color = adjustForDarkMode(theme.secondaryColor)
+                        const ratio = getContrastRatio(color, bg)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {theme.secondaryColor} / {bg} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <Button key={`ghost-${theme.accentColor}`} style="ghost" color="accent" size="small" fullWidth>Accent</Button>
+                    <div className="text-[10px] text-muted-foreground mt-1 text-center font-mono">
+                      {(() => {
+                        const bg = isDarkMode ? '#09090b' : '#ffffff'
+                        const color = adjustForDarkMode(theme.accentColor)
+                        const ratio = getContrastRatio(color, bg)
+                        const a11y = getA11yLevel(ratio)
+                        return (
+                          <>
+                            {theme.accentColor} / {bg} · {ratio.toFixed(2)}:1 <span className={a11y.color}>{a11y.level}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
         </div>
       </div>
     </div>
