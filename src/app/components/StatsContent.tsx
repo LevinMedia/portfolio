@@ -76,10 +76,10 @@ export default function StatsContent() {
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card title="Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
             <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
-            <Card title="Unique Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
             <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
-            <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
+            <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={formatCount(summary?.totals?.topPage?.views ?? 0, 'view')} />
           </div>
 
           {/* Time Series (moved under cards) */}
@@ -133,7 +133,7 @@ export default function StatsContent() {
                     <div className="relative flex items-center justify-between">
                       <div className="truncate max-w-[70%] text-sm text-foreground font-medium pl-3">{p.path}</div>
                       <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
-                        {p.views} views • {p.uniques} unique
+                        {formatCount(p.uniques, 'visitor')} • {formatCount(p.views, 'view')}
                       </div>
                     </div>
                   </div>
@@ -147,15 +147,9 @@ export default function StatsContent() {
   )
 }
 
-function pct(n?: number) {
-  if (typeof n !== 'number' || !isFinite(n)) return undefined
-  const s = (n >= 0 ? '+' : '') + n.toFixed(1) + '%'
-  return s
-}
-
 function Card({ title, value, sub, delta }: { title: string, value: string | number, sub?: string, delta?: string }) {
   return (
-    <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
+    <div className="bg-background border border-border/20 rounded-none p-4" style={{
       backgroundImage: `
         linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -169,4 +163,15 @@ function Card({ title, value, sub, delta }: { title: string, value: string | num
       {delta && <div className={`text-xs ${delta.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{delta} vs previous period</div>}
     </div>
   )
+}
+
+function pct(n?: number) {
+  if (typeof n !== 'number' || !isFinite(n)) return undefined
+  const s = (n >= 0 ? '+' : '') + n.toFixed(1) + '%'
+  return s
+}
+
+function formatCount(count: number, singular: string, plural?: string) {
+  const label = count === 1 ? singular : (plural ?? `${singular}s`)
+  return `${count} ${label}`
 }

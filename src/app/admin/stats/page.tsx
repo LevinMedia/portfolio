@@ -76,75 +76,75 @@ export default function StatsAdmin() {
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
-        <Card title="Unique Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
-        <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
-        <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
-      </div>
+            <Card title="Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
+            <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
+            <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
+            <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={formatCount(summary?.totals?.topPage?.views ?? 0, 'view')} />
+          </div>
 
           {/* Time Series (moved under cards) */}
           <TimeSeriesChart range={range} />
 
-      {/* World Map Placeholder (keep simple without heavy map until styled) */}
-      <div className="bg-background border border-border/20 rounded-none" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations Map</h3>
-          <VisitorMap points={geo} />
-        </div>
-      </div>
-
-      {/* Top Pages */}
-      <div className="bg-background border border-border/20 rounded-none" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
-          <div>
-            {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
-            {pages.map((p, i) => {
-              const maxViews = Math.max(...pages.map(page => page.views))
-              const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
-              // Ensure minimum 2% width for visibility (much smaller, more proportional)
-              const scaledPercent = Math.max(calculatedPercent, 2)
-              // Scale to fit within available space (leaving room for stats)
-              const availableWidth = 75 // Use 75% of container width, leaving 25% for stats
-              const finalWidth = (scaledPercent / 100) * availableWidth
-              
-              return (
-                <div key={i} className="relative py-2">
-                  {/* Background bar */}
-                  <div 
-                    className="absolute inset-y-0 left-0 rounded-none opacity-20"
-                    style={{ 
-                      width: `${finalWidth}%`,
-                      backgroundColor: 'var(--accent)'
-                    }}
-                  />
-                  {/* Content */}
-                  <div className="relative flex items-center justify-between">
-                    <div className="truncate max-w-[70%] text-foreground font-medium pl-3">{p.path}</div>
-                    <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
-                      {p.views} views • {p.uniques} uniques
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+          {/* World Map Placeholder (keep simple without heavy map until styled) */}
+          <div className="bg-background border border-border/20 rounded-none" style={{
+            backgroundImage: `
+              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
+            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
+          }}>
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations Map</h3>
+              <VisitorMap points={geo} />
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Top Pages */}
+          <div className="bg-background border border-border/20 rounded-none" style={{
+            backgroundImage: `
+              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
+            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
+          }}>
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
+              <div>
+                {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
+                {pages.map((p, i) => {
+                  const maxViews = Math.max(...pages.map(page => page.views))
+                  const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
+                  // Ensure minimum 2% width for visibility (much smaller, more proportional)
+                  const scaledPercent = Math.max(calculatedPercent, 2)
+                  // Scale to fit within available space (leaving room for stats)
+                  const availableWidth = 75 // Use 75% of container width, leaving 25% for stats
+                  const finalWidth = (scaledPercent / 100) * availableWidth
+
+                  return (
+                    <div key={i} className="relative py-2">
+                      {/* Background bar */}
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-none opacity-20"
+                        style={{
+                          width: `${finalWidth}%`,
+                          backgroundColor: 'var(--accent)'
+                        }}
+                      />
+                      {/* Content */}
+                      <div className="relative flex items-center justify-between">
+                        <div className="truncate max-w-[70%] text-foreground font-medium pl-3">{p.path}</div>
+                        <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
+                          {formatCount(p.uniques, 'visitor')} • {formatCount(p.views, 'view')}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>
@@ -157,9 +157,14 @@ function pct(n?: number) {
   return s
 }
 
+function formatCount(count: number, singular: string, plural?: string) {
+  const label = count === 1 ? singular : (plural ?? `${singular}s`)
+  return `${count} ${label}`
+}
+
 function Card({ title, value, sub, delta }: { title: string, value: string | number, sub?: string, delta?: string }) {
   return (
-    <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
+    <div className="bg-background border border-border/20 rounded-none p-4" style={{
       backgroundImage: `
         linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
