@@ -2,29 +2,53 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
+const TZ = 'America/Los_Angeles'
+
+function getTZOffsetMinutes(date: Date): number {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'shortOffset' })
+  const tz = f.formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'GMT+0'
+  const m = tz.match(/GMT([+-]?)((?:\d{1,2}))(?:\:(\d{2}))?/)
+  if (!m) return 0
+  const sign = m[1] === '-' ? -1 : 1
+  const h = parseInt(m[2] || '0', 10)
+  const mi = parseInt(m[3] || '0', 10)
+  const minutesFromGMT = sign * (h * 60 + mi)
+  return -minutesFromGMT
+}
+
+function floorToTZ(date: Date, unit: 'hour' | 'day') {
+  const off = getTZOffsetMinutes(date)
+  const shifted = new Date(date.getTime() - off * 60_000)
+  const s = new Date(shifted)
+  if (unit === 'hour') s.setUTCMinutes(0, 0, 0)
+  else s.setUTCHours(0, 0, 0, 0)
+  const back = new Date(s.getTime() + getTZOffsetMinutes(new Date(s.getTime() + off * 60_000)) * 60_000)
+  return back
+}
 
 function getWindow(range: RangeKey) {
   const now = new Date()
-  // Use a much larger buffer and ensure we're using UTC
-  const end = new Date(now.getTime() + 48 * 60 * 60 * 1000) // Add 48 hour buffer to be safe
+  // Align end to LA boundary and include current bucket by advancing one day
+  let end = floorToTZ(now, 'day')
+  end = new Date(end.getTime() + 24 * 60 * 60 * 1000)
   let start: Date | null = null
   let prevStart: Date | null = null
   
   switch (range) {
     case '24h':
-      start = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      start = new Date(end.getTime() - 24 * 60 * 60 * 1000)
       prevStart = new Date(start.getTime() - 24 * 60 * 60 * 1000)
       break
     case '7d':
-      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000)
       prevStart = new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000)
       break
     case '30d':
-      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000)
       prevStart = new Date(start.getTime() - 30 * 24 * 60 * 60 * 1000)
       break
     case '1y':
-      start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+      start = new Date(end.getTime() - 365 * 24 * 60 * 60 * 1000)
       prevStart = new Date(start.getTime() - 365 * 24 * 60 * 60 * 1000)
       break
     case 'all':

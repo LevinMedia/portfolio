@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import VisitorMap from '@/app/components/VisitorMap'
+import TimeSeriesChart from '@/app/components/TimeSeriesChart'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 
@@ -10,7 +11,6 @@ const ranges: { key: RangeKey, label: string }[] = [
   { key: '7d', label: 'Last 7d' },
   { key: '30d', label: 'Last 30d' },
   { key: '1y', label: 'Last 365d' },
-  { key: 'all', label: 'All time' },
 ]
 
 export default function StatsAdmin() {
@@ -74,6 +74,9 @@ export default function StatsAdmin() {
         <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
       </div>
 
+          {/* Time Series (moved under cards) */}
+          <TimeSeriesChart range={range} />
+
       {/* World Map Placeholder (keep simple without heavy map until styled) */}
       <div className="bg-background border border-border/20 rounded-none" style={{ 
         backgroundImage: `
@@ -100,14 +103,37 @@ export default function StatsAdmin() {
       }}>
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
-          <div className="divide-y divide-border/10">
+          <div>
             {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
-            {pages.map((p, i) => (
-              <div key={i} className="flex items-center justify-between py-2">
-                <div className="truncate max-w-[70%] text-foreground">{p.path}</div>
-                <div className="text-muted-foreground">{p.views} views • {p.uniques} uniques</div>
-              </div>
-            ))}
+            {pages.map((p, i) => {
+              const maxViews = Math.max(...pages.map(page => page.views))
+              const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
+              // Ensure minimum 2% width for visibility (much smaller, more proportional)
+              const scaledPercent = Math.max(calculatedPercent, 2)
+              // Scale to fit within available space (leaving room for stats)
+              const availableWidth = 75 // Use 75% of container width, leaving 25% for stats
+              const finalWidth = (scaledPercent / 100) * availableWidth
+              
+              return (
+                <div key={i} className="relative py-2">
+                  {/* Background bar */}
+                  <div 
+                    className="absolute inset-y-0 left-0 rounded-none opacity-20"
+                    style={{ 
+                      width: `${finalWidth}%`,
+                      backgroundColor: 'var(--accent)'
+                    }}
+                  />
+                  {/* Content */}
+                  <div className="relative flex items-center justify-between">
+                    <div className="truncate max-w-[70%] text-foreground font-medium pl-3">{p.path}</div>
+                    <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
+                      {p.views} views • {p.uniques} uniques
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -136,7 +162,7 @@ function Card({ title, value, sub, delta }: { title: string, value: string | num
       <div className="text-sm text-muted-foreground">{title}</div>
       <div className="text-2xl font-semibold text-foreground">{value}</div>
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
-      {delta && <div className={`text-xs ${delta.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{delta}</div>}
+      {delta && <div className={`text-xs ${delta.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{delta} vs previous period</div>}
     </div>
   )
 }
