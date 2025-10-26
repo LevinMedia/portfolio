@@ -3,6 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isbot } from 'isbot'
 
+type Geo = {
+  country?: string | null
+  region?: string | null
+  city?: string | null
+  latitude?: number | null
+  longitude?: number | null
+}
+
 function getReferrerDomain(referrer: string | null): string | null {
   try {
     if (!referrer) return null
@@ -24,6 +32,33 @@ function parseUtm(url: string | null): Record<string, string> {
       if (v) out[k] = v
     })
     return out
+  } catch {
+    return {}
+  }
+}
+
+type HeaderGetter = { get(name: string): string | null }
+
+function extractLocale(headerValue: string | null): string | null {
+  if (!headerValue) return null
+  const [first] = headerValue.split(',')
+  if (!first) return null
+  const [locale] = first.split(';')
+  return locale?.trim().replace('_', '-') || null
+}
+
+function geoFromAcceptLanguage(hdrs: HeaderGetter): Geo {
+  const locale = extractLocale(hdrs.get('accept-language'))
+  if (!locale) return {}
+  const parts = locale.split('-')
+  const region = parts[parts.length - 1]
+  if (!region || region.length !== 2) return {}
+
+  try {
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'region' })
+    const country = displayNames.of(region.toUpperCase())
+    if (!country) return {}
+    return { country }
   } catch {
     return {}
   }
@@ -65,8 +100,16 @@ export async function POST(request: NextRequest) {
   if (!visitorId) visitorId = crypto.randomUUID()
   if (!sessionId) sessionId = crypto.randomUUID()
 
-  // Derive geo from platform if available (Vercel/Next edge)
-  let geo = (request as { geo?: { country?: string; region?: string; city?: string; latitude?: number; longitude?: number } }).geo || {}
+  // Derive geo from platform if available and fall back to client hints
+  let geo: Geo = (request as { geo?: Geo }).geo || {}
+
+  if (!geo.country && !geo.region && !geo.city && geo.latitude == null && geo.longitude == null) {
+    // Use Accept-Language as a host-agnostic hint for visitor country
+    const localeGeo = geoFromAcceptLanguage(hdrs)
+    if (Object.keys(localeGeo).length > 0) {
+      geo = { ...geo, ...localeGeo }
+    }
+  }
   
   // Add mock geo data for local development
   if (process.env.NODE_ENV === 'development' && (!geo.country)) {
