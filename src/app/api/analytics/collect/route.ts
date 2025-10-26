@@ -40,7 +40,8 @@ function parseUtm(url: string | null): Record<string, string> {
 type HeaderGetter = { get(name: string): string | null }
 
 function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
-  if (request.ip) return request.ip
+  const directIp = (request as NextRequest & { ip?: string | null }).ip?.trim()
+  if (directIp) return directIp
   const forwarded = hdrs.get('x-forwarded-for')
   if (forwarded) {
     const [first] = forwarded.split(',')
