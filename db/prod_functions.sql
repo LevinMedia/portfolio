@@ -185,6 +185,41 @@ CREATE POLICY "Service role only - howdy_content" ON howdy_content
     FOR ALL USING (auth.role() = 'service_role');
 
 -- =====================================================
+-- ANALYTICS TABLES (SELF-HOSTED)
+-- =====================================================
+
+-- Pageviews table to store privacy-friendly analytics
+CREATE TABLE IF NOT EXISTS analytics_pageviews (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    path TEXT NOT NULL,
+    referrer_domain TEXT,
+    utm JSONB DEFAULT '{}',
+    visitor_id UUID,
+    session_id UUID,
+    is_bot BOOLEAN DEFAULT false,
+    country TEXT,
+    region TEXT,
+    city TEXT,
+    latitude REAL,
+    longitude REAL,
+    is_admin BOOLEAN DEFAULT false,
+    is_private BOOLEAN DEFAULT false
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_time ON analytics_pageviews(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_path ON analytics_pageviews(path);
+CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_country ON analytics_pageviews(country);
+CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_time_path ON analytics_pageviews(occurred_at DESC, path);
+
+-- Enable RLS and restrict to service role
+ALTER TABLE analytics_pageviews ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role only - analytics_pageviews" ON analytics_pageviews;
+CREATE POLICY "Service role only - analytics_pageviews" ON analytics_pageviews
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- =====================================================
 -- SAMPLE DATA (for reference)
 -- =====================================================
 /*

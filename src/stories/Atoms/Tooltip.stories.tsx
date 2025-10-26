@@ -363,36 +363,38 @@ export const WithNavigation: Story = {
         </p>
       </div>
       
-      <Navigation>
-        <Tooltip codeGenerator={getNavigationItemCode}>
-          <NavigationItem 
-            icon={<BriefcaseIcon className="w-5 h-5" />}
-            label="Work history"
-            href="/work-history"
-          />
-        </Tooltip>
+      {/* Navigation component is now self-contained and doesn't take children */}
+      <div className="p-4 border border-border/20 rounded-none">
+        <p className="text-muted-foreground text-sm">Navigation component is now self-contained</p>
+        <Navigation />
+      </div>
         
-        <Tooltip codeGenerator={getNavigationItemCode}>
-          <NavigationItem 
-            icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
-            label="About David"
-          />
-        </Tooltip>
-        
-        <Tooltip codeGenerator={getNavigationItemCode}>
-          <NavigationItem 
-            icon={<ChartBarSquareIcon className="w-5 h-5" />}
-            label="Stats"
-          />
-        </Tooltip>
-        
-        <Tooltip codeGenerator={getNavigationItemCode}>
-          <NavigationItem 
-            icon={<PencilSquareIcon className="w-5 h-5" />}
-            label="Sign the guest book"
-          />
-        </Tooltip>
-      </Navigation>
+        {/* Individual NavigationItems for demonstration */}
+        <div className="flex gap-4 p-4">
+          <Tooltip codeGenerator={getNavigationItemCode}>
+            <NavigationItem 
+              icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
+              label="About David"
+              onClick={() => {}}
+            />
+          </Tooltip>
+          
+          <Tooltip codeGenerator={getNavigationItemCode}>
+            <NavigationItem 
+              icon={<ChartBarSquareIcon className="w-5 h-5" />}
+              label="Stats"
+              onClick={() => {}}
+            />
+          </Tooltip>
+          
+          <Tooltip codeGenerator={getNavigationItemCode}>
+            <NavigationItem 
+              icon={<PencilSquareIcon className="w-5 h-5" />}
+              label="Sign the guest book"
+              onClick={() => {}}
+            />
+          </Tooltip>
+        </div>
     </div>
   ),
   parameters: {
@@ -410,12 +412,18 @@ export const NavigationWithCustomTooltips: Story = {
         </p>
       </div>
       
-      <Navigation>
+      {/* Navigation component is now self-contained */}
+      <div className="p-4 border border-border/20 rounded-none mb-4">
+        <Navigation />
+      </div>
+      
+      {/* Individual NavigationItems with custom tooltips */}
+      <div className="flex gap-4 p-4">
         <Tooltip tooltipType="text" tooltipContent="View your professional experience">
           <NavigationItem 
             icon={<BriefcaseIcon className="w-5 h-5" />}
             label="Work history"
-            href="/work-history"
+            onClick={() => {}}
           />
         </Tooltip>
         
@@ -423,6 +431,7 @@ export const NavigationWithCustomTooltips: Story = {
           <NavigationItem 
             icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
             label="About David"
+            onClick={() => {}}
           />
         </Tooltip>
         
@@ -430,6 +439,7 @@ export const NavigationWithCustomTooltips: Story = {
           <NavigationItem 
             icon={<ChartBarSquareIcon className="w-5 h-5" />}
             label="Stats"
+            onClick={() => {}}
           />
         </Tooltip>
         
@@ -437,9 +447,10 @@ export const NavigationWithCustomTooltips: Story = {
           <NavigationItem 
             icon={<PencilSquareIcon className="w-5 h-5" />}
             label="Sign the guest book"
+            onClick={() => {}}
           />
         </Tooltip>
-      </Navigation>
+      </div>
     </div>
   ),
   parameters: {
@@ -462,7 +473,7 @@ export const NavigationItemStandalone: Story = {
             <NavigationItem 
               icon={<BriefcaseIcon className="w-5 h-5" />}
               label="Work history"
-              href="/work-history"
+              onClick={() => {}}
             />
           </Tooltip>
         </div>
@@ -473,6 +484,7 @@ export const NavigationItemStandalone: Story = {
             <NavigationItem 
               icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
               label="About David"
+              onClick={() => {}}
             />
           </Tooltip>
         </div>
@@ -483,6 +495,7 @@ export const NavigationItemStandalone: Story = {
             <NavigationItem 
               icon={<ChartBarSquareIcon className="w-5 h-5" />}
               label="Stats"
+              onClick={() => {}}
             />
           </Tooltip>
         </div>
@@ -493,6 +506,7 @@ export const NavigationItemStandalone: Story = {
             <NavigationItem 
               icon={<PencilSquareIcon className="w-5 h-5" />}
               label="Sign the guest book"
+              onClick={() => {}}
             />
           </Tooltip>
         </div>
@@ -517,26 +531,11 @@ export const WithNavigationWrapper: Story = {
         </p>
       </div>
       
+      {/* Navigation component is now self-contained */}
       <Tooltip codeGenerator={getNavigationCode}>
-        <Navigation>
-          <NavigationItem 
-            icon={<BriefcaseIcon className="w-5 h-5" />}
-            label="Work history"
-            href="/work-history"
-          />
-          <NavigationItem 
-            icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
-            label="About David"
-          />
-          <NavigationItem 
-            icon={<ChartBarSquareIcon className="w-5 h-5" />}
-            label="Stats"
-          />
-          <NavigationItem 
-            icon={<PencilSquareIcon className="w-5 h-5" />}
-            label="Sign the guest book"
-          />
-        </Navigation>
+        <div className="p-4 border border-border/20 rounded-none">
+          <Navigation />
+        </div>
       </Tooltip>
     </div>
   ),

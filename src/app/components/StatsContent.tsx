@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import VisitorMap from '@/app/components/VisitorMap'
-import TimeSeriesChart from '@/app/components/TimeSeriesChart'
+import VisitorMap from './VisitorMap'
+import TimeSeriesChart from './TimeSeriesChart'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 
@@ -13,7 +13,7 @@ const ranges: { key: RangeKey, label: string }[] = [
   { key: '1y', label: 'Last 365d' },
 ]
 
-export default function StatsAdmin() {
+export default function StatsContent() {
   const [range, setRange] = useState<RangeKey>('30d')
   const [summary, setSummary] = useState<{
     totals?: { pageViews?: number; uniqueVisitors?: number; countries?: number; topPage?: { path?: string; views?: number } };
@@ -75,76 +75,72 @@ export default function StatsAdmin() {
       {!loading && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
-        <Card title="Unique Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
-        <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
-        <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
-      </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
+            <Card title="Unique Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
+            <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
+            <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
+          </div>
 
           {/* Time Series (moved under cards) */}
           <TimeSeriesChart range={range} />
 
-      {/* World Map Placeholder (keep simple without heavy map until styled) */}
-      <div className="bg-background border border-border/20 rounded-none" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations Map</h3>
-          <VisitorMap points={geo} />
-        </div>
-      </div>
+          {/* Visitor Map */}
+          <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
+            backgroundImage: `
+              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
+            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
+          }}>
+            <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations</h3>
+            <VisitorMap points={geo} />
+          </div>
 
-      {/* Top Pages */}
-      <div className="bg-background border border-border/20 rounded-none" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
-          <div>
-            {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
-            {pages.map((p, i) => {
-              const maxViews = Math.max(...pages.map(page => page.views))
-              const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
-              // Ensure minimum 2% width for visibility (much smaller, more proportional)
-              const scaledPercent = Math.max(calculatedPercent, 2)
-              // Scale to fit within available space (leaving room for stats)
-              const availableWidth = 75 // Use 75% of container width, leaving 25% for stats
-              const finalWidth = (scaledPercent / 100) * availableWidth
-              
-              return (
-                <div key={i} className="relative py-2">
-                  {/* Background bar */}
-                  <div 
-                    className="absolute inset-y-0 left-0 rounded-none opacity-20"
-                    style={{ 
-                      width: `${finalWidth}%`,
-                      backgroundColor: 'var(--accent)'
-                    }}
-                  />
-                  {/* Content */}
-                  <div className="relative flex items-center justify-between">
-                    <div className="truncate max-w-[70%] text-foreground font-medium pl-3">{p.path}</div>
-                    <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
-                      {p.views} views • {p.uniques} uniques
+          {/* Top Pages */}
+          <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
+            backgroundImage: `
+              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
+            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
+          }}>
+            <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
+            <div className="space-y-2">
+              {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
+              {pages.slice(0, 10).map((p, i) => {
+                const maxViews = Math.max(...pages.map(page => page.views))
+                const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
+                // Ensure minimum 2% width for visibility (much smaller, more proportional)
+                const scaledPercent = Math.max(calculatedPercent, 2)
+                // Scale to fit within available space (leaving room for stats)
+                const availableWidth = 75 // Use 75% of container width, leaving 25% for stats
+                const finalWidth = (scaledPercent / 100) * availableWidth
+                
+                return (
+                  <div key={i} className="relative py-2">
+                    {/* Background bar */}
+                    <div 
+                      className="absolute inset-y-0 left-0 rounded-none opacity-20"
+                      style={{ 
+                        width: `${finalWidth}%`,
+                        backgroundColor: 'var(--accent)'
+                      }}
+                    />
+                    {/* Content */}
+                    <div className="relative flex items-center justify-between">
+                      <div className="truncate max-w-[70%] text-sm text-foreground font-medium pl-3">{p.path}</div>
+                      <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
+                        {p.views} views • {p.uniques} unique
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
-      </div>
         </>
       )}
     </div>
@@ -167,11 +163,10 @@ function Card({ title, value, sub, delta }: { title: string, value: string | num
       backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
       backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
     }}>
-      <div className="text-sm text-muted-foreground">{title}</div>
-      <div className="text-2xl font-semibold text-foreground">{value}</div>
+      <div className="text-xs text-muted-foreground mb-1">{title}</div>
+      <div className="text-lg font-semibold text-foreground">{value}</div>
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
       {delta && <div className={`text-xs ${delta.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{delta} vs previous period</div>}
     </div>
   )
 }
-

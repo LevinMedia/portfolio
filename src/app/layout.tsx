@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AnalyticsTracker from "./components/AnalyticsTracker";
+import { Suspense } from "react";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,6 +29,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
         {children}
       </body>
     </html>
