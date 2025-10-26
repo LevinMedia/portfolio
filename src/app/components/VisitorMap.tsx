@@ -99,7 +99,7 @@ export default function VisitorMap({ points, showMockData = false }: VisitorMapP
   const [displayPoints, setDisplayPoints] = useState<GeoPoint[]>([])
 
   useEffect(() => {
-    if (showMockData && points.length === 0) {
+    if (process.env.NODE_ENV === 'development' && showMockData && points.length === 0) {
       setDisplayPoints(mockGeoData)
     } else {
       // Normalize optional fields to match LeafletMap required types

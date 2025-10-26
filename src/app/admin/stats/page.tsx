@@ -96,7 +96,7 @@ export default function StatsAdmin() {
       }}>
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations Map</h3>
-          <VisitorMap points={geo} showMockData={true} />
+          <VisitorMap points={geo} />
         </div>
       </div>
 

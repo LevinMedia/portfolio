@@ -95,7 +95,7 @@ export default function StatsContent() {
             backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
           }}>
             <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations</h3>
-            <VisitorMap points={geo} showMockData={true} />
+            <VisitorMap points={geo} />
           </div>
 
           {/* Top Pages */}
