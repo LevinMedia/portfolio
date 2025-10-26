@@ -73,7 +73,7 @@ function allowedAggs(range: RangeKey): AggKey[] {
 }
 
 async function getAllPageviewsInWindow(
-  supabase: SupabaseClient<unknown, 'public', unknown>,
+  supabase: SupabaseClient,
   start: Date | null,
   end: Date
 ) {
