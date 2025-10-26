@@ -20,7 +20,7 @@ export default function StatsContent() {
     deltas?: { pageViewsPct?: number; uniqueVisitorsPct?: number };
   } | null>(null)
   const [pages, setPages] = useState<{ path: string; views: number; uniques: number }[]>([])
-  const [geo, setGeo] = useState<{ country: string; region?: string; city?: string; latitude?: number; longitude?: number; count: number }[]>([])
+  const [geo, setGeo] = useState<{ country: string; region: string | null; city: string | null; latitude: number | null; longitude: number | null; count: number }[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -34,7 +34,15 @@ export default function StatsContent() {
       if (cancelled) return
       setSummary(s)
       setPages(p.pages || [])
-      setGeo(g.points || [])
+      const normalized = (g.points || []).map((p: { country: string; region?: string; city?: string; latitude?: number; longitude?: number; count: number }) => ({
+        country: p.country,
+        region: p.region ?? null,
+        city: p.city ?? null,
+        latitude: p.latitude ?? null,
+        longitude: p.longitude ?? null,
+        count: p.count,
+      }))
+      setGeo(normalized)
     }).finally(() => !cancelled && setLoading(false))
     return () => { cancelled = true }
   }, [range])
