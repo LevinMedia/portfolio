@@ -1,7 +1,15 @@
-import { cookies, headers } from 'next/headers'
+import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isbot } from 'isbot'
+
+type Geo = {
+  country?: string | null
+  region?: string | null
+  city?: string | null
+  latitude?: number | null
+  longitude?: number | null
+}
 
 function getReferrerDomain(referrer: string | null): string | null {
   try {
@@ -29,8 +37,86 @@ function parseUtm(url: string | null): Record<string, string> {
   }
 }
 
+type HeaderGetter = { get(name: string): string | null }
+
+function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
+  const directIp = (request as NextRequest & { ip?: string | null }).ip?.trim()
+  if (directIp) return directIp
+  const forwarded = hdrs.get('x-forwarded-for')
+  if (forwarded) {
+    const [first] = forwarded.split(',')
+    if (first && first.trim()) return first.trim()
+  }
+  const realIp = hdrs.get('x-real-ip')
+  if (realIp && realIp.trim()) return realIp.trim()
+  return null
+}
+
+function deriveVisitorId(existing: string | null | undefined, request: NextRequest, hdrs: HeaderGetter): string {
+  if (existing) return existing
+
+  const ip = getClientIp(request, hdrs)
+  const ua = hdrs.get('user-agent') || ''
+  const acceptLanguage = hdrs.get('accept-language') || ''
+
+  if (ip || ua || acceptLanguage) {
+    const hash = createHash('sha256')
+    if (ip) hash.update(ip)
+    hash.update('|')
+    hash.update(ua)
+    hash.update('|')
+    hash.update(acceptLanguage)
+    return hash.digest('hex')
+  }
+
+  return crypto.randomUUID()
+}
+
+function geoFromVercelHeaders(hdrs: HeaderGetter): Geo {
+  const country = hdrs.get('x-vercel-ip-country')
+  const region = hdrs.get('x-vercel-ip-country-region') || hdrs.get('x-vercel-ip-region')
+  const city = hdrs.get('x-vercel-ip-city')
+  const latitude = hdrs.get('x-vercel-ip-latitude')
+  const longitude = hdrs.get('x-vercel-ip-longitude')
+
+  const parsed: Geo = {}
+
+  if (country) parsed.country = country
+  if (region) parsed.region = region
+  if (city) parsed.city = city
+  if (latitude) parsed.latitude = Number.parseFloat(latitude)
+  if (longitude) parsed.longitude = Number.parseFloat(longitude)
+
+  return parsed
+}
+
+function extractLocale(headerValue: string | null): string | null {
+  if (!headerValue) return null
+  const [first] = headerValue.split(',')
+  if (!first) return null
+  const [locale] = first.split(';')
+  return locale?.trim().replace('_', '-') || null
+}
+
+function geoFromAcceptLanguage(hdrs: HeaderGetter): Geo {
+  const locale = extractLocale(hdrs.get('accept-language'))
+  if (!locale) return {}
+  const parts = locale.split('-')
+  const region = parts[parts.length - 1]
+  if (!region || region.length !== 2) return {}
+
+  try {
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'region' })
+    const country = displayNames.of(region.toUpperCase())
+    if (!country) return {}
+    return { country }
+  } catch {
+    return {}
+  }
+}
+
 export async function POST(request: NextRequest) {
-  const hdrs = await headers()
+  const hdrs = request.headers
   const userAgent = hdrs.get('user-agent') || ''
   const dnt = hdrs.get('dnt') === '1'
   const referer = hdrs.get('referer')
@@ -57,16 +143,35 @@ export async function POST(request: NextRequest) {
   }
 
   // Use cookies for visitor and session identification
-  const cookieStore = await cookies()
-  let visitorId = cookieStore.get('lm_vid')?.value
-  let sessionId = cookieStore.get('lm_sid')?.value
-  const newVisitor = !visitorId
-  const newSession = !sessionId
-  if (!visitorId) visitorId = crypto.randomUUID()
-  if (!sessionId) sessionId = crypto.randomUUID()
+  const cookieStore = request.cookies
+  const visitorCookie = cookieStore.get('lm_vid')?.value || null
+  const sessionCookie = cookieStore.get('lm_sid')?.value || null
 
-  // Derive geo from platform if available (Vercel/Next edge)
-  let geo = (request as { geo?: { country?: string; region?: string; city?: string; latitude?: number; longitude?: number } }).geo || {}
+  const visitorId = deriveVisitorId(visitorCookie, request, hdrs)
+  const sessionId = sessionCookie || crypto.randomUUID()
+
+  const newVisitor = !visitorCookie
+  const newSession = !sessionCookie
+
+  // Derive geo from platform if available and fall back to client hints
+  let geo: Geo = (request as { geo?: Geo }).geo || {}
+
+  if (!geo.country || !geo.region || !geo.city || geo.latitude == null || geo.longitude == null) {
+    const headerGeo = geoFromVercelHeaders(hdrs)
+    if (headerGeo.country && !geo.country) geo = { ...geo, country: headerGeo.country }
+    if (headerGeo.region && !geo.region) geo = { ...geo, region: headerGeo.region }
+    if (headerGeo.city && !geo.city) geo = { ...geo, city: headerGeo.city }
+    if (typeof headerGeo.latitude === 'number' && geo.latitude == null) geo = { ...geo, latitude: headerGeo.latitude }
+    if (typeof headerGeo.longitude === 'number' && geo.longitude == null) geo = { ...geo, longitude: headerGeo.longitude }
+  }
+
+  if (!geo.country) {
+    // Use Accept-Language as a host-agnostic hint for visitor country
+    const localeGeo = geoFromAcceptLanguage(hdrs)
+    if (Object.keys(localeGeo).length > 0) {
+      geo = { ...localeGeo, ...geo }
+    }
+  }
   
   // Add mock geo data for local development
   if (process.env.NODE_ENV === 'development' && (!geo.country)) {
@@ -102,8 +207,8 @@ export async function POST(request: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true })
-  if (newVisitor) res.cookies.set('lm_vid', visitorId!, { httpOnly: false, sameSite: 'lax', maxAge: 31536000 })
-  if (newSession) res.cookies.set('lm_sid', sessionId!, { httpOnly: false, sameSite: 'lax', maxAge: 60 * 60 * 4 })
+  if (newVisitor) res.cookies.set('lm_vid', visitorId, { httpOnly: false, sameSite: 'lax', maxAge: 31536000, path: '/' })
+  if (newSession) res.cookies.set('lm_sid', sessionId, { httpOnly: false, sameSite: 'lax', maxAge: 60 * 60 * 4, path: '/' })
   return res
 }
 
