@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Force Tailwind classes to use CSS variables - THEME SYSTEM FIX */
+.bg-primary { background-color: var(--primary) !important; }
+.bg-secondary { background-color: var(--secondary) !important; }
+.bg-accent { background-color: var(--accent) !important; }
+.bg-destructive { background-color: var(--destructive) !important; }
+
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--secondary) !important; }
+.text-accent { color: var(--accent) !important; }
+.text-destructive { color: var(--destructive) !important; }
+
+.border-primary { border-color: var(--primary) !important; }
+.border-secondary { border-color: var(--secondary) !important; }
+.border-accent { border-color: var(--accent) !important; }
+.border-destructive { border-color: var(--destructive) !important; }
+
+.bg-primary\/10 { background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important; }
+.bg-secondary\/10 { background-color: color-mix(in srgb, var(--secondary) 10%, transparent) !important; }
+.bg-accent\/10 { background-color: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
+
+.hover\:bg-primary\/90:hover { background-color: color-mix(in srgb, var(--primary) 90%, black) !important; }
+.hover\:bg-secondary\/90:hover { background-color: color-mix(in srgb, var(--secondary) 90%, black) !important; }
+.hover\:bg-accent\/90:hover { background-color: color-mix(in srgb, var(--accent) 90%, black) !important; }
+
 /* Video.js Player Customization */
 .video-js {
   font-family: inherit;

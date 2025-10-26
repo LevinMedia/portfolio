@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import VisitorMap from '@/app/components/VisitorMap'
+import VisitorMap from './VisitorMap'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 
@@ -13,7 +13,7 @@ const ranges: { key: RangeKey, label: string }[] = [
   { key: 'all', label: 'All time' },
 ]
 
-export default function StatsAdmin() {
+export default function StatsContent() {
   const [range, setRange] = useState<RangeKey>('30d')
   const [summary, setSummary] = useState<{
     totals?: { pageViews?: number; uniqueVisitors?: number; countries?: number; topPage?: { path?: string; views?: number } };
@@ -67,50 +67,46 @@ export default function StatsAdmin() {
       {!loading && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
-        <Card title="Unique Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
-        <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
-        <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
-      </div>
-
-      {/* World Map Placeholder (keep simple without heavy map until styled) */}
-      <div className="bg-background border border-border/20 rounded-none" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations Map</h3>
-          <VisitorMap points={geo} showMockData={true} />
-        </div>
-      </div>
-
-      {/* Top Pages */}
-      <div className="bg-background border border-border/20 rounded-none" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
-          <div className="divide-y divide-border/10">
-            {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
-            {pages.map((p, i) => (
-              <div key={i} className="flex items-center justify-between py-2">
-                <div className="truncate max-w-[70%] text-foreground">{p.path}</div>
-                <div className="text-muted-foreground">{p.views} views • {p.uniques} uniques</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
+            <Card title="Unique Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
+            <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
+            <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={`${summary?.totals?.topPage?.views ?? 0} views`} />
           </div>
-        </div>
-      </div>
+
+          {/* Visitor Map */}
+          <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
+            backgroundImage: `
+              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
+            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
+          }}>
+            <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations</h3>
+            <VisitorMap points={geo} showMockData={true} />
+          </div>
+
+          {/* Top Pages */}
+          <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
+            backgroundImage: `
+              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
+            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
+          }}>
+            <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
+            <div className="space-y-2">
+              {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
+              {pages.slice(0, 10).map((p, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-border/10 last:border-b-0">
+                  <div className="truncate max-w-[70%] text-sm text-foreground">{p.path}</div>
+                  <div className="text-muted-foreground text-sm">{p.views} views • {p.uniques} unique</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
     </div>
@@ -133,11 +129,10 @@ function Card({ title, value, sub, delta }: { title: string, value: string | num
       backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
       backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
     }}>
-      <div className="text-sm text-muted-foreground">{title}</div>
-      <div className="text-2xl font-semibold text-foreground">{value}</div>
+      <div className="text-xs text-muted-foreground mb-1">{title}</div>
+      <div className="text-lg font-semibold text-foreground">{value}</div>
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
       {delta && <div className={`text-xs ${delta.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{delta}</div>}
     </div>
   )
 }
-

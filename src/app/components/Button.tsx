@@ -96,12 +96,32 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       large: 'h-12 px-6 text-base rounded-lg'
     }
     
+    // Get CSS variable values for inline styles as fallback
+    const getCSSVarValue = (varName: string): string => {
+      if (typeof window === 'undefined') return ''
+      return getComputedStyle(document.documentElement).getPropertyValue(`--${varName}`).trim()
+    }
+
+    // Create inline styles for solid buttons to ensure colors work
+    const getInlineStyles = (): React.CSSProperties => {
+      if (style !== 'solid') return {}
+      
+      const colorVar = getCSSVarValue(color)
+      if (!colorVar) return {}
+      
+      return {
+        backgroundColor: colorVar,
+        borderColor: colorVar
+      }
+    }
+
     return (
       <HeadlessButton
         ref={ref}
         type={type}
         disabled={disabled}
         onClick={onClick}
+        style={getInlineStyles()}
         className={clsx(
           baseStyles,
           styleVariants[style][color],

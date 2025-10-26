@@ -98,10 +98,20 @@ export default function SiteSettingsContent() {
       }
     }
 
-    // Apply custom colors
+    // Apply custom colors with all related variables
     root.style.setProperty('--primary', newTheme.primaryColor)
+    root.style.setProperty('--primary-foreground', '#ffffff')
     root.style.setProperty('--secondary', newTheme.secondaryColor)
+    root.style.setProperty('--secondary-foreground', '#ffffff')
     root.style.setProperty('--accent', newTheme.accentColor)
+    root.style.setProperty('--accent-foreground', '#ffffff')
+    root.style.setProperty('--ring', newTheme.primaryColor) // Ring color matches primary
+    
+    console.log('Theme applied:', {
+      primary: newTheme.primaryColor,
+      secondary: newTheme.secondaryColor,
+      accent: newTheme.accentColor
+    })
   }
 
   const handleModeChange = (mode: 'light' | 'dark' | 'system') => {
@@ -120,6 +130,10 @@ export default function SiteSettingsContent() {
     // Apply immediately to the site
     const root = document.documentElement
     root.style.setProperty(`--${colorType}`, color)
+    root.style.setProperty(`--${colorType}-foreground`, '#ffffff')
+    if (colorType === 'primary') {
+      root.style.setProperty('--ring', color)
+    }
     
     // Save to localStorage immediately
     localStorage.setItem('site-theme', JSON.stringify(newTheme))

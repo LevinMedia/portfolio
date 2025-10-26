@@ -57,6 +57,7 @@ const Drawer: React.FC<DrawerProps> = ({
         style={{
           overflowY: 'auto',
           zIndex: 10,
+          backgroundColor: 'var(--background)', // Fallback inline style
           backgroundImage: `
             linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -78,7 +79,8 @@ const Drawer: React.FC<DrawerProps> = ({
           className="flex items-center justify-between bg-background border-b border-blue-200/15 sticky top-0 z-30"
           style={{ 
             padding: 'var(--grid-major)',
-            height: '64px'
+            height: '64px',
+            backgroundColor: 'var(--background)' // Fallback inline style
           }}
         >
           <div className="flex items-center gap-3 overflow-hidden">
