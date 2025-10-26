@@ -18,7 +18,6 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   const [agg, setAgg] = useState<AggKey>('day')
   const [allowedAggs, setAllowedAggs] = useState<AggKey[]>(['day'])
   const [points, setPoints] = useState<Point[]>([])
-  const [loading, setLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const clipPathId = useRef<string>(`ts-clip-${Math.random().toString(36).slice(2)}`)
   const [containerWidth, setContainerWidth] = useState<number>(0)
@@ -27,7 +26,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   // Fetch data whenever range or aggregation changes
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
+    // fetching state not used for UI
     fetch(`/api/admin/stats/timeseries?range=${range}&agg=${agg}`)
       .then(r => r.json())
       .then(d => {
@@ -37,11 +36,11 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
         setAgg(d.agg)
         setPoints(d.points || [])
       })
-      .finally(() => !cancelled && setLoading(false))
+      .finally(() => {})
     return () => { cancelled = true }
   }, [range, agg])
 
-  const disabledSelect = useMemo(() => allowedAggs.length === 1, [allowedAggs])
+  useMemo(() => allowedAggs.length === 1, [allowedAggs])
 
   // Track container size for responsive redraws
   useEffect(() => {
@@ -115,7 +114,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     } else if (agg === 'day') {
       // Ensure the last tick is the current LA day
       const now = new Date()
-      const laMidnight = new Date(now)
+    const laMidnight = new Date(now) // not used; keeping logic below
       const laFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' })
       const parts = laFmt.formatToParts(now)
       const y = Number(parts.find(p => p.type === 'year')?.value)
@@ -408,7 +407,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       tipBox.attr('transform', `translate(${boxX}, ${boxY})`)
     }
 
-    const overlay = svg.append('rect')
+    svg.append('rect')
       .attr('x', margin.left)
       .attr('y', margin.top)
       .attr('width', width - margin.left - margin.right)
@@ -416,7 +415,10 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('fill', 'transparent')
       .style('cursor', 'crosshair')
       .on('mouseenter', () => tip.style('display', null))
-      .on('mousemove', (event: MouseEvent) => updateTip((event as any).offsetX, (event as any).offsetY))
+      .on('mousemove', (event: MouseEvent) => {
+        const ev = event as unknown as { offsetX: number; offsetY: number }
+        updateTip(ev.offsetX, ev.offsetY)
+      })
       .on('mouseleave', () => tip.style('display', 'none'))
 
   }, [points, agg, containerWidth, chartHeight])
