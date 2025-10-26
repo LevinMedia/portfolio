@@ -241,7 +241,7 @@ function ClusterLayer({ points }: { points: LeafletMapProps['points'] }) {
               eventHandlers={{
                 click: () => {
                   const expansionZoom = Math.min(
-                    supercluster.getClusterExpansionZoom(cluster.id!),
+                    supercluster.getClusterExpansionZoom(Number(cluster.id)),
                     15
                   )
                   map.setView([latitude, longitude], expansionZoom, {
