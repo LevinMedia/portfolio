@@ -1,4 +1,4 @@
-import { cookies, headers } from 'next/headers'
+import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isbot } from 'isbot'
@@ -38,6 +38,38 @@ function parseUtm(url: string | null): Record<string, string> {
 }
 
 type HeaderGetter = { get(name: string): string | null }
+
+function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
+  if (request.ip) return request.ip
+  const forwarded = hdrs.get('x-forwarded-for')
+  if (forwarded) {
+    const [first] = forwarded.split(',')
+    if (first && first.trim()) return first.trim()
+  }
+  const realIp = hdrs.get('x-real-ip')
+  if (realIp && realIp.trim()) return realIp.trim()
+  return null
+}
+
+function deriveVisitorId(existing: string | null | undefined, request: NextRequest, hdrs: HeaderGetter): string {
+  if (existing) return existing
+
+  const ip = getClientIp(request, hdrs)
+  const ua = hdrs.get('user-agent') || ''
+  const acceptLanguage = hdrs.get('accept-language') || ''
+
+  if (ip || ua || acceptLanguage) {
+    const hash = createHash('sha256')
+    if (ip) hash.update(ip)
+    hash.update('|')
+    hash.update(ua)
+    hash.update('|')
+    hash.update(acceptLanguage)
+    return hash.digest('hex')
+  }
+
+  return crypto.randomUUID()
+}
 
 function geoFromVercelHeaders(hdrs: HeaderGetter): Geo {
   const country = hdrs.get('x-vercel-ip-country')
@@ -83,7 +115,7 @@ function geoFromAcceptLanguage(hdrs: HeaderGetter): Geo {
 }
 
 export async function POST(request: NextRequest) {
-  const hdrs = await headers()
+  const hdrs = request.headers
   const userAgent = hdrs.get('user-agent') || ''
   const dnt = hdrs.get('dnt') === '1'
   const referer = hdrs.get('referer')
@@ -110,13 +142,15 @@ export async function POST(request: NextRequest) {
   }
 
   // Use cookies for visitor and session identification
-  const cookieStore = await cookies()
-  let visitorId = cookieStore.get('lm_vid')?.value
-  let sessionId = cookieStore.get('lm_sid')?.value
-  const newVisitor = !visitorId
-  const newSession = !sessionId
-  if (!visitorId) visitorId = crypto.randomUUID()
-  if (!sessionId) sessionId = crypto.randomUUID()
+  const cookieStore = request.cookies
+  const visitorCookie = cookieStore.get('lm_vid')?.value || null
+  const sessionCookie = cookieStore.get('lm_sid')?.value || null
+
+  const visitorId = deriveVisitorId(visitorCookie, request, hdrs)
+  const sessionId = sessionCookie || crypto.randomUUID()
+
+  const newVisitor = !visitorCookie
+  const newSession = !sessionCookie
 
   // Derive geo from platform if available and fall back to client hints
   let geo: Geo = (request as { geo?: Geo }).geo || {}
@@ -172,8 +206,8 @@ export async function POST(request: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true })
-  if (newVisitor) res.cookies.set('lm_vid', visitorId!, { httpOnly: false, sameSite: 'lax', maxAge: 31536000 })
-  if (newSession) res.cookies.set('lm_sid', sessionId!, { httpOnly: false, sameSite: 'lax', maxAge: 60 * 60 * 4 })
+  if (newVisitor) res.cookies.set('lm_vid', visitorId, { httpOnly: false, sameSite: 'lax', maxAge: 31536000, path: '/' })
+  if (newSession) res.cookies.set('lm_sid', sessionId, { httpOnly: false, sameSite: 'lax', maxAge: 60 * 60 * 4, path: '/' })
   return res
 }
 
