@@ -114,7 +114,6 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     } else if (agg === 'day') {
       // Ensure the last tick is the current LA day
       const now = new Date()
-    const laMidnight = new Date(now) // not used; keeping logic below
       const laFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' })
       const parts = laFmt.formatToParts(now)
       const y = Number(parts.find(p => p.type === 'year')?.value)
@@ -187,7 +186,9 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       return { ticks, kind }
     }
 
-    let { ticks: tickValues, kind: tickKind } = computeTicks(domain[0], domain[1])
+    const tickResult = computeTicks(domain[0], domain[1])
+    let tickValues = tickResult.ticks
+    const tickKind = tickResult.kind
     // Filter ticks for small widths to avoid overcrowding
     const maxTicks = Math.max(4, Math.floor((width - margin.left - margin.right) / 80))
     if (tickValues.length > maxTicks) {
@@ -249,7 +250,8 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
         .call(d3.axisLeft(y).tickValues(yTicks).tickSizeOuter(0))
     }
 
-    svg.append('g').attr('class', 'x-axis').call(xAxis as any)
+    const xAxisSelection = svg.append('g').attr('class', 'x-axis') as unknown as d3.Selection<SVGGElement, unknown, null, undefined>
+    xAxisSelection.call(xAxis)
     // Small screens: shrink/tilt x labels for readability
     if (width < 420) {
       svg.select('.x-axis').selectAll('text')
@@ -260,7 +262,8 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
           .style('text-anchor', 'end')
       }
     }
-    svg.append('g').attr('class', 'y-axis').call(yAxis as any)
+    const yAxisSelection = svg.append('g').attr('class', 'y-axis') as unknown as d3.Selection<SVGGElement, unknown, null, undefined>
+    yAxisSelection.call(yAxis)
 
     // Horizontal gridlines aligned to y ticks; baseline solid, others dotted
     const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#334155'
@@ -415,9 +418,10 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('fill', 'transparent')
       .style('cursor', 'crosshair')
       .on('mouseenter', () => tip.style('display', null))
-      .on('mousemove', (event: MouseEvent) => {
-        const ev = event as unknown as { offsetX: number; offsetY: number }
-        updateTip(ev.offsetX, ev.offsetY)
+      .on('mousemove', function (event: MouseEvent) {
+        // Compute mouse position relative to the SVG using d3.pointer
+        const [mx, my] = d3.pointer(event, this)
+        updateTip(mx, my)
       })
       .on('mouseleave', () => tip.style('display', 'none'))
 
