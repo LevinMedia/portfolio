@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 type AggKey = 'hour' | 'day' | 'week' | 'month' | 'quarter'
@@ -72,7 +72,11 @@ function allowedAggs(range: RangeKey): AggKey[] {
   return ['day', 'week', 'month', 'quarter']
 }
 
-async function getAllPageviewsInWindow(supabase: ReturnType<typeof createClient>, start: Date | null, end: Date) {
+async function getAllPageviewsInWindow(
+  supabase: SupabaseClient<unknown, 'public', unknown>,
+  start: Date | null,
+  end: Date
+) {
   let q = supabase
     .from('analytics_pageviews')
     .select('occurred_at, visitor_id', { head: false })
