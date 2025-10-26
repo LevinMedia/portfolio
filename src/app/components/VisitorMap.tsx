@@ -13,12 +13,12 @@ const LeafletMap = dynamic(() => import('./LeafletMap'), {
   )
 })
 
-interface GeoPoint {
+type GeoPoint = {
   country: string
-  region?: string | null
-  city?: string | null
-  latitude?: number | null
-  longitude?: number | null
+  region: string | null
+  city: string | null
+  latitude: number | null
+  longitude: number | null
   count: number
 }
 
@@ -102,7 +102,16 @@ export default function VisitorMap({ points, showMockData = false }: VisitorMapP
     if (showMockData && points.length === 0) {
       setDisplayPoints(mockGeoData)
     } else {
-      setDisplayPoints(points)
+      // Normalize optional fields to match LeafletMap required types
+      const normalized = points.map(p => ({
+        country: p.country,
+        region: p.region ?? null,
+        city: p.city ?? null,
+        latitude: p.latitude ?? null,
+        longitude: p.longitude ?? null,
+        count: p.count
+      }))
+      setDisplayPoints(normalized)
     }
   }, [points, showMockData])
 
