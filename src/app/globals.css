@@ -143,7 +143,6 @@
   /* Disable element dragging which ProseMirror may enable via draggable=true */
   .crepe-editor .ProseMirror [draggable="true"] {
     -webkit-user-drag: none !important;
-    user-drag: none !important;
   }
 }
 
