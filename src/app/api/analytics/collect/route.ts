@@ -39,6 +39,24 @@ function parseUtm(url: string | null): Record<string, string> {
 
 type HeaderGetter = { get(name: string): string | null }
 
+function geoFromVercelHeaders(hdrs: HeaderGetter): Geo {
+  const country = hdrs.get('x-vercel-ip-country')
+  const region = hdrs.get('x-vercel-ip-country-region') || hdrs.get('x-vercel-ip-region')
+  const city = hdrs.get('x-vercel-ip-city')
+  const latitude = hdrs.get('x-vercel-ip-latitude')
+  const longitude = hdrs.get('x-vercel-ip-longitude')
+
+  const parsed: Geo = {}
+
+  if (country) parsed.country = country
+  if (region) parsed.region = region
+  if (city) parsed.city = city
+  if (latitude) parsed.latitude = Number.parseFloat(latitude)
+  if (longitude) parsed.longitude = Number.parseFloat(longitude)
+
+  return parsed
+}
+
 function extractLocale(headerValue: string | null): string | null {
   if (!headerValue) return null
   const [first] = headerValue.split(',')
@@ -103,11 +121,20 @@ export async function POST(request: NextRequest) {
   // Derive geo from platform if available and fall back to client hints
   let geo: Geo = (request as { geo?: Geo }).geo || {}
 
-  if (!geo.country && !geo.region && !geo.city && geo.latitude == null && geo.longitude == null) {
+  if (!geo.country || !geo.region || !geo.city || geo.latitude == null || geo.longitude == null) {
+    const headerGeo = geoFromVercelHeaders(hdrs)
+    if (headerGeo.country && !geo.country) geo = { ...geo, country: headerGeo.country }
+    if (headerGeo.region && !geo.region) geo = { ...geo, region: headerGeo.region }
+    if (headerGeo.city && !geo.city) geo = { ...geo, city: headerGeo.city }
+    if (typeof headerGeo.latitude === 'number' && geo.latitude == null) geo = { ...geo, latitude: headerGeo.latitude }
+    if (typeof headerGeo.longitude === 'number' && geo.longitude == null) geo = { ...geo, longitude: headerGeo.longitude }
+  }
+
+  if (!geo.country) {
     // Use Accept-Language as a host-agnostic hint for visitor country
     const localeGeo = geoFromAcceptLanguage(hdrs)
     if (Object.keys(localeGeo).length > 0) {
-      geo = { ...geo, ...localeGeo }
+      geo = { ...localeGeo, ...geo }
     }
   }
   
