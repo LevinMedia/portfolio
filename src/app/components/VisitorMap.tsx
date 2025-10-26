@@ -1,4 +1,5 @@
 'use client'
+// stats-followup: no-op comment to trigger CI/push
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
