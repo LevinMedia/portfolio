@@ -125,6 +125,58 @@ export async function DELETE(request: Request) {
   }
 }
 
+// PUT - Update display order for works
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json()
+    const { works } = body as { works?: { id: string; display_order: number }[] }
+
+    if (!Array.isArray(works) || works.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid payload' },
+        { status: 400 }
+      )
+    }
+
+    const timestamp = new Date().toISOString()
+
+    const updates = works
+      .filter((work) => typeof work.id === 'string' && typeof work.display_order === 'number' && !Number.isNaN(work.display_order))
+      .map((work) => ({
+        id: work.id,
+        display_order: work.display_order,
+        updated_at: timestamp
+      }))
+
+    if (updates.length === 0) {
+      return NextResponse.json(
+        { error: 'No valid works provided' },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await supabase
+      .from('selected_works')
+      .upsert(updates, { onConflict: 'id' })
+
+    if (error) {
+      console.error('Error updating display order:', error)
+      return NextResponse.json(
+        { error: 'Failed to update display order' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error in admin selected works PUT:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
 // PATCH - Update thumbnail crop only
 export async function PATCH(request: Request) {
   try {

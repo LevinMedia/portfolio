@@ -15,6 +15,7 @@ interface SelectedWork {
     height: number
     unit: string
   }
+  display_order: number
 }
 
 const SelectedWorksContent: React.FC = () => {
@@ -28,7 +29,8 @@ const SelectedWorksContent: React.FC = () => {
         const response = await fetch('/api/selected-works')
         if (response.ok) {
           const data = await response.json()
-          setWorks(data.works || [])
+          const orderedWorks = (data.works || []).sort((a: SelectedWork, b: SelectedWork) => b.display_order - a.display_order)
+          setWorks(orderedWorks)
         }
       } catch (error) {
         console.error('Error fetching selected works:', error)
@@ -59,7 +61,7 @@ const SelectedWorksContent: React.FC = () => {
   return (
     <div>
       {/* Grid of work samples - each item spans 2 grid columns, gaps between columns */}
-      <div className="grid grid-cols-6" style={{ gap: 'var(--grid-major)' }}>
+      <div className="grid grid-cols-4 sm:grid-cols-6" style={{ gap: 'var(--grid-major)' }}>
         {works.map((work) => (
           <div
             key={work.id}
