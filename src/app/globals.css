@@ -287,22 +287,23 @@
 
 /* Drawer height handling */
 .drawer-container {
-  height: calc(100vh - 64px);
-  max-height: 80vh; /* Mobile fallback */
+  height: 100vh;
+  max-height: 100vh;
 }
 
 @media (min-width: 768px) {
   .drawer-container {
     height: calc(100vh - 64px);
-    max-height: calc(100vh - 64px); /* Full height on desktop */
+    max-height: calc(100vh - 64px); /* Align with global header on desktop */
   }
 }
 
 @supports (height: 100dvh) {
   .drawer-container {
-    height: calc(100dvh - 64px);
+    height: 100dvh;
+    max-height: 100dvh;
   }
-  
+
   @media (min-width: 768px) {
     .drawer-container {
       height: calc(100vh - 64px); /* Use regular vh on desktop */
