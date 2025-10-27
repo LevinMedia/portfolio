@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, Bars3Icon } from '@heroicons/react/24/outline'
 
 interface SelectedWork {
   id: string
@@ -29,6 +29,9 @@ export default function SelectedWorkAdmin() {
   const router = useRouter()
   const [works, setWorks] = useState<SelectedWork[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [isSavingOrder, setIsSavingOrder] = useState(false)
 
   useEffect(() => {
     fetchWorks()
@@ -39,12 +42,47 @@ export default function SelectedWorkAdmin() {
       const response = await fetch('/api/admin/selected-works')
       if (response.ok) {
         const data = await response.json()
-        setWorks(data.works || [])
+        const orderedWorks = (data.works || []).sort((a: SelectedWork, b: SelectedWork) => b.display_order - a.display_order)
+        setWorks(orderedWorks)
       }
     } catch (error) {
       console.error('Error fetching works:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const saveDisplayOrder = async (orderedWorks: SelectedWork[]) => {
+    if (!orderedWorks.length) return
+
+    setIsSavingOrder(true)
+    try {
+      const payload = orderedWorks.map((work, index) => ({
+        id: work.id,
+        display_order: orderedWorks.length - index
+      }))
+
+      const response = await fetch('/api/admin/selected-works', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ works: payload })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        const message = typeof errorData?.error === 'string' && errorData.error.trim().length > 0
+          ? errorData.error
+          : 'Failed to save new order. Please try again.'
+
+        throw new Error(message)
+      }
+    } catch (error) {
+      console.error('Error saving display order:', error)
+      const message = error instanceof Error ? error.message : 'Failed to save new order. Please try again.'
+      alert(message)
+      fetchWorks()
+    } finally {
+      setIsSavingOrder(false)
     }
   }
 
@@ -75,6 +113,49 @@ export default function SelectedWorkAdmin() {
     }
   }
 
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, index: number) => {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', works[index]?.id ?? '')
+    setDraggedIndex(index)
+    setDragOverIndex(index)
+  }
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>, index: number) => {
+    event.preventDefault()
+    if (draggedIndex === null || draggedIndex === index || dragOverIndex === index) return
+
+    setWorks(prevWorks => {
+      const updated = [...prevWorks]
+      const [movedItem] = updated.splice(draggedIndex, 1)
+      updated.splice(index, 0, movedItem)
+
+      return updated.map((work, idx) => ({
+        ...work,
+        display_order: updated.length - idx
+      }))
+    })
+
+    setDraggedIndex(index)
+    setDragOverIndex(index)
+  }
+
+  const handleDragEnd = () => {
+    if (draggedIndex === null) return
+
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+
+    setWorks(prevWorks => {
+      const updated = prevWorks.map((work, idx) => ({
+        ...work,
+        display_order: prevWorks.length - idx
+      }))
+
+      void saveDisplayOrder(updated)
+      return updated
+    })
+  }
+
 
   if (isLoading) {
     return (
@@ -86,31 +167,54 @@ export default function SelectedWorkAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold text-foreground font-[family-name:var(--font-geist-mono)]">
           Selected Work Management
         </h1>
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Add New Work
-        </button>
+        <div className="flex items-center gap-4">
+          {isSavingOrder && (
+            <span className="text-sm text-muted-foreground">Saving order…</span>
+          )}
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Add New Work
+          </button>
+        </div>
       </div>
 
       {/* Works List */}
       <div className="bg-background border border-border rounded-lg overflow-hidden">
+        {works.length > 0 && (
+          <div className="px-4 py-3 border-b border-border text-sm text-muted-foreground">
+            Drag items to reorder. Changes are saved automatically.
+          </div>
+        )}
         {works.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No works yet. Create your first one!</p>
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {works.map((work) => (
-              <div key={work.id} className="p-4 hover:bg-muted/50 transition-colors">
+            {works.map((work, index) => (
+              <div
+                key={work.id}
+                className={`p-4 transition-colors ${dragOverIndex === index ? 'bg-muted/70' : 'hover:bg-muted/50'} ${draggedIndex === index ? 'opacity-75' : ''}`}
+                onDragOver={(event) => handleDragOver(event, index)}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 flex-1">
+                    <div
+                      className="cursor-grab text-muted-foreground"
+                      data-drag-handle
+                      draggable
+                      onDragStart={(event) => handleDragStart(event, index)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <Bars3Icon className="h-5 w-5" />
+                    </div>
                     <div className="w-16 h-16 relative rounded overflow-hidden bg-muted">
                       {work.feature_image_url && (
                         <div
