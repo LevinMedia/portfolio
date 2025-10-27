@@ -288,11 +288,15 @@ export default function Guestbook() {
             <p className="text-muted-foreground">No messages yet. Be the first to leave one! 🎉</p>
           </div>
         ) : (
-          entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="bg-background border border-border/20 p-6"
-              style={{ 
+          entries.map((entry) => {
+            const activeSocialLinks = Object.entries(entry.social_links).filter(([, url]) => url)
+            const shouldStackSocialLinks = activeSocialLinks.length >= 3
+
+            return (
+              <div
+                key={entry.id}
+                className="bg-background border border-border/20 p-6"
+                style={{
                 backgroundImage: `
                   linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
                   linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -300,7 +304,7 @@ export default function Guestbook() {
                 backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
                 backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
               }}
-            >
+              >
               {/* Entry Header */}
               <div className="flex items-start mb-4">
                 <div className="flex items-center space-x-3">
@@ -367,27 +371,48 @@ export default function Guestbook() {
               </div>
 
               {/* Social Links */}
-              {Object.entries(entry.social_links).some(([, url]) => url) && (
-                <div className="flex items-center space-x-4 pt-4 border-t border-border/20">
-                  <span className="text-xs text-muted-foreground">Connect:</span>
-                  {Object.entries(entry.social_links).map(([platform, url]) => 
-                    url && (
-                      <a
-                        key={platform}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <span>{getSocialIcon(platform)}</span>
-                        <span className="text-xs capitalize">{platform}</span>
-                      </a>
-                    )
+              {activeSocialLinks.length > 0 && (
+                <div className="pt-4 border-t border-border/20">
+                  {shouldStackSocialLinks ? (
+                    <div className="flex flex-col items-start space-y-2">
+                      <span className="text-xs text-muted-foreground">Connect:</span>
+                      <div className="flex flex-wrap gap-4">
+                        {activeSocialLinks.map(([platform, url]) => (
+                          <a
+                            key={platform}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <span>{getSocialIcon(platform)}</span>
+                            <span className="text-xs capitalize">{platform}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-4">
+                      <span className="text-xs text-muted-foreground">Connect:</span>
+                      {activeSocialLinks.map(([platform, url]) => (
+                        <a
+                          key={platform}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <span>{getSocialIcon(platform)}</span>
+                          <span className="text-xs capitalize">{platform}</span>
+                        </a>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
-          ))
+              </div>
+            )
+          })
         )}
       </div>
     </div>
