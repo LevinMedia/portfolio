@@ -69,11 +69,17 @@ export default function SelectedWorkAdmin() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save new order')
+        const errorData = await response.json().catch(() => null)
+        const message = typeof errorData?.error === 'string' && errorData.error.trim().length > 0
+          ? errorData.error
+          : 'Failed to save new order. Please try again.'
+
+        throw new Error(message)
       }
     } catch (error) {
       console.error('Error saving display order:', error)
-      alert('Failed to save new order. Please try again.')
+      const message = error instanceof Error ? error.message : 'Failed to save new order. Please try again.'
+      alert(message)
       fetchWorks()
     } finally {
       setIsSavingOrder(false)

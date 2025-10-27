@@ -140,13 +140,10 @@ export async function PUT(request: Request) {
 
     const timestamp = new Date().toISOString()
 
-    const updates = works
-      .filter((work) => typeof work.id === 'string' && typeof work.display_order === 'number' && !Number.isNaN(work.display_order))
-      .map((work) => ({
-        id: work.id,
-        display_order: work.display_order,
-        updated_at: timestamp
-      }))
+    const updates = works.filter(
+      (work): work is { id: string; display_order: number } =>
+        typeof work.id === 'string' && typeof work.display_order === 'number' && Number.isFinite(work.display_order)
+    )
 
     if (updates.length === 0) {
       return NextResponse.json(
@@ -155,16 +152,22 @@ export async function PUT(request: Request) {
       )
     }
 
-    const { error } = await supabase
-      .from('selected_works')
-      .upsert(updates, { onConflict: 'id' })
+    for (const work of updates) {
+      const { error } = await supabase
+        .from('selected_works')
+        .update({
+          display_order: work.display_order,
+          updated_at: timestamp
+        })
+        .eq('id', work.id)
 
-    if (error) {
-      console.error('Error updating display order:', error)
-      return NextResponse.json(
-        { error: 'Failed to update display order' },
-        { status: 500 }
-      )
+      if (error) {
+        console.error(`Error updating display order for work ${work.id}:`, error)
+        return NextResponse.json(
+          { error: 'Failed to update display order' },
+          { status: 500 }
+        )
+      }
     }
 
     return NextResponse.json({ success: true })
