@@ -52,7 +52,7 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
         contentPadding="p-0"
         maxWidth=""
       >
-        <div className="px-4 pb-4">
+        <div className="px-4">
           <SelectedWorkDetail 
             slug={slug} 
             onTitleLoad={setWorkTitle}

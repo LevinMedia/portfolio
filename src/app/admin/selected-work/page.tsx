@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, Bars3Icon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, Bars3Icon, LinkIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 interface SelectedWork {
   id: string
@@ -32,6 +32,7 @@ export default function SelectedWorkAdmin() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [isSavingOrder, setIsSavingOrder] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchWorks()
@@ -92,6 +93,18 @@ export default function SelectedWorkAdmin() {
 
   const handleEdit = (id: string) => {
     router.push(`/admin/selected-work/${id}`)
+  }
+
+  const handleCopyLink = async (id: string, slug: string) => {
+    const url = `/selected-works/${slug}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+      alert('Failed to copy link to clipboard')
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -251,6 +264,21 @@ export default function SelectedWorkAdmin() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleCopyLink(work.id, work.slug)}
+                      className={`p-2 rounded transition-colors ${
+                        copiedId === work.id
+                          ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                      title={copiedId === work.id ? 'Copied!' : 'Copy link to clipboard'}
+                    >
+                      {copiedId === work.id ? (
+                        <CheckIcon className="h-5 w-5" />
+                      ) : (
+                        <LinkIcon className="h-5 w-5" />
+                      )}
+                    </button>
                     <button
                       onClick={() => handleEdit(work.id)}
                       className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded"
