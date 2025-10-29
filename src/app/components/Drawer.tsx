@@ -115,7 +115,7 @@ const Drawer: React.FC<DrawerProps> = ({
 
         {/* Content */}
         <div className={`${contentPadding} flex justify-center`}>
-          <div className={`w-full ${maxWidth}`}>
+          <div className={`w-full ${maxWidth} pb-24`}>
             {children}
           </div>
         </div>
