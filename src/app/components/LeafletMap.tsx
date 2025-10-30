@@ -277,7 +277,7 @@ function ClusterLayer({ points }: { points: LeafletMapProps['points'] }) {
                 </div>
                 <div className="text-muted-foreground">{cluster.properties.country}</div>
                 <div className="text-xs mt-1">
-                  {cluster.properties.count} visit{cluster.properties.count !== 1 ? 's' : ''}
+                  {cluster.properties.count} {cluster.properties.count === 1 ? 'visitor' : 'visitors'}
                 </div>
               </div>
             </Popup>

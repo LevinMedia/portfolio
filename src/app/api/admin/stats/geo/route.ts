@@ -41,11 +41,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ range, points: [] })
   }
 
-  // Deduplicate by visitor and location to avoid massive marker counts
+  // Group by location and count unique visitors per location
   const key = (r: { country: string | null; region?: string | null; city?: string | null; latitude?: number | null; longitude?: number | null }) => 
     [r.country || 'Unknown', r.region || '', r.city || '', r.latitude || '', r.longitude || ''].join('|')
   
-  const byKey = new Map<string, { country: string, region: string | null, city: string | null, latitude: number | null, longitude: number | null, count: number }>()
+  const byKey = new Map<string, { 
+    country: string, 
+    region: string | null, 
+    city: string | null, 
+    latitude: number | null, 
+    longitude: number | null, 
+    visitors: Set<string> 
+  }>()
   
   for (const r of recordsWithGeo) {
     const k = key(r)
@@ -57,14 +64,22 @@ export async function GET(request: NextRequest) {
         city: r.city || null, 
         latitude: r.latitude || null, 
         longitude: r.longitude || null, 
-        count: 1 
+        visitors: new Set([r.visitor_id])
       })
     } else {
-      curr.count += 1
+      curr.visitors.add(r.visitor_id)
     }
   }
 
-  const points = Array.from(byKey.values())
+  // Convert to final format with visitor count
+  const points = Array.from(byKey.values()).map(loc => ({
+    country: loc.country,
+    region: loc.region,
+    city: loc.city,
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    count: loc.visitors.size
+  }))
   return NextResponse.json({ range, points })
 }
 
