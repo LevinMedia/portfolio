@@ -140,13 +140,37 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-  // Server-side guard: if selected work is private, skip
-  if (path.startsWith('/selected-works/')) {
-    const slug = path.split('/')[2]
+  // Normalize and guard Selected Works paths and privacy
+  let normalizedPath = path
+  // Case 1: Proper Selected Works path – enforce privacy
+  if (normalizedPath.startsWith('/selected-works/')) {
+    const slug = normalizedPath.split('/')[2]
     if (slug) {
-      const { data: sw } = await supabase.from('selected_works').select('is_private, is_published').eq('slug', slug).single()
+      const { data: sw } = await supabase
+        .from('selected_works')
+        .select('is_private, is_published')
+        .eq('slug', slug)
+        .single()
       if (sw && sw.is_private === true) {
         return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
+      }
+    }
+  } else {
+    // Case 2: Bare slug without prefix (e.g., /my-work) – detect and normalize
+    // Only slugs with safe characters are considered
+    const bare = normalizedPath.startsWith('/') ? normalizedPath.slice(1) : normalizedPath
+    if (/^[a-z0-9-]{3,}$/.test(bare)) {
+      const { data: sw } = await supabase
+        .from('selected_works')
+        .select('is_private, is_published, slug')
+        .eq('slug', bare)
+        .single()
+      if (sw) {
+        // If private, skip entirely. If public, rewrite path with proper prefix
+        if (sw.is_private === true) {
+          return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
+        }
+        normalizedPath = `/selected-works/${sw.slug}`
       }
     }
   }
@@ -196,7 +220,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { error } = await supabase.from('analytics_pageviews').insert({
-    path,
+    path: normalizedPath,
     referrer_domain: getReferrerDomain(referer),
     utm: parseUtm(currentUrl || null),
     visitor_id: visitorId,
@@ -208,6 +232,7 @@ export async function POST(request: NextRequest) {
     latitude: geo?.latitude ?? null,
     longitude: geo?.longitude ?? null,
     is_admin: Boolean(isAdmin),
+    // We never log private views; this field reflects the client hint only
     is_private: Boolean(isPrivate)
   })
 
