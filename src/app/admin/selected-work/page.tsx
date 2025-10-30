@@ -3,6 +3,7 @@
 import { useState, useEffect, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, Bars3Icon, LinkIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { usePageTitle } from '@/app/hooks/usePageTitle'
 
 interface SelectedWork {
   id: string
@@ -26,6 +27,7 @@ interface SelectedWork {
 }
 
 export default function SelectedWorkAdmin() {
+  usePageTitle('Admin / Selected Works')
   const router = useRouter()
   const [works, setWorks] = useState<SelectedWork[]>([])
   const [isLoading, setIsLoading] = useState(true)

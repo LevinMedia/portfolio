@@ -11,6 +11,7 @@ import StatsContent from "./components/StatsContent";
 import Guestbook from "./components/Guestbook";
 import Howdy from "./components/Howdy";
 import Navigation from "./components/Navigation";
+import { usePageTitle } from "./hooks/usePageTitle";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
@@ -23,6 +24,17 @@ function HomeContent() {
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+
+  // Determine current page title based on open drawer
+  const pageTitle = isWorkHistoryOpen ? 'Work History'
+    : isAboutOpen ? 'About'
+    : isSelectedWorksOpen ? 'Selected Works'
+    : isSiteSettingsOpen ? 'Site Settings'
+    : isGuestbookOpen ? 'Guestbook'
+    : isStatsOpen ? 'Stats'
+    : null;
+
+  usePageTitle(pageTitle);
 
   // Check URL parameters on mount
   useEffect(() => {

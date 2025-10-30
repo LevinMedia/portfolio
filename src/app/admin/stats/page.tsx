@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePageTitle } from '@/app/hooks/usePageTitle'
 import VisitorMap from '@/app/components/VisitorMap'
 import TimeSeriesChart from '@/app/components/TimeSeriesChart'
 
@@ -14,6 +15,7 @@ const ranges: { key: RangeKey, label: string }[] = [
 ]
 
 export default function StatsAdmin() {
+  usePageTitle('Admin / Stats')
   const [range, setRange] = useState<RangeKey>('30d')
   const [summary, setSummary] = useState<{
     totals?: { pageViews?: number; uniqueVisitors?: number; countries?: number; topPage?: { path?: string; views?: number } };
