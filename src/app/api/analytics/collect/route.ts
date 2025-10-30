@@ -55,20 +55,23 @@ function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
 function deriveVisitorId(existing: string | null | undefined, request: NextRequest, hdrs: HeaderGetter): string {
   if (existing) return existing
 
+  // Try Vercel's visitor ID first (most reliable)
+  const vercelId = hdrs.get('x-vercel-id')
+  if (vercelId) return vercelId
+
+  // Fall back to IP-based hash for consistency
   const ip = getClientIp(request, hdrs)
   const ua = hdrs.get('user-agent') || ''
-  const acceptLanguage = hdrs.get('accept-language') || ''
 
-  if (ip || ua || acceptLanguage) {
+  if (ip && ua) {
     const hash = createHash('sha256')
-    if (ip) hash.update(ip)
+    hash.update(ip)
     hash.update('|')
     hash.update(ua)
-    hash.update('|')
-    hash.update(acceptLanguage)
     return hash.digest('hex')
   }
 
+  // Last resort: generate a UUID (will be stored in cookie)
   return crypto.randomUUID()
 }
 
@@ -120,6 +123,12 @@ export async function POST(request: NextRequest) {
   const userAgent = hdrs.get('user-agent') || ''
   const dnt = hdrs.get('dnt') === '1'
   const referer = hdrs.get('referer')
+  const host = hdrs.get('host') || ''
+
+  // Filter out localhost traffic
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    return NextResponse.json({ skipped: true, reason: 'localhost' }, { status: 200 })
+  }
 
   if (dnt) return NextResponse.json({ skipped: true, reason: 'dnt' }, { status: 200 })
   if (isbot(userAgent)) return NextResponse.json({ skipped: true, reason: 'bot' }, { status: 200 })

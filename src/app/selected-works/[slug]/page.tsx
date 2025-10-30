@@ -6,12 +6,16 @@ import SelectedWorkDetail from '@/app/components/SelectedWorkDetail'
 import Drawer from '@/app/components/Drawer'
 import Navigation from '@/app/components/Navigation'
 import { CommandLineIcon } from '@heroicons/react/24/outline'
+import { usePageTitle } from '@/app/hooks/usePageTitle'
 
 export default function SelectedWorkPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const router = useRouter()
   const [workTitle, setWorkTitle] = useState<string>('')
   const [isTitleVisible, setIsTitleVisible] = useState(true)
+
+  // Update page title dynamically
+  usePageTitle(workTitle || 'Selected Works')
 
   const handleClose = () => {
     router.push('/?selected-works=true')
