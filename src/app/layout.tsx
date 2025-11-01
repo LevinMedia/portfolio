@@ -4,6 +4,7 @@ import "./globals.css";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,15 +30,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="hydrated">
       <body
-        className={`${inter.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} antialiased fonts-loaded`}
       >
         <Suspense fallback={null}>
           <AnalyticsTracker />
         </Suspense>
         {children}
         <Analytics />
+        <Script
+          id="prevent-fouc"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              document.documentElement.classList.add('hydrated');
+              document.body.classList.add('fonts-loaded');
+            `,
+          }}
+        />
       </body>
     </html>
   );

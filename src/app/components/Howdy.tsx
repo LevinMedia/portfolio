@@ -64,7 +64,7 @@ export default function Howdy({ onSelectedWorksClick, onSiteSettingsClick }: How
     return (
       <div className="row-start-2 col-span-6 flex flex-col lg:flex-row items-center lg:items-start" style={{ gap: 'var(--grid-major)' }}>
         <div className="w-full text-center text-foreground/60">
-          Loading...
+          {/* Loading skeleton - invisible but maintains layout */}
         </div>
       </div>
     )
