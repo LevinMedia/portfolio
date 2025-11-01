@@ -320,6 +320,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Prevent flash of unstyled content */
+  opacity: 1;
+}
+
+/* Hide body until fonts and styles are ready */
+body:not(.fonts-loaded) {
+  opacity: 0;
+}
+
+html:not(.hydrated) body {
+  visibility: hidden;
 }
 
 /* Responsive grid sizing */
