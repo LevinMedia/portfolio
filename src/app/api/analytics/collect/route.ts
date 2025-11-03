@@ -128,34 +128,20 @@ function geoFromAcceptLanguage(hdrs: HeaderGetter): Geo {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🎯 Analytics request received')
-  
   const hdrs = request.headers
   const userAgent = hdrs.get('user-agent') || ''
   const dnt = hdrs.get('dnt') === '1'
   const referer = hdrs.get('referer')
   const host = hdrs.get('host') || ''
 
-  console.log('📋 Request details:', { host, userAgent: userAgent.slice(0, 50), dnt })
-
-  if (dnt) {
-    console.log('🚫 Skipped: DNT enabled')
-    return NextResponse.json({ skipped: true, reason: 'dnt' }, { status: 200 })
-  }
-  if (isbot(userAgent)) {
-    console.log('🚫 Skipped: Bot detected')
-    return NextResponse.json({ skipped: true, reason: 'bot' }, { status: 200 })
-  }
+  if (dnt) return NextResponse.json({ skipped: true, reason: 'dnt' }, { status: 200 })
+  if (isbot(userAgent)) return NextResponse.json({ skipped: true, reason: 'bot' }, { status: 200 })
 
   const { path, isAdmin = false, isPrivate = false, currentUrl } = await request.json().catch(() => ({}))
-  if (!path || typeof path !== 'string') {
-    console.log('❌ Error: No path provided')
-    return NextResponse.json({ error: 'path required' }, { status: 400 })
-  }
+  if (!path || typeof path !== 'string') return NextResponse.json({ error: 'path required' }, { status: 400 })
 
   // Filter out localhost traffic
   if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    console.log('🚫 Skipping localhost traffic:', { host, path })
     return NextResponse.json({ skipped: true, reason: 'localhost' }, { status: 200 })
   }
 
@@ -213,17 +199,8 @@ export async function POST(request: NextRequest) {
   // Derive geo from platform if available and fall back to client hints
   let geo: Geo = (request as { geo?: Geo }).geo || {}
 
-  console.log('🌍 Vercel headers:', {
-    'x-vercel-id': hdrs.get('x-vercel-id'),
-    'x-vercel-ip-country': hdrs.get('x-vercel-ip-country'),
-    'x-vercel-ip-city': hdrs.get('x-vercel-ip-city'),
-    'x-vercel-ip-latitude': hdrs.get('x-vercel-ip-latitude'),
-    'x-vercel-ip-longitude': hdrs.get('x-vercel-ip-longitude')
-  })
-
   if (!geo.country || !geo.region || !geo.city || geo.latitude == null || geo.longitude == null) {
     const headerGeo = geoFromVercelHeaders(hdrs)
-    console.log('📍 Parsed geo from headers:', headerGeo)
     if (headerGeo.country && !geo.country) geo = { ...geo, country: headerGeo.country }
     if (headerGeo.region && !geo.region) geo = { ...geo, region: headerGeo.region }
     if (headerGeo.city && !geo.city) geo = { ...geo, city: headerGeo.city }
@@ -270,11 +247,8 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    console.error('❌ Analytics DB error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  console.log('✅ Pageview recorded:', { path: normalizedPath, visitor: visitorId.slice(0, 8), geo: geo?.city || geo?.country || 'unknown' })
 
   const res = NextResponse.json({ ok: true })
   if (newVisitor) res.cookies.set('lm_vid', visitorId, { httpOnly: false, sameSite: 'lax', maxAge: 31536000, path: '/' })

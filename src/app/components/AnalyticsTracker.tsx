@@ -37,8 +37,6 @@ export default function AnalyticsTracker() {
     }
 
     // Post page view
-    console.log('📊 Analytics tracking:', { path: analyticsPath, url: window.location.href })
-    
     void fetch('/api/analytics/collect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,14 +45,7 @@ export default function AnalyticsTracker() {
         currentUrl: window.location.href, 
         isAdmin: false 
       })
-    })
-      .then(res => res.json())
-      .then(data => {
-        console.log('✅ Analytics response:', data)
-      })
-      .catch(err => {
-        console.error('❌ Analytics error:', err)
-      })
+    }).catch(() => {})
   }, [pathname, searchParams])
 
   return null
