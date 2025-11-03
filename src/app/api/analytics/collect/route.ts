@@ -55,13 +55,15 @@ function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
 function deriveVisitorId(existing: string | null | undefined, request: NextRequest, hdrs: HeaderGetter): string {
   if (existing) return existing
 
-  // Try Vercel's visitor ID first (most reliable) - hash it to get a consistent format
+  // Try Vercel's visitor ID first (most reliable) - convert to UUID format
   const vercelId = hdrs.get('x-vercel-id')
   if (vercelId) {
     const hash = createHash('sha256')
     hash.update('vercel-id:')
     hash.update(vercelId)
-    return hash.digest('hex')
+    const hex = hash.digest('hex')
+    // Convert first 32 hex chars to UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
   }
 
   // Fall back to IP-based hash for consistency
@@ -73,7 +75,9 @@ function deriveVisitorId(existing: string | null | undefined, request: NextReque
     hash.update(ip)
     hash.update('|')
     hash.update(ua)
-    return hash.digest('hex')
+    const hex = hash.digest('hex')
+    // Convert first 32 hex chars to UUID format
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
   }
 
   // Last resort: generate a UUID (will be stored in cookie)
