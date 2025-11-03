@@ -55,9 +55,14 @@ function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
 function deriveVisitorId(existing: string | null | undefined, request: NextRequest, hdrs: HeaderGetter): string {
   if (existing) return existing
 
-  // Try Vercel's visitor ID first (most reliable)
+  // Try Vercel's visitor ID first (most reliable) - hash it to get a consistent format
   const vercelId = hdrs.get('x-vercel-id')
-  if (vercelId) return vercelId
+  if (vercelId) {
+    const hash = createHash('sha256')
+    hash.update('vercel-id:')
+    hash.update(vercelId)
+    return hash.digest('hex')
+  }
 
   // Fall back to IP-based hash for consistency
   const ip = getClientIp(request, hdrs)
