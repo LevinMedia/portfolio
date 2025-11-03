@@ -55,9 +55,16 @@ function getClientIp(request: NextRequest, hdrs: HeaderGetter): string | null {
 function deriveVisitorId(existing: string | null | undefined, request: NextRequest, hdrs: HeaderGetter): string {
   if (existing) return existing
 
-  // Try Vercel's visitor ID first (most reliable)
+  // Try Vercel's visitor ID first (most reliable) - convert to UUID format
   const vercelId = hdrs.get('x-vercel-id')
-  if (vercelId) return vercelId
+  if (vercelId) {
+    const hash = createHash('sha256')
+    hash.update('vercel-id:')
+    hash.update(vercelId)
+    const hex = hash.digest('hex')
+    // Convert first 32 hex chars to UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
+  }
 
   // Fall back to IP-based hash for consistency
   const ip = getClientIp(request, hdrs)
@@ -68,7 +75,9 @@ function deriveVisitorId(existing: string | null | undefined, request: NextReque
     hash.update(ip)
     hash.update('|')
     hash.update(ua)
-    return hash.digest('hex')
+    const hex = hash.digest('hex')
+    // Convert first 32 hex chars to UUID format
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
   }
 
   // Last resort: generate a UUID (will be stored in cookie)
@@ -125,16 +134,17 @@ export async function POST(request: NextRequest) {
   const referer = hdrs.get('referer')
   const host = hdrs.get('host') || ''
 
-  // Filter out localhost traffic
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    return NextResponse.json({ skipped: true, reason: 'localhost' }, { status: 200 })
-  }
-
   if (dnt) return NextResponse.json({ skipped: true, reason: 'dnt' }, { status: 200 })
   if (isbot(userAgent)) return NextResponse.json({ skipped: true, reason: 'bot' }, { status: 200 })
 
   const { path, isAdmin = false, isPrivate = false, currentUrl } = await request.json().catch(() => ({}))
   if (!path || typeof path !== 'string') return NextResponse.json({ error: 'path required' }, { status: 400 })
+
+  // Filter out localhost traffic
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    return NextResponse.json({ skipped: true, reason: 'localhost' }, { status: 200 })
+  }
+
   if (path.startsWith('/admin')) return NextResponse.json({ skipped: true, reason: 'admin' }, { status: 200 })
   if (isPrivate) return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
 
