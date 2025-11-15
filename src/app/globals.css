@@ -150,6 +150,32 @@
 .gb-editor .milkdown ~ .milkdown { display: none !important; }
 
 
+.home-shell {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-grid {
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .home-shell {
+    min-height: 100svh;
+    min-height: 100dvh;
+    height: 100svh;
+    height: 100dvh;
+    padding: 0 var(--grid-major);
+    overflow: hidden;
+    align-items: flex-start;
+    justify-content: center;
+  }
+}
+
+
 :root {
   /* Light theme */
   --background: #ffffff;
