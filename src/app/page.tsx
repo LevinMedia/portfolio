@@ -112,43 +112,45 @@ function HomeContent() {
   };
 
   return (
-    <div className="grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
-      gridTemplateRows: 'var(--grid-major) 1fr 0',
-      gap: 'var(--grid-major)',
-      backgroundImage: `
-        linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-        linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-        repeating-linear-gradient(90deg, 
-          rgba(0, 100, 255, 0.015) 0, 
-          rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6), 
-          transparent calc((100% - 5 * var(--grid-major)) / 6), 
-          transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
-        )
-      `,
-      backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
-      backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
-    }}>
-      <Howdy onSelectedWorksClick={() => router.push('/?selected-works=true')} onSiteSettingsClick={() => setIsSiteSettingsOpen(true)} />
-      
-
-      
-      <Navigation />
-
-      {/* Work History Drawer */}
-      <Drawer
-        isOpen={isWorkHistoryOpen}
-        onClose={handleWorkHistoryClose}
-        title="Work History"
-        icon={<BriefcaseIcon className="w-6 h-6" />}
-        showLinkedInButton={true}
-        linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
+    <div className="home-shell">
+      <div
+        className="home-grid grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]"
+        style={{
+          gridTemplateRows: 'var(--grid-major) 1fr 0',
+          gap: 'var(--grid-major)',
+          backgroundImage: `
+            linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+            linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
+            repeating-linear-gradient(90deg,
+              rgba(0, 100, 255, 0.015) 0,
+              rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6),
+              transparent calc((100% - 5 * var(--grid-major)) / 6),
+              transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
+            )
+          `,
+          backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
+          backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
+        }}
       >
-        <WorkHistoryContent />
-      </Drawer>
+        <Howdy onSelectedWorksClick={() => router.push('/?selected-works=true')} onSiteSettingsClick={() => setIsSiteSettingsOpen(true)} />
 
-              {/* About Drawer */}
+        <Navigation />
+
+        {/* Work History Drawer */}
+        <Drawer
+          isOpen={isWorkHistoryOpen}
+          onClose={handleWorkHistoryClose}
+          title="Work History"
+          icon={<BriefcaseIcon className="w-6 h-6" />}
+          showLinkedInButton={true}
+          linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
+        >
+          <WorkHistoryContent />
+        </Drawer>
+
+        {/* About Drawer */}
         <Drawer
           isOpen={isAboutOpen}
           onClose={handleAboutClose}
@@ -206,8 +208,9 @@ function HomeContent() {
           <StatsContent />
         </Drawer>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 export default function Home() {
   return (
