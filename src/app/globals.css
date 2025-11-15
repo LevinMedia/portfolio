@@ -170,6 +170,7 @@
     height: 100dvh;
     padding: 0 var(--grid-major);
     overflow: hidden;
+    align-items: flex-start;
   }
 }
 
