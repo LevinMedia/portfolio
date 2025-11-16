@@ -207,7 +207,7 @@ export default function SiteSettingsContent() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="animate-spin h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -215,7 +215,7 @@ export default function SiteSettingsContent() {
   return (
     <div className="space-y-6">
       {/* Theme Mode */}
-      <div className="bg-background border border-border/20 rounded-lg p-4" style={{ 
+      <div className="bg-background border border-border/20 p-4" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -229,7 +229,7 @@ export default function SiteSettingsContent() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={() => handleModeChange('light')}
-            className={`p-3 rounded-lg border-2 transition-all ${
+            className={`p-3 border-2 transition-all ${
               theme.mode === 'light' 
                 ? 'border-primary bg-primary/10' 
                 : 'border-border/20 hover:border-border/40'
@@ -242,7 +242,7 @@ export default function SiteSettingsContent() {
           
           <button
             onClick={() => handleModeChange('dark')}
-            className={`p-3 rounded-lg border-2 transition-all ${
+            className={`p-3 border-2 transition-all ${
               theme.mode === 'dark' 
                 ? 'border-primary bg-primary/10' 
                 : 'border-border/20 hover:border-border/40'
@@ -255,7 +255,7 @@ export default function SiteSettingsContent() {
           
           <button
             onClick={() => handleModeChange('system')}
-            className={`p-3 rounded-lg border-2 transition-all ${
+            className={`p-3 border-2 transition-all ${
               theme.mode === 'system' 
                 ? 'border-primary bg-primary/10' 
                 : 'border-border/20 hover:border-border/40'
@@ -269,7 +269,7 @@ export default function SiteSettingsContent() {
       </div>
 
       {/* Color Presets */}
-      <div className="bg-background border border-border/20 rounded-lg p-4" style={{ 
+      <div className="bg-background border border-border/20 p-4" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -287,7 +287,7 @@ export default function SiteSettingsContent() {
               <button
                 key={preset.name}
                 onClick={() => applyPreset(preset)}
-                className={`relative p-3 rounded-lg border-2 transition-all group ${
+                className={`relative p-3 border-2 transition-all group ${
                   isSelected 
                     ? 'border-primary bg-primary/10 shadow-lg' 
                     : 'border-border/20 hover:border-border/40'
@@ -300,15 +300,15 @@ export default function SiteSettingsContent() {
                 )}
                 <div className="flex space-x-1 mb-2">
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="w-3 h-3" 
                     style={{ backgroundColor: preset.primary }}
                   />
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="w-3 h-3" 
                     style={{ backgroundColor: preset.secondary }}
                   />
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="w-3 h-3" 
                     style={{ backgroundColor: preset.accent }}
                   />
                 </div>
@@ -322,7 +322,7 @@ export default function SiteSettingsContent() {
           {/* Custom Preset */}
           <button
             onClick={handleCustom}
-            className={`relative p-3 rounded-lg border-2 transition-all group ${
+            className={`relative p-3 border-2 transition-all group ${
               isPresetSelected('Custom')
                 ? 'border-primary bg-primary/10 shadow-lg' 
                 : 'border-border/20 hover:border-border/40'
@@ -335,15 +335,15 @@ export default function SiteSettingsContent() {
             )}
             <div className="flex space-x-1 mb-2">
               <div 
-                className="w-3 h-3 rounded-full" 
+                className="w-3 h-3" 
                 style={{ backgroundColor: theme.primaryColor }}
               />
               <div 
-                className="w-3 h-3 rounded-full" 
+                className="w-3 h-3" 
                 style={{ backgroundColor: theme.secondaryColor }}
               />
               <div 
-                className="w-3 h-3 rounded-full" 
+                className="w-3 h-3" 
                 style={{ backgroundColor: theme.accentColor }}
               />
             </div>
@@ -356,7 +356,7 @@ export default function SiteSettingsContent() {
 
       {/* Custom Colors - Only show when Custom preset is selected */}
       {isPresetSelected('Custom') && (
-      <div className="bg-background border border-border/20 rounded-lg p-4" style={{ 
+      <div className="bg-background border border-border/20 p-4" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -377,13 +377,13 @@ export default function SiteSettingsContent() {
                 type="color"
                 value={theme.primaryColor}
                 onChange={(e) => handleColorChange('primary', e.target.value)}
-                className="w-10 h-10 rounded-lg border border-border/20 cursor-pointer"
+                className="w-10 h-10 border border-border/20 cursor-pointer"
               />
               <input
                 type="text"
                 value={theme.primaryColor}
                 onChange={(e) => handleColorChange('primary', e.target.value)}
-                className="flex-1 px-2 py-1 border border-border/20 rounded-md bg-background text-foreground text-sm"
+                className="flex-1 px-2 py-1 border border-border/20 bg-background text-foreground text-sm"
                 placeholder="#C614E1"
               />
             </div>
@@ -398,13 +398,13 @@ export default function SiteSettingsContent() {
                 type="color"
                 value={theme.secondaryColor}
                 onChange={(e) => handleColorChange('secondary', e.target.value)}
-                className="w-10 h-10 rounded-lg border border-border/20 cursor-pointer"
+                className="w-10 h-10 border border-border/20 cursor-pointer"
               />
               <input
                 type="text"
                 value={theme.secondaryColor}
                 onChange={(e) => handleColorChange('secondary', e.target.value)}
-                className="flex-1 px-2 py-1 border border-border/20 rounded-md bg-background text-foreground text-sm"
+                className="flex-1 px-2 py-1 border border-border/20 bg-background text-foreground text-sm"
                 placeholder="#ec4899"
               />
             </div>
@@ -419,13 +419,13 @@ export default function SiteSettingsContent() {
                 type="color"
                 value={theme.accentColor}
                 onChange={(e) => handleColorChange('accent', e.target.value)}
-                className="w-10 h-10 rounded-lg border border-border/20 cursor-pointer"
+                className="w-10 h-10 border border-border/20 cursor-pointer"
               />
               <input
                 type="text"
                 value={theme.accentColor}
                 onChange={(e) => handleColorChange('accent', e.target.value)}
-                className="flex-1 px-2 py-1 border border-border/20 rounded-md bg-background text-foreground text-sm"
+                className="flex-1 px-2 py-1 border border-border/20 bg-background text-foreground text-sm"
                 placeholder="#0891b2"
               />
             </div>
@@ -435,7 +435,7 @@ export default function SiteSettingsContent() {
       )}
 
       {/* Button Preview */}
-      <div className="bg-background border border-border/20 rounded-lg p-4" style={{ 
+      <div className="bg-background border border-border/20 p-4" style={{ 
         backgroundImage: `
           linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)

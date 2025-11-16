@@ -40,7 +40,13 @@ export function ParticleBackground() {
   const engineRef = useRef<ParticleEngine | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [themeColors, setThemeColors] = useState({ primary: '#C614E1', accent: '#087d9a' });
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Check initial dark mode state immediately
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return true; // Default to dark mode for SSR
+  });
 
   // Watch for theme color changes and dark mode
   useEffect(() => {
@@ -95,7 +101,7 @@ export function ParticleBackground() {
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     const updateCanvasSize = () => {
@@ -163,8 +169,8 @@ export function ParticleBackground() {
       ref={canvasRef}
       className="w-full h-full absolute inset-0"
       style={{
-        background: isDarkMode ? '#0a0a0a' : '#f5f5f5',
         pointerEvents: 'none',
+        background: 'transparent',
       }}
     />
   );

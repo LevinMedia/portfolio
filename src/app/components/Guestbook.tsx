@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PaperAirplaneIcon, UserIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import { Input } from '@headlessui/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import MilkdownEditor from './MilkdownEditor'
@@ -180,11 +181,11 @@ export default function Guestbook() {
             <label className="block text-sm font-medium text-foreground mb-2">
               Your Name
             </label>
-            <input
+            <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="block w-full px-3 py-2 border border-border rounded-md shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+              className="block w-full px-3 py-2 border border-border shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
               placeholder="Enter your name"
               required
               maxLength={100}
@@ -218,7 +219,7 @@ export default function Guestbook() {
                   <label className="block text-xs text-muted-foreground mb-1 capitalize">
                     {getSocialIcon(platform)} {platform}
                   </label>
-                  <input
+                  <Input
                     type="url"
                     value={formData.socialLinks[platform as keyof SocialLinks] || ''}
                     onChange={(e) => setFormData(prev => ({
@@ -228,7 +229,7 @@ export default function Guestbook() {
                         [platform]: e.target.value
                       }
                     }))}
-                    className="block w-full px-3 py-2 border border-border rounded-md shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+                    className="block w-full px-3 py-2 border border-border shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
                     placeholder={`https://${platform}.com/yourusername`}
                   />
                 </div>
@@ -251,30 +252,29 @@ export default function Guestbook() {
 
           {/* Submit Button */}
           <div className="flex justify-end gap-3">
-            <button
+            <Button
               type="button"
               onClick={() => setIsFormVisible(false)}
-              className="px-6 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors font-medium"
+              style="ghost"
+              color="primary"
+              size="medium"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                  Adding...
-                </>
+              style="solid"
+              color="primary"
+              size="medium"
+              iconLeft={isSubmitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
               ) : (
-                <>
-                  <PaperAirplaneIcon className="h-4 w-4 mr-2" />
-                  Add to Guestbook
-                </>
+                <PaperAirplaneIcon className="h-4 w-4" />
               )}
-            </button>
+            >
+              {isSubmitting ? 'Adding...' : 'Add to Guestbook'}
+            </Button>
           </div>
         </form>
       </div>
@@ -308,7 +308,7 @@ export default function Guestbook() {
               {/* Entry Header */}
               <div className="flex items-start mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center">
                     <span className="text-primary font-semibold">
                       {entry.name.charAt(0).toUpperCase()}
                     </span>

@@ -219,11 +219,8 @@ export class ParticleEngine {
 
   draw() {
     if (this.useGridMode) {
-      const bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height)
-      bgGradient.addColorStop(0, this.config.backgroundColor)
-      bgGradient.addColorStop(1, this.config.backgroundGradient)
-      this.ctx.fillStyle = bgGradient
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+      // Clear canvas with transparency instead of drawing background
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
       // Draw grid particles with 3D projection
       const particleSize = this.config.size

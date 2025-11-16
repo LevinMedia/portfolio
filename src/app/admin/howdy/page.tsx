@@ -76,6 +76,24 @@ export default function HowdyAdmin() {
         const result = await response.json()
         setData(result)
         console.log('Howdy content saved successfully')
+        
+        // Trigger cache revalidation
+        try {
+          const revalidateResponse = await fetch('/api/revalidate/howdy', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_REVALIDATION_SECRET || 'your-secret-key'}`,
+            },
+          })
+          
+          if (revalidateResponse.ok) {
+            console.log('Cache revalidated successfully')
+          } else {
+            console.warn('Failed to revalidate cache, but content was saved')
+          }
+        } catch (revalidateError) {
+          console.warn('Failed to revalidate cache:', revalidateError)
+        }
       } else {
         const errorData = await response.json()
         console.error('Failed to save howdy data:', errorData.error)
