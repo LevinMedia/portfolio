@@ -22,24 +22,24 @@ const BASE_CONFIG: Omit<ParticleConfig, 'peakColor' | 'troughColor'> = {
   backgroundGradient: "#1a1a2e",
 };
 
-function getThemeColors(): { primary: string; secondary: string } {
+function getThemeColors(): { primary: string; accent: string } {
   if (typeof window === 'undefined') {
-    return { primary: '#C614E1', secondary: '#cc3f84' };
+    return { primary: '#C614E1', accent: '#087d9a' };
   }
   
   const root = document.documentElement;
   const computedStyle = getComputedStyle(root);
   const primary = computedStyle.getPropertyValue('--primary').trim() || '#C614E1';
-  const secondary = computedStyle.getPropertyValue('--secondary').trim() || '#cc3f84';
+  const accent = computedStyle.getPropertyValue('--accent').trim() || '#087d9a';
   
-  return { primary, secondary };
+  return { primary, accent };
 }
 
 export function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<ParticleEngine | null>(null);
   const animationIdRef = useRef<number | null>(null);
-  const [themeColors, setThemeColors] = useState({ primary: '#C614E1', secondary: '#cc3f84' });
+  const [themeColors, setThemeColors] = useState({ primary: '#C614E1', accent: '#087d9a' });
 
   // Watch for theme color changes
   useEffect(() => {
@@ -76,7 +76,7 @@ export function ParticleBackground() {
       const config: ParticleConfig = {
         ...BASE_CONFIG,
         peakColor: themeColors.primary,
-        troughColor: themeColors.secondary,
+        troughColor: themeColors.accent,
       };
       engineRef.current.updateConfig(config);
     }
@@ -126,7 +126,7 @@ export function ParticleBackground() {
     const initialConfig: ParticleConfig = {
       ...BASE_CONFIG,
       peakColor: themeColors.primary,
-      troughColor: themeColors.secondary,
+      troughColor: themeColors.accent,
     };
     engineRef.current.updateConfig(initialConfig);
     engineRef.current.setGridMode(true);
