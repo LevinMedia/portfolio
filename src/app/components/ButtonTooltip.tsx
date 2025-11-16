@@ -3,6 +3,7 @@ import Tooltip from './Tooltip';
 
 interface ButtonTooltipProps {
   children: React.ReactElement;
+  fullWidth?: boolean;
 }
 
 function getButtonCode(props: Record<string, unknown>) {
@@ -34,7 +35,7 @@ function getButtonCode(props: Record<string, unknown>) {
   return `<Button${propString ? ' ' + propString : ''}>`;
 }
 
-const ButtonTooltip: React.FC<ButtonTooltipProps> = ({ children }) => {
+const ButtonTooltip: React.FC<ButtonTooltipProps> = ({ children, fullWidth = false }) => {
   const buttonProps = (children.props ?? {}) as Record<string, unknown>;
   const borderRadius = buttonProps.size === 'large' ? 8 : 6;
 
@@ -45,6 +46,7 @@ const ButtonTooltip: React.FC<ButtonTooltipProps> = ({ children }) => {
       showBorder={true}
       tooltipType="code"
       borderColor="stroke-accent"
+      fullWidth={fullWidth}
     >
       {children}
     </Tooltip>

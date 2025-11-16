@@ -113,7 +113,7 @@ function HomeContent() {
   };
 
   return (
-    <div className="relative grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
+    <div className="relative grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto px-4 sm:px-0 max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
       gridTemplateRows: 'var(--grid-major) 1fr 0',
       gap: 'var(--grid-major)',
     }}>
