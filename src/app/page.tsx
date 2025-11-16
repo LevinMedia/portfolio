@@ -11,6 +11,7 @@ import StatsContent from "./components/StatsContent";
 import Guestbook from "./components/Guestbook";
 import Howdy from "./components/Howdy";
 import Navigation from "./components/Navigation";
+import { ParticleBackground } from "./components/ParticleBackground";
 import { usePageTitle } from "./hooks/usePageTitle";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
@@ -112,9 +113,17 @@ function HomeContent() {
   };
 
   return (
-    <div className="grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
+    <div className="relative grid grid-cols-6 items-center min-h-screen font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto px-4 sm:px-0 max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]" style={{ 
       gridTemplateRows: 'var(--grid-major) 1fr 0',
       gap: 'var(--grid-major)',
+    }}>
+      {/* Particle Background Layer - constrained to wrapper */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <ParticleBackground />
+      </div>
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 z-[1] pointer-events-none" style={{
       backgroundImage: `
         linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -129,8 +138,11 @@ function HomeContent() {
       `,
       backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
       backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
-    }}>
-      <Howdy onSelectedWorksClick={() => router.push('/?selected-works=true')} onSiteSettingsClick={() => setIsSiteSettingsOpen(true)} />
+      }} />
+
+      {/* Content Layer */}
+      <div className="relative z-10 col-span-6 contents">
+        <Howdy onSelectedWorksClick={() => router.push('/?selected-works=true')} onSiteSettingsClick={() => setIsSiteSettingsOpen(true)} />
       
 
       
@@ -205,6 +217,7 @@ function HomeContent() {
         >
           <StatsContent />
         </Drawer>
+      </div>
       </div>
     );
   }

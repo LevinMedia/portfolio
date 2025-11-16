@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+// Cache indefinitely - only revalidate on-demand when content is updated
+export const revalidate = false // or use a very large number like 86400 (1 day)
+
 export async function GET() {
   try {
     const supabase = createClient(
@@ -23,7 +26,12 @@ export async function GET() {
       return NextResponse.json({ error: 'No content available' }, { status: 404 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        // Cache for a very long time - will be revalidated on-demand
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800'
+      }
+    })
   } catch (err) {
     console.error('Error in howdy API route:', err)
     return NextResponse.json(
