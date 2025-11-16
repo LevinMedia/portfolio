@@ -40,25 +40,32 @@ export function ParticleBackground() {
   const engineRef = useRef<ParticleEngine | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [themeColors, setThemeColors] = useState({ primary: '#C614E1', accent: '#087d9a' });
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Watch for theme color changes
+  // Watch for theme color changes and dark mode
   useEffect(() => {
     const updateColors = () => {
       const colors = getThemeColors();
       setThemeColors(colors);
     };
 
-    // Initial color load
+    const updateDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+
+    // Initial load
     updateColors();
+    updateDarkMode();
 
     // Watch for theme changes via MutationObserver
     const observer = new MutationObserver(() => {
       updateColors();
+      updateDarkMode();
     });
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['style'],
+      attributeFilter: ['style', 'class'],
     });
 
     // Also listen for storage events (when theme changes in another tab)
@@ -70,17 +77,19 @@ export function ParticleBackground() {
     };
   }, []);
 
-  // Update particle colors when theme changes
+  // Update particle colors and background when theme changes
   useEffect(() => {
     if (engineRef.current) {
       const config: ParticleConfig = {
         ...BASE_CONFIG,
         peakColor: themeColors.primary,
         troughColor: themeColors.accent,
+        backgroundColor: isDarkMode ? '#0a0a0a' : '#f5f5f5',
+        backgroundGradient: isDarkMode ? '#1a1a2e' : '#e5e5e5',
       };
       engineRef.current.updateConfig(config);
     }
-  }, [themeColors]);
+  }, [themeColors, isDarkMode]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -127,6 +136,8 @@ export function ParticleBackground() {
       ...BASE_CONFIG,
       peakColor: themeColors.primary,
       troughColor: themeColors.accent,
+      backgroundColor: isDarkMode ? '#0a0a0a' : '#f5f5f5',
+      backgroundGradient: isDarkMode ? '#1a1a2e' : '#e5e5e5',
     };
     engineRef.current.updateConfig(initialConfig);
     engineRef.current.setGridMode(true);
@@ -145,14 +156,14 @@ export function ParticleBackground() {
       }
       resizeObserver.disconnect();
     };
-  }, [themeColors]);
+  }, [themeColors, isDarkMode]);
 
   return (
     <canvas
       ref={canvasRef}
       className="w-full h-full absolute inset-0"
       style={{
-        background: BASE_CONFIG.backgroundColor,
+        background: isDarkMode ? '#0a0a0a' : '#f5f5f5',
         pointerEvents: 'none',
       }}
     />
