@@ -25,7 +25,7 @@ const DEFAULT_DATA: HowdyData = {
   image_src: '/Levin_Profile.jpg',
   image_alt: 'David Levin',
   greeting: "Hi, I'm David",
-  li_1: '👨‍💻 Software architect, pizza enthusiast.',
+  li_1: '👨‍💻 Software designer, pizza enthusiast.',
   li_2: '🚀 Let\'s make awesome happen.'
 }
 
