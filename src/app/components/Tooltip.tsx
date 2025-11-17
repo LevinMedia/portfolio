@@ -83,7 +83,7 @@ function getDefaultCode(props: Record<string, unknown>, children: React.ReactNod
   return `<${componentName}${propString ? ' ' + propString : ''}>`;
 }
 
-const TYPING_SPEED = 4; // ms per character
+const TYPING_SPEED = 8; // ms per character (increased from 4ms for better performance with particle background)
 
 const Tooltip: React.FC<TooltipProps> = ({
   children, 
@@ -102,6 +102,8 @@ const Tooltip: React.FC<TooltipProps> = ({
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const timeout = useRef<NodeJS.Timeout | null>(null);
   const typingInterval = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastUpdateTimeRef = useRef<number>(0);
 
   // Detect touch device and theme changes
   useEffect(() => {
@@ -143,21 +145,43 @@ const Tooltip: React.FC<TooltipProps> = ({
   useEffect(() => {
     if (show) {
       setTypedLength(0);
-      typingInterval.current = setInterval(() => {
-        setTypedLength((len) => {
-          if (len < code.length) {
-            return len + 1;
-          } else {
-            if (typingInterval.current) clearInterval(typingInterval.current);
-            return len;
-          }
-        });
-      }, TYPING_SPEED);
+      lastUpdateTimeRef.current = performance.now();
+      let currentLength = 0;
+      let isActive = true;
+      
+      const animate = (currentTime: number) => {
+        if (!isActive) return;
+        
+        const elapsed = currentTime - lastUpdateTimeRef.current;
+        
+        if (elapsed >= TYPING_SPEED && currentLength < code.length) {
+          currentLength += 1;
+          lastUpdateTimeRef.current = currentTime;
+          setTypedLength(currentLength);
+        }
+        
+        // Continue animation loop until we've typed all characters
+        if (currentLength < code.length) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+        }
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(animate);
+      
       return () => {
+        isActive = false;
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
         if (typingInterval.current) clearInterval(typingInterval.current);
       };
     } else {
       setTypedLength(0);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
       if (typingInterval.current) clearInterval(typingInterval.current);
     }
   }, [show, code]);
