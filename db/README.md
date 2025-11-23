@@ -8,6 +8,7 @@ This folder contains all database-related files for the LevinMedia site.
 db/
 ├── README.md                 # This file
 ├── prod_functions.sql        # Production database functions
+├── themes_schema.sql         # Theme tables (themes + site_settings)
 ├── migrations/               # Database migrations (future)
 └── temp_fixes/              # One-time fixes (future)
 ```
@@ -39,6 +40,13 @@ db/
 2. Paste into Supabase SQL Editor
 3. Execute the script
 4. Verify functions are created with `prod_` prefix
+
+### Deploying Theme System Tables
+1. Ensure `prod_functions.sql` has been executed
+2. Copy the contents of `themes_schema.sql`
+3. Paste into the Supabase SQL Editor
+4. Execute the script to create/update `themes` and `site_settings`
+5. Confirm `my-first-theme` is the active theme in `themes`
 
 ### Adding New Production Functions
 1. Add function to `prod_functions.sql`

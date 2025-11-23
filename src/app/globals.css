@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../themes/my-first-theme/styles/theme.css";
 
 /* Force Tailwind classes to use CSS variables - THEME SYSTEM FIX */
 .bg-primary { background-color: var(--primary) !important; }
@@ -150,35 +151,7 @@
 .gb-editor .milkdown ~ .milkdown { display: none !important; }
 
 
-:root {
-  /* Light theme */
-  --background: #ffffff;
-  --foreground: #1a1a1a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #cbd5e1;
-  --input: #ffffff;
-  
-  /* Responsive grid properties */
-  --grid-size: 4px;
-  --grid-major: 16px;
-  --grid-opacity-light: 0.08;
-  --grid-opacity-dark: 0.15;
-  
-  /* Vibrant theme colors - light mode versions */
-  --primary: #C614E1;           /* Brand primary */
-  --primary-foreground: #ffffff;
-  --secondary: #ec4899;         /* Slightly darker pink for light mode */
-  --secondary-foreground: #ffffff;
-  --accent: #0891b2;            /* Darker cyan for light mode contrast */
-  --accent-foreground: #ffffff;
-  
-  /* Status colors */
-  --destructive: #dc2626;       /* Slightly darker red for light mode */
-  --destructive-foreground: #ffffff;
-  --ring: #C614E1;              /* Match primary */
-  --radius: 0.5rem;
-}
+/* Theme CSS variables are defined within individual theme stylesheets */
 
 /* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
@@ -204,50 +177,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    /* Base colors */
-    --background: #242427;        /* oklch(14% 0.005 285.823) */
-    --foreground: #f4f4f5;        /* oklch(96% 0.007 247.896) */
-    --muted: #36363b;             /* oklch(21% 0.006 285.885) */
-    --muted-foreground: #a1a1aa;  /* derived from content */
-    --border: #52525b;            /* slightly lighter muted */
-    --input: #36363b;             /* same as muted */
-    
-    /* Theme colors */
-    --primary: #C614E1;           /* Brand primary */
-    --primary-foreground: #ffffff; /* oklch(100% 0 0) */
-    --secondary: #f471b5;         /* oklch(65% 0.241 354.308) */
-    --secondary-foreground: #ffffff;
-    --accent: #67e8f9;            /* oklch(77% 0.152 181.912) */
-    --accent-foreground: #0f172a;
-    
-    /* Status colors */
-    --destructive: #f87171;       /* oklch(71% 0.194 13.428) */
-    --destructive-foreground: #ffffff;
-    --ring: #C614E1;              /* same as primary */
+    /* Theme-specific overrides handled by theme stylesheets */
   }
 }
 
 .dark {
-  /* Base colors */
-  --background: #242427;        /* oklch(14% 0.005 285.823) */
-  --foreground: #f4f4f5;        /* oklch(96% 0.007 247.896) */
-  --muted: #36363b;             /* oklch(21% 0.006 285.885) */
-  --muted-foreground: #a1a1aa;  /* derived from content */
-  --border: #52525b;            /* slightly lighter muted */
-  --input: #36363b;             /* same as muted */
-  
-  /* Theme colors */
-  --primary: #C614E1;           /* Brand primary */
-  --primary-foreground: #ffffff; /* oklch(100% 0 0) */
-  --secondary: #f471b5;         /* oklch(65% 0.241 354.308) */
-  --secondary-foreground: #ffffff;
-  --accent: #67e8f9;            /* oklch(77% 0.152 181.912) */
-  --accent-foreground: #0f172a;
-  
-  /* Status colors */
-  --destructive: #f87171;       /* oklch(71% 0.194 13.428) */
-  --destructive-foreground: #ffffff;
-  --ring: #C614E1;              /* same as primary */
+  /* Theme-specific overrides handled by theme stylesheets */
 }
 
 /* Image container responsive sizing */
@@ -307,6 +242,19 @@
   .tooltip-container > * {
     pointer-events: auto !important;
   }
+}
+
+/* Hide Next.js dev toast notifications */
+[data-nextjs-toast],
+[data-nextjs-toast-wrapper],
+[data-nextjs-dialog-overlay],
+[data-nextjs-dialog-left-right],
+[data-nextjs-dialog-content],
+nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 

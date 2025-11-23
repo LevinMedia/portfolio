@@ -5,6 +5,10 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import { ThemeProvider } from "@/lib/themes/ThemeProvider";
+import { createClient } from "@supabase/supabase-js";
+import { defaultThemeId } from "@/lib/themes/registry";
+import { getActiveThemeId, syncThemesTable } from "@/lib/themes/theme-store";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,31 +28,49 @@ export const metadata: Metadata = {
   description: "David Levin's portfolio and work history",
 };
 
-export default function RootLayout({
+async function resolveActiveThemeId() {
+  try {
+    const client = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    await syncThemesTable(client);
+    return await getActiveThemeId(client);
+  } catch (error) {
+    console.error("Unable to resolve active theme. Falling back to default.", error);
+    return defaultThemeId;
+  }
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const activeThemeId = await resolveActiveThemeId();
+
   return (
     <html lang="en" className="hydrated">
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased fonts-loaded`}
       >
-        <Suspense fallback={null}>
-          <AnalyticsTracker />
-        </Suspense>
-        {children}
-        <Analytics />
-        <Script
-          id="prevent-fouc"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
+        <ThemeProvider initialThemeId={activeThemeId}>
+          <Suspense fallback={null}>
+            <AnalyticsTracker />
+          </Suspense>
+          {children}
+          <Analytics />
+          <Script
+            id="prevent-fouc"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
               document.documentElement.classList.add('hydrated');
               document.body.classList.add('fonts-loaded');
             `,
-          }}
-        />
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );

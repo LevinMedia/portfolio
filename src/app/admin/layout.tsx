@@ -12,7 +12,8 @@ import {
   DocumentTextIcon,
   ChartBarIcon,
   BookOpenIcon,
-  HomeIcon
+  HomeIcon,
+  SwatchIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminLayoutProps {
@@ -22,6 +23,7 @@ interface AdminLayoutProps {
 const navigation = [
   { name: 'General Settings', href: '/admin', icon: CogIcon },
   { name: 'Howdy', href: '/admin/howdy', icon: UserIcon },
+  { name: 'Themes', href: '/admin/themes', icon: SwatchIcon },
   { name: 'Selected Work', href: '/admin/selected-work', icon: DocumentTextIcon },
   { name: 'Work History', href: '/admin/work-history', icon: BriefcaseIcon },
   { name: 'About', href: '/admin/about', icon: BookOpenIcon },

@@ -57,6 +57,7 @@
     "react-leaflet": "^5.0.0",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
+    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "supercluster": "^8.0.1",
     "video.js": "^8.23.4"

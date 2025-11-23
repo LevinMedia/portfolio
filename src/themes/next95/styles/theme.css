@@ -1,0 +1,76 @@
+:root {
+  --background: #008080; /* Classic Windows 95 teal background */
+  --foreground: #000000;
+  --muted: #dcdcdc;
+  --muted-foreground: #333333;
+  --border: #6b6b6b;
+  --input: #ffffff;
+
+  --grid-size: 4px;
+  --grid-major: 16px;
+  --grid-opacity-light: 0.05;
+  --grid-opacity-dark: 0.12;
+
+  --primary: #000080;
+  --primary-foreground: #ffffff;
+  --secondary: #008080;
+  --secondary-foreground: #ffffff;
+  --accent: #ffb900;
+  --accent-foreground: #1a1a1a;
+
+  --destructive: #8b0000;
+  --destructive-foreground: #ffffff;
+  --ring: #000080;
+  --radius: 0;
+  --font-geist-mono: var(--font-geist-mono);
+  --font-geist-sans: var(--font-inter);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #008080; /* Keep teal in dark mode too */
+    --foreground: #000000;
+    --muted: #dcdcdc;
+    --muted-foreground: #333333;
+    --border: #6b6b6b;
+    --input: #ffffff;
+
+    --primary: #000080;
+    --primary-foreground: #ffffff;
+    --secondary: #008080;
+    --secondary-foreground: #ffffff;
+    --accent: #ffb900;
+    --accent-foreground: #1a1a1a;
+
+    --destructive: #8b0000;
+    --destructive-foreground: #ffffff;
+    --ring: #000080;
+  }
+}
+
+.dark {
+  --background: #008080; /* Keep teal in dark mode too */
+  --foreground: #000000;
+  --muted: #dcdcdc;
+  --muted-foreground: #333333;
+  --border: #6b6b6b;
+  --input: #ffffff;
+
+  --primary: #000080;
+  --primary-foreground: #ffffff;
+  --secondary: #008080;
+  --secondary-foreground: #ffffff;
+  --accent: #ffb900;
+  --accent-foreground: #1a1a1a;
+
+  --destructive: #8b0000;
+  --destructive-foreground: #ffffff;
+  --ring: #000080;
+}
+
+html,
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
