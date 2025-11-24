@@ -177,8 +177,11 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               {/* Title overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h1 className="text-2xl font-bold text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+              <div className="absolute bottom-0 left-0 right-0 p-4 @[600px]:p-6">
+                <h1
+                  className="text-3xl @[600px]:text-4xl @[900px]:text-5xl font-black tracking-tight text-white leading-tight"
+                  style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.9)' }}
+                >
                   {work.title}
                 </h1>
               </div>

@@ -337,7 +337,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
   const renderDesktopTab = () => (
     <>
         <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
-        <div className="text-sm font-bold" style={{ color: 'var(--win95-content-bg, #ffffff)', backgroundColor: 'var(--win95-text, #000000)', display: 'inline-block', padding: '0 6px' }}>Desktop Background</div>
+        <div className="text-sm font-bold" style={{ color: 'var(--win95-content-text, #000000)' }}>Desktop Background</div>
         <div className="grid grid-cols-1 @[600px]:grid-cols-3 gap-2">
           {wallpaperOptions.map((option) => {
             const isActive = settings.desktopWallpaper === option.id
@@ -363,7 +363,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
       </div>
 
       <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
-        <div className="text-sm font-bold" style={{ color: 'var(--win95-content-bg, #ffffff)', backgroundColor: 'var(--win95-text, #000000)', display: 'inline-block', padding: '0 6px' }}>Screen Saver</div>
+        <div className="text-sm font-bold" style={{ color: 'var(--win95-content-text, #000000)' }}>Screen Saver</div>
         <div className="grid grid-cols-1 @[500px]:grid-cols-3 gap-2">
           {screensaverOptions.map((option) => {
             const isActive = settings.screensaverMode === option.id
