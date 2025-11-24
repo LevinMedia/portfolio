@@ -35,7 +35,7 @@ export async function GET(
   } catch (err) {
     console.error('Error in selected work API route:', err)
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

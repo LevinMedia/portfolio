@@ -27,6 +27,8 @@ export default function SystemSettingsWindow({ onClose }: SystemSettingsWindowPr
 
   return (
     <Window
+      id="system-settings"
+      slug="system-settings"
       title="System Settings"
       icon={<Image src="/System-settings.png" alt="System Settings" width={16} height={16} />}
       defaultWidth={820}

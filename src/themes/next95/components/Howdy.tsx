@@ -89,6 +89,7 @@ export default function Howdy({
   return (
     <Window
       id="welcome"
+      slug="howdy"
       title="Howdy"
       icon={
         remoteData?.image_src ? (

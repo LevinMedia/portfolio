@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Drawer from "./components/Drawer";
@@ -14,7 +14,7 @@ import { ThemeHowdy, ThemeNavigation } from "./components/ThemeComponents";
 import { ParticleBackground } from "./components/ParticleBackground";
 import { usePageTitle } from "./hooks/usePageTitle";
 import { useTheme } from "@/lib/themes/ThemeProvider";
-import { WindowManagerProvider } from "@/themes/next95/context/WindowManagerContext";
+import { WindowManagerProvider, useWindowManager } from "@/themes/next95/context/WindowManagerContext";
 import DesktopIcon from "@/themes/next95/components/DesktopIcon";
 import SelectedWorksWindow from "@/themes/next95/components/SelectedWorksWindow";
 import WorkDetailWindow from "@/themes/next95/components/WorkDetailWindow";
@@ -23,6 +23,7 @@ import WorkHistoryWindow from "@/themes/next95/components/WorkHistoryWindow";
 import GuestbookWindow from "@/themes/next95/components/GuestbookWindow";
 import AboutWindow from "@/themes/next95/components/AboutWindow";
 import SystemSettingsWindow from "@/themes/next95/components/SystemSettingsWindow";
+import NotFoundWindow from "@/themes/next95/components/NotFoundWindow";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
@@ -30,6 +31,7 @@ function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
+  const { windows } = useWindowManager();
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false);
@@ -37,7 +39,7 @@ function HomeContent() {
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
-  const [isHowdyOpen, setIsHowdyOpen] = useState(true); // Howdy window state
+  const [isHowdyOpen, setIsHowdyOpen] = useState(false); // Howdy window state
   const [isSelectedWorksWindowOpen, setIsSelectedWorksWindowOpen] = useState(false); // Next95 Selected Works window
   const [isStatsWindowOpen, setIsStatsWindowOpen] = useState(false); // Next95 Stats window
   const [isWorkHistoryWindowOpen, setIsWorkHistoryWindowOpen] = useState(false); // Next95 Work History window
@@ -47,6 +49,14 @@ function HomeContent() {
   const [openWorkWindows, setOpenWorkWindows] = useState<Array<{ slug: string; title: string }>>([]); // Track open work detail windows
   const [howdyImageSrc, setHowdyImageSrc] = useState<string>('/guestbook-icon.png'); // Fallback to guestbook icon
   const [isDarkMode, setIsDarkMode] = useState(false); // Track dark mode state
+  const [isNotFoundWindowOpen, setIsNotFoundWindowOpen] = useState(false);
+  const [notFoundPath, setNotFoundPath] = useState('');
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname || '/';
+    }
+    return '/';
+  });
 
   // Determine current page title based on open drawer
   const pageTitle = isWorkHistoryOpen ? 'Work History'
@@ -158,6 +168,89 @@ function HomeContent() {
     else setActiveWindow(null);
   }, [searchParams]);
 
+  const handlePathNavigation = useCallback((path: string) => {
+    if (theme.id !== 'next95') return;
+    const cleanPath = path.replace(/^\/+|\/+$/g, '');
+    const segments = cleanPath ? cleanPath.split('/') : [];
+    const [rawSlug = '', detail] = segments;
+    const normalizedSlug = rawSlug;
+
+    const isHowdy = normalizedSlug === 'howdy';
+    const isAbout = normalizedSlug === 'about';
+    const isWorkHistory = normalizedSlug === 'work-history';
+    const isSelectedWorks = normalizedSlug === 'selected-works';
+    const isStats = normalizedSlug === 'stats';
+    const isGuestbook = normalizedSlug === 'guestbook';
+    const isSystemSettings = normalizedSlug === 'system-settings';
+    const isNotFoundSlug = normalizedSlug === '404';
+    const isRoot = normalizedSlug === '';
+    const isKnownSlug = isRoot || isHowdy || isAbout || isWorkHistory || isSelectedWorks || isStats || isGuestbook || isSystemSettings || isNotFoundSlug;
+    const shouldShowNotFound = !isKnownSlug;
+
+    setIsHowdyOpen(prev => (isHowdy ? true : prev));
+    setIsAboutWindowOpen(prev => (isAbout ? true : prev));
+    setIsWorkHistoryWindowOpen(prev => (isWorkHistory ? true : prev));
+    setIsSelectedWorksWindowOpen(prev => (isSelectedWorks ? true : prev));
+    setIsStatsWindowOpen(prev => (isStats ? true : prev));
+    setIsGuestbookWindowOpen(prev => (isGuestbook ? true : prev));
+    setIsSystemSettingsWindowOpen(prev => (isSystemSettings ? true : prev));
+    setIsNotFoundWindowOpen(isNotFoundSlug || shouldShowNotFound);
+
+    if (isSelectedWorks && detail) {
+      setOpenWorkWindows(prev => {
+        if (prev.some(w => w.slug === detail)) {
+          return prev;
+        }
+        return [...prev, { slug: detail, title: detail }];
+      });
+    }
+
+    if (isNotFoundSlug || shouldShowNotFound) {
+      const fallback = cleanPath ? `/${cleanPath}` : '/404';
+      setNotFoundPath(fallback);
+    } else {
+      setNotFoundPath('');
+    }
+  }, [theme.id]);
+
+  useEffect(() => {
+    if (theme.id !== 'next95') return;
+    handlePathNavigation(currentPath);
+  }, [currentPath, theme.id, handlePathNavigation]);
+
+  useEffect(() => {
+    if (theme.id !== 'next95') return;
+    const activeWindow = windows.find(w => w.isActive && !w.isMinimized);
+    const fallbackWindow = [...windows].reverse().find(w => !w.isMinimized);
+    const targetSlug = activeWindow?.slug ?? fallbackWindow?.slug ?? (isHowdyOpen ? 'howdy' : undefined);
+    const nextPath = isNotFoundWindowOpen
+      ? (notFoundPath || currentPath || '/404')
+      : (targetSlug ? `/${targetSlug}` : '/');
+
+    if (currentPath === nextPath) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ desktopNavigation: true }, '', nextPath);
+    }
+    setCurrentPath(nextPath);
+  }, [windows, currentPath, isHowdyOpen, theme.id, isNotFoundWindowOpen, notFoundPath]);
+
+  useEffect(() => {
+    if (theme.id !== 'next95') return;
+    const syncPathToLocation = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentPath(window.location.pathname || '/');
+      }
+    };
+    syncPathToLocation();
+    window.addEventListener('popstate', syncPathToLocation);
+    return () => {
+      window.removeEventListener('popstate', syncPathToLocation);
+    };
+  }, [theme.id]);
+
 
   // Handle closing work history drawer
   const handleWorkHistoryClose = () => {
@@ -232,9 +325,9 @@ function HomeContent() {
     }}>
       {/* Particle Background Layer - constrained to wrapper */}
       {showParticleBackground && (
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <ParticleBackground />
-        </div>
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <ParticleBackground />
+      </div>
       )}
 
       {/* Dark Mode Scrim - 67% opacity black overlay for Next95 theme in dark mode */}
@@ -247,22 +340,22 @@ function HomeContent() {
 
       {/* Grid Pattern Overlay */}
       {showGridPattern && (
-        <div className="absolute inset-0 z-[1] pointer-events-none" style={{
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-          repeating-linear-gradient(90deg, 
-            rgba(0, 100, 255, 0.015) 0, 
-            rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6), 
-            transparent calc((100% - 5 * var(--grid-major)) / 6), 
-            transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
-          )
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
-        }} />
+      <div className="absolute inset-0 z-[1] pointer-events-none" style={{
+      backgroundImage: `
+        linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
+        linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
+        repeating-linear-gradient(90deg, 
+          rgba(0, 100, 255, 0.015) 0, 
+          rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6), 
+          transparent calc((100% - 5 * var(--grid-major)) / 6), 
+          transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
+        )
+      `,
+      backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
+      backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
+      }} />
       )}
 
       {/* Content Layer */}
@@ -347,9 +440,12 @@ function HomeContent() {
             onClose={() => setIsSelectedWorksWindowOpen(false)} 
             onOpenWork={(slug, title) => {
               // Add to open work windows if not already open
-              if (!openWorkWindows.some(w => w.slug === slug)) {
-                setOpenWorkWindows([...openWorkWindows, { slug, title }]);
-              }
+              setOpenWorkWindows(prev => {
+                if (prev.some(w => w.slug === slug)) {
+                  return prev;
+                }
+                return [...prev, { slug, title }];
+              });
             }}
           />
         )}
@@ -361,7 +457,7 @@ function HomeContent() {
             slug={work.slug}
             title={work.title}
             onClose={() => {
-              setOpenWorkWindows(openWorkWindows.filter(w => w.slug !== work.slug));
+              setOpenWorkWindows(prev => prev.filter(w => w.slug !== work.slug));
             }}
           />
         ))}
@@ -392,6 +488,18 @@ function HomeContent() {
             onClose={() => setIsSystemSettingsWindowOpen(false)} 
           />
         )}
+
+        {/* Not Found Window */}
+        {theme.id === 'next95' && isNotFoundWindowOpen && (
+          <NotFoundWindow
+            attemptedPath={notFoundPath || currentPath || '/'}
+            onClose={() => {
+              setIsNotFoundWindowOpen(false);
+              setNotFoundPath('');
+              setIsHowdyOpen(true);
+            }}
+          />
+        )}
       
 
       
@@ -399,99 +507,96 @@ function HomeContent() {
 
       {theme.id !== 'next95' && (
         <>
-          {/* Work History Drawer */}
-          <Drawer
-            isOpen={isWorkHistoryOpen}
-            onClose={handleWorkHistoryClose}
-            title="Work History"
-            icon={<BriefcaseIcon className="w-6 h-6" />}
-            showLinkedInButton={true}
-            linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
+      {/* Work History Drawer */}
+      <Drawer
+        isOpen={isWorkHistoryOpen}
+        onClose={handleWorkHistoryClose}
+        title="Work History"
+        icon={<BriefcaseIcon className="w-6 h-6" />}
+        showLinkedInButton={true}
+        linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
             lazyMount
-          >
-            <WorkHistoryContent />
-          </Drawer>
+      >
+        <WorkHistoryContent />
+      </Drawer>
 
-          {/* About Drawer */}
-          <Drawer
-            isOpen={isAboutOpen}
-            onClose={handleAboutClose}
-            title="About"
-            icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
+              {/* About Drawer */}
+        <Drawer
+          isOpen={isAboutOpen}
+          onClose={handleAboutClose}
+          title="About"
+          icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
             lazyMount
-          >
-            <AboutContent />
-          </Drawer>
+        >
+          <AboutContent />
+        </Drawer>
 
-          {/* Selected Works Drawer */}
-          <Drawer
-            isOpen={isSelectedWorksOpen}
-            onClose={handleSelectedWorksClose}
-            title="Selected works"
-            icon={<CommandLineIcon className="w-6 h-6" />}
-            contentPadding="p-0"
-            maxWidth=""
+        {/* Selected Works Drawer */}
+        <Drawer
+          isOpen={isSelectedWorksOpen}
+          onClose={handleSelectedWorksClose}
+          title="Selected works"
+          icon={<CommandLineIcon className="w-6 h-6" />}
+          contentPadding="p-0"
+          maxWidth=""
             lazyMount
-          >
-            <SelectedWorksContent />
-          </Drawer>
+        >
+          <SelectedWorksContent />
+        </Drawer>
 
-          {/* Site Settings Drawer */}
-          <Drawer
-            isOpen={isSiteSettingsOpen}
-            onClose={handleSiteSettingsClose}
-            title="Site Settings"
-            icon={<CogIcon className="w-6 h-6" />}
-            contentPadding="p-4"
-            maxWidth="max-w-4xl"
+        {/* Site Settings Drawer */}
+        <Drawer
+          isOpen={isSiteSettingsOpen}
+          onClose={handleSiteSettingsClose}
+          title="Site Settings"
+          icon={<CogIcon className="w-6 h-6" />}
+          contentPadding="p-4"
+          maxWidth="max-w-4xl"
             lazyMount
-          >
-            <SiteSettingsContent />
-          </Drawer>
+        >
+          <SiteSettingsContent />
+        </Drawer>
 
-          {/* Guestbook Drawer */}
-          <Drawer
-            isOpen={isGuestbookOpen}
-            onClose={handleGuestbookClose}
-            title="Guestbook"
-            icon={<PencilSquareIcon className="w-6 h-6" />}
-            contentPadding="p-4"
-            maxWidth="max-w-4xl"
+        {/* Guestbook Drawer */}
+        <Drawer
+          isOpen={isGuestbookOpen}
+          onClose={handleGuestbookClose}
+          title="Guestbook"
+          icon={<PencilSquareIcon className="w-6 h-6" />}
+          contentPadding="p-4"
+          maxWidth="max-w-4xl"
             lazyMount
-          >
-            <Guestbook />
-          </Drawer>
+        >
+          <Guestbook />
+        </Drawer>
 
-          {/* Stats Drawer */}
-          <Drawer
-            isOpen={isStatsOpen}
-            onClose={handleStatsClose}
-            title="Site Statistics"
-            icon={<ChartBarSquareIcon className="w-6 h-6" />}
-            contentPadding="p-4"
-            maxWidth="max-w-6xl"
+        {/* Stats Drawer */}
+        <Drawer
+          isOpen={isStatsOpen}
+          onClose={handleStatsClose}
+          title="Site Statistics"
+          icon={<ChartBarSquareIcon className="w-6 h-6" />}
+          contentPadding="p-4"
+          maxWidth="max-w-6xl"
             lazyMount
-          >
-            <StatsContent />
-          </Drawer>
+        >
+          <StatsContent />
+        </Drawer>
         </>
       )}
       </div>
-    </div>
-  );
-
-  // Wrap with WindowManagerProvider for next95 theme
-  if (theme.id === 'next95') {
-    return <WindowManagerProvider>{content}</WindowManagerProvider>;
-  }
+      </div>
+    );
 
   return content;
-}
+  }
 
 export default function Home() {
   return (
-    <Suspense fallback={null}>
-      <HomeContent />
-    </Suspense>
+    <WindowManagerProvider>
+      <Suspense fallback={null}>
+        <HomeContent />
+      </Suspense>
+    </WindowManagerProvider>
   );
 }

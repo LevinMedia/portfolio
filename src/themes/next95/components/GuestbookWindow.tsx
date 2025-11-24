@@ -29,6 +29,7 @@ export default function GuestbookWindow({ onClose }: GuestbookWindowProps) {
   return (
     <Window
       id="guestbook"
+      slug="guestbook"
       title="Guestbook"
       icon={<Image src="/guestbook-icon.png" alt="Guestbook" width={16} height={16} />}
       defaultWidth={windowWidth}

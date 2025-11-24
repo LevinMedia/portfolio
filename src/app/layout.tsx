@@ -50,26 +50,51 @@ export default async function RootLayout({
   const activeThemeId = await resolveActiveThemeId();
 
   return (
-    <html lang="en" className="hydrated">
+    <html lang="en" className="hydrated light">
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased fonts-loaded`}
       >
         <ThemeProvider initialThemeId={activeThemeId}>
-          <Suspense fallback={null}>
-            <AnalyticsTracker />
-          </Suspense>
-          {children}
-          <Analytics />
-          <Script
-            id="prevent-fouc"
-            strategy="beforeInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-              document.documentElement.classList.add('hydrated');
-              document.body.classList.add('fonts-loaded');
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
+        {children}
+        <Analytics />
+        <Script
+          id="prevent-fouc"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var root = document.documentElement;
+                try {
+                  root.classList.add('hydrated');
+                  var saved = localStorage.getItem('next95-settings');
+                  if (saved) {
+                    var parsed = JSON.parse(saved);
+                    if (parsed && parsed.colorMode === 'dark') {
+                      root.classList.add('dark');
+                      root.classList.remove('light');
+                    } else if (parsed && parsed.colorMode === 'light') {
+                      root.classList.add('light');
+                      root.classList.remove('dark');
+                    } else {
+                      root.classList.add('light');
+                      root.classList.remove('dark');
+                    }
+                  } else {
+                    root.classList.add('light');
+                    root.classList.remove('dark');
+                  }
+                } catch (error) {
+                  root.classList.add('light');
+                  root.classList.remove('dark');
+                }
+                document.body.classList.add('fonts-loaded');
+              })();
             `,
-            }}
-          />
+          }}
+        />
         </ThemeProvider>
       </body>
     </html>

@@ -110,10 +110,13 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
   const defaultX = baseX + (cascadeLevel * cascadeOffset);
   const defaultY = baseY + (cascadeLevel * cascadeOffset);
 
+  const displayTitle = work?.title ?? title;
+
   return (
     <Window
       id={`work-${slug}`}
-      title={title}
+      slug={`selected-works/${slug}`}
+      title={displayTitle}
       icon={
         <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
           <rect x="2" y="1" width="10" height="14" fill="#ffffff" stroke="#000" />

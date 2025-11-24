@@ -30,6 +30,7 @@ export default function StatsWindow({ onClose }: StatsWindowProps) {
   return (
     <Window
       id="stats"
+      slug="stats"
       title="System Stats"
       icon={<Image src="/Stats.png" alt="Stats" width={16} height={16} />}
       defaultWidth={windowWidth}

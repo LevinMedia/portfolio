@@ -29,6 +29,7 @@ export default function WorkHistoryWindow({ onClose }: WorkHistoryWindowProps) {
   return (
     <Window
       id="work-history"
+      slug="work-history"
       title="Work History"
       icon={<Image src="/work-history.png" alt="Work History" width={16} height={16} />}
       defaultWidth={windowWidth}

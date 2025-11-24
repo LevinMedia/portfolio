@@ -33,6 +33,7 @@ export default function AboutWindow({ onClose }: AboutWindowProps) {
   return (
     <Window
       id="about-next95"
+      slug="about"
       title="About"
       icon={<Image src="/about.png" alt="About" width={16} height={16} />}
       defaultWidth={windowWidth}

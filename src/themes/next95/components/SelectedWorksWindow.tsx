@@ -62,6 +62,7 @@ export default function SelectedWorksWindow({ onClose, onOpenWork }: SelectedWor
   return (
     <Window
       id="selected-works"
+      slug="selected-works"
       title="Selected Works"
       icon={<Image src="/folder.png" alt="Folder" width={16} height={16} />}
       defaultWidth={windowWidth}

@@ -8,6 +8,7 @@ interface WindowProps {
   title: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
+  slug?: string;
   onClose?: () => void;
   onMinimize?: () => void;
   onMaximize?: () => void;
@@ -25,6 +26,7 @@ export default function Window({
   title,
   icon,
   children,
+  slug,
   onClose,
   onMinimize,
   onMaximize,
@@ -103,15 +105,16 @@ export default function Window({
 
   // Register window on mount, unregister on unmount
   useEffect(() => {
-    registerWindow(id, title);
+    registerWindow(id, title, slug);
     return () => {
       unregisterWindow(id);
     };
-  }, [id, title, registerWindow, unregisterWindow]);
+  }, [id, title, slug, registerWindow, unregisterWindow]);
 
   // Check if this window is active
   const thisWindow = windows.find(w => w.id === id);
   const isActive = thisWindow?.isActive ?? false;
+  const zIndex = thisWindow?.zIndex ?? 1;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!draggable || isMaximized) return; // Disable dragging when maximized
@@ -271,7 +274,7 @@ export default function Window({
         top: `${position.y}px`,
         width: `${size.width}px`,
         height: size.height > 0 ? `${size.height}px` : 'auto',
-        zIndex: isActive ? 100 : 50,
+        zIndex,
         boxShadow: '4px 4px 10px rgba(0,0,0,0.5)'
       }}
     >

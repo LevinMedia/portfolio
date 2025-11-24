@@ -2,16 +2,21 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react';
 
-export interface TaskbarWindow {
+interface RegisteredWindow {
   id: string;
   title: string;
-  isActive: boolean;
   isMinimized: boolean;
+  slug?: string;
+  zIndex: number;
+}
+
+export interface TaskbarWindow extends RegisteredWindow {
+  isActive: boolean;
 }
 
 interface WindowManagerContextType {
   windows: TaskbarWindow[];
-  registerWindow: (id: string, title: string) => void;
+  registerWindow: (id: string, title: string, slug?: string) => void;
   unregisterWindow: (id: string) => void;
   setActiveWindow: (id: string) => void;
   updateWindowTitle: (id: string, title: string) => void;
@@ -22,21 +27,32 @@ interface WindowManagerContextType {
 const WindowManagerContext = createContext<WindowManagerContextType | undefined>(undefined);
 
 export function WindowManagerProvider({ children }: { children: ReactNode }) {
-  const [windows, setWindows] = useState<TaskbarWindow[]>([]);
+  const [windows, setWindows] = useState<RegisteredWindow[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
-  const windowsRef = useRef<TaskbarWindow[]>([]);
+  const windowsRef = useRef<RegisteredWindow[]>([]);
+  const nextZIndexRef = useRef(1);
 
   // Keep ref in sync with state
   useEffect(() => {
     windowsRef.current = windows;
   }, [windows]);
 
-  const registerWindow = useCallback((id: string, title: string) => {
+  const registerWindow = useCallback((id: string, title: string, slug?: string) => {
     setWindows(prev => {
       // Check if already registered
-      if (prev.some(w => w.id === id)) return prev;
-      return [...prev, { id, title, isActive: false, isMinimized: false }];
+      const existing = prev.find(w => w.id === id);
+      if (existing) {
+        return prev.map(w => w.id === id ? { ...w, title, slug } : w);
+      }
+      const newZIndex = nextZIndexRef.current++;
+      return [...prev, { id, title, slug, isMinimized: false, zIndex: newZIndex }];
     });
+    setActiveWindowId(id);
+  }, []);
+
+  const setActiveWindow = useCallback((id: string) => {
+    const newZIndex = nextZIndexRef.current++;
+    setWindows(prev => prev.map(w => w.id === id ? { ...w, zIndex: newZIndex } : w));
     setActiveWindowId(id);
   }, []);
 
@@ -47,8 +63,8 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
 
   const restoreWindow = useCallback((id: string) => {
     setWindows(prev => prev.map(w => w.id === id ? { ...w, isMinimized: false } : w));
-    setActiveWindowId(id);
-  }, []);
+    setActiveWindow(id);
+  }, [setActiveWindow]);
 
   const unregisterWindow = useCallback((id: string) => {
     setWindows(prev => prev.filter(w => w.id !== id));
@@ -64,19 +80,17 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const setActiveWindow = useCallback((id: string) => {
-    setActiveWindowId(id);
-  }, []);
-
   const updateWindowTitle = useCallback((id: string, title: string) => {
     setWindows(prev => prev.map(w => w.id === id ? { ...w, title } : w));
   }, []);
 
   // Compute windows with active state
-  const windowsWithActiveState = windows.map(w => ({
-    ...w,
-    isActive: w.id === activeWindowId
-  }));
+  const windowsWithActiveState: TaskbarWindow[] = windows
+    .map(w => ({
+      ...w,
+      isActive: w.id === activeWindowId
+    }))
+    .sort((a, b) => a.zIndex - b.zIndex);
 
   return (
     <WindowManagerContext.Provider value={{

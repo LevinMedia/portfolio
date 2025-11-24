@@ -6,10 +6,10 @@ export const revalidate = 3600
 
 export async function GET() {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
     const { data, error } = await supabase
       .rpc('prod_get_selected_works')
@@ -27,7 +27,7 @@ export async function GET() {
   } catch (err) {
     console.error('Error in selected works API route:', err)
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

@@ -24,7 +24,7 @@ const defaultSettings: Next95Settings = {
   windowHeaderType: 'gradient',
   windowHeaderSolid: '#000080',
   windowHeaderGradient: 'linear-gradient(90deg, #000080 0%, #1084d0 100%)',
-  colorMode: 'system',
+  colorMode: 'light',
   desktopWallpaper: 'teal',
   screensaverMode: 'none',
   screensaverTimeout: 10
@@ -100,7 +100,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
   const [settings, setSettings] = useState<Next95Settings>(defaultSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPreset, setSelectedPreset] = useState('Classic')
-  const [selectedGradient, setSelectedGradient] = useState('')
+  const [selectedGradient, setSelectedGradient] = useState('Classic Blue')
   const [gradientStops, setGradientStops] = useState<Array<{ color: string; position: number }>>([
     { color: '#000080', position: 0 },
     { color: '#1084d0', position: 100 }
@@ -336,8 +336,8 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
 
   const renderDesktopTab = () => (
     <>
-      <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
-        <div className="text-sm font-bold">Desktop Background</div>
+        <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
+        <div className="text-sm font-bold" style={{ color: 'var(--win95-content-bg, #ffffff)', backgroundColor: 'var(--win95-text, #000000)', display: 'inline-block', padding: '0 6px' }}>Desktop Background</div>
         <div className="grid grid-cols-1 @[600px]:grid-cols-3 gap-2">
           {wallpaperOptions.map((option) => {
             const isActive = settings.desktopWallpaper === option.id
@@ -348,7 +348,8 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                 className="p-2 text-left border-2"
                 style={{
                   borderColor: isActive ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
-                  backgroundColor: 'var(--win95-button-face, #c0c0c0)',
+                  backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                  color: 'var(--win95-content-text, #000000)',
                   boxShadow: isActive ? insetSunken : insetRaised
                 }}
               >
@@ -362,7 +363,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
       </div>
 
       <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
-        <div className="text-sm font-bold">Screen Saver</div>
+        <div className="text-sm font-bold" style={{ color: 'var(--win95-content-bg, #ffffff)', backgroundColor: 'var(--win95-text, #000000)', display: 'inline-block', padding: '0 6px' }}>Screen Saver</div>
         <div className="grid grid-cols-1 @[500px]:grid-cols-3 gap-2">
           {screensaverOptions.map((option) => {
             const isActive = settings.screensaverMode === option.id
@@ -373,7 +374,8 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                 className="p-2 text-left border-2"
                 style={{
                   borderColor: isActive ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
-                  backgroundColor: 'var(--win95-button-face, #c0c0c0)',
+                  backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                  color: 'var(--win95-content-text, #000000)',
                   boxShadow: isActive ? insetSunken : insetRaised
                 }}
               >
@@ -384,15 +386,20 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
           })}
         </div>
 
-        <div className="border-2 p-3" style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)', borderColor: 'var(--win95-border-mid, #808080)' }}>
-          <div className="text-sm font-bold mb-2">Wait Time (minutes)</div>
+        <div className="p-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', color: 'var(--win95-content-text, #000000)' }}>
+          <div className="text-sm font-bold mb-2" style={{ color: 'var(--win95-text, #000000)' }}>Wait Time (minutes)</div>
           <input
             type="number"
             min={1}
             value={settings.screensaverTimeout}
             onChange={(e) => handleScreensaverTimeoutChange(parseInt(e.target.value, 10) || 1)}
-            className="w-24 px-2 py-1 border-2 border-[#808080]"
-            style={{ boxShadow: insetSunken }}
+            className="w-24 px-2 py-1 border-2 text-sm"
+            style={{
+              borderColor: 'var(--win95-border-mid, #808080)',
+              color: 'var(--win95-content-text, #000000)',
+              backgroundColor: 'var(--win95-content-bg, #ffffff)',
+              boxShadow: insetSunken
+            }}
           />
         </div>
       </div>
@@ -474,15 +481,15 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                     type="color"
                     value={settings.windowHeaderSolid}
                     onChange={(e) => handleWindowHeaderSolidChange(e.target.value)}
-                    className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
-                    style={{ boxShadow: insetSunken }}
+                    className="w-12 h-8 border-2 cursor-pointer"
+                    style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)' }}
                   />
                   <input
                     type="text"
                     value={settings.windowHeaderSolid}
                     onChange={(e) => handleWindowHeaderSolidChange(e.target.value)}
-                    className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
-                    style={{ boxShadow: insetSunken }}
+                    className="flex-1 px-2 py-1 border-2 text-sm"
+                    style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #000000)', backgroundColor: 'var(--win95-content-bg, #ffffff)' }}
                     placeholder="#000080"
                   />
                 </div>
@@ -519,11 +526,12 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                           style={{
                             borderColor: isSelected ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
                             backgroundColor: isSelected ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
+                          color: 'var(--win95-content-text, #000000)',
                           boxShadow: isSelected ? insetSunken : insetRaised
                           }}
                         >
                           <div className="mb-1">
-                            <div className="h-6 border border-black" style={{ background: preset.gradient }} />
+                            <div className="h-6 border" style={{ background: preset.gradient, borderColor: 'var(--win95-border-dark, #000000)' }} />
                           </div>
                           <div className="font-medium">{preset.name}</div>
                         </button>
@@ -541,7 +549,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                       }}
                     >
                       <div className="mb-1">
-                        <div className="h-6 border border-black" style={{ background: settings.windowHeaderGradient }} />
+                        <div className="h-6 border" style={{ background: settings.windowHeaderGradient, borderColor: 'var(--win95-border-dark, #000000)' }} />
                       </div>
                       <div className="font-medium">Custom</div>
                     </button>
@@ -558,8 +566,8 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                             type="color"
                             value={stop.color}
                             onChange={(e) => handleGradientStopChange(index, 'color', e.target.value)}
-                        className="w-8 h-8 border-2 border-[#808080] cursor-pointer"
-                        style={{ boxShadow: insetSunken }}
+                            className="w-8 h-8 border-2 cursor-pointer"
+                            style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)' }}
                           />
                           <input
                             type="number"
@@ -567,15 +575,15 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                             max="100"
                             value={stop.position}
                             onChange={(e) => handleGradientStopChange(index, 'position', parseInt(e.target.value))}
-                        className="w-16 px-2 py-1 border-2 border-[#808080] text-xs"
-                        style={{ boxShadow: insetSunken }}
+                            className="w-16 px-2 py-1 border-2 text-xs"
+                            style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #000000)', backgroundColor: 'var(--win95-content-bg, #ffffff)' }}
                           />
                           <span className="text-xs">%</span>
                           {gradientStops.length > 2 && (
                         <button
                               onClick={() => removeGradientStop(index)}
-                              className="px-2 py-1 text-xs border-2 border-[#808080]"
-                          style={{ boxShadow: insetRaised }}
+                              className="px-2 py-1 text-xs border-2"
+                          style={{ boxShadow: insetRaised, borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #000000)', backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}
                             >
                               Remove
                             </button>
@@ -585,8 +593,8 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                       {gradientStops.length < 5 && (
                     <button
                           onClick={addGradientStop}
-                          className="w-full px-2 py-1 text-xs border-2 border-[#808080]"
-                      style={{ boxShadow: insetRaised }}
+                          className="w-full px-2 py-1 text-xs border-2"
+                      style={{ boxShadow: insetRaised, borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #000000)', backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}
                         >
                           Add Stop
                         </button>
@@ -622,12 +630,13 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                 style={{
                   borderColor: isSelected ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
                   backgroundColor: isSelected ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
+                  color: 'var(--win95-content-text, #000000)',
                   boxShadow: isSelected ? insetSunken : insetRaised
                 }}
               >
                 <div className="flex gap-1 mb-1">
-                  <div className="w-6 h-6 border border-black" style={{ backgroundColor: preset.primary }} />
-                  <div className="w-6 h-6 border border-black" style={{ backgroundColor: preset.secondary }} />
+                  <div className="w-6 h-6 border" style={{ backgroundColor: preset.primary, borderColor: 'var(--win95-border-dark, #000000)' }} />
+                  <div className="w-6 h-6 border" style={{ backgroundColor: preset.secondary, borderColor: 'var(--win95-border-dark, #000000)' }} />
                 </div>
                 <div className="font-medium">{preset.name}</div>
               </button>
@@ -642,12 +651,13 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
             style={{
               borderColor: isPresetSelected('Custom') ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
               backgroundColor: isPresetSelected('Custom') ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
+              color: 'var(--win95-content-text, #000000)',
               boxShadow: isPresetSelected('Custom') ? insetSunken : insetRaised
             }}
           >
             <div className="flex gap-1 mb-1">
-              <div className="w-6 h-6 border border-black" style={{ backgroundColor: settings.primaryColor }} />
-              <div className="w-6 h-6 border border-black" style={{ backgroundColor: settings.secondaryColor }} />
+              <div className="w-6 h-6 border" style={{ backgroundColor: settings.primaryColor, borderColor: 'var(--win95-border-dark, #000000)' }} />
+              <div className="w-6 h-6 border" style={{ backgroundColor: settings.secondaryColor, borderColor: 'var(--win95-border-dark, #000000)' }} />
             </div>
             <div className="font-medium">Custom</div>
           </button>
@@ -665,15 +675,15 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                   type="color"
                   value={settings.primaryColor}
                   onChange={(e) => handleColorChange('primary', e.target.value)}
-                className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
-                style={{ boxShadow: insetSunken }}
+                className="w-12 h-8 border-2 cursor-pointer"
+                style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)' }}
                 />
                 <input
                   type="text"
                   value={settings.primaryColor}
                   onChange={(e) => handleColorChange('primary', e.target.value)}
-                className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
-                style={{ boxShadow: insetSunken }}
+                className="flex-1 px-2 py-1 border-2 text-sm"
+                style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #000000)', backgroundColor: 'var(--win95-content-bg, #ffffff)' }}
                   placeholder="#0000ff"
                 />
               </div>
@@ -689,15 +699,15 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
                   type="color"
                   value={settings.secondaryColor}
                   onChange={(e) => handleColorChange('secondary', e.target.value)}
-                className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
-                style={{ boxShadow: insetSunken }}
+                className="w-12 h-8 border-2 cursor-pointer"
+                style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)' }}
                 />
                 <input
                   type="text"
                   value={settings.secondaryColor}
                   onChange={(e) => handleColorChange('secondary', e.target.value)}
-                className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
-                style={{ boxShadow: insetSunken }}
+                className="flex-1 px-2 py-1 border-2 text-sm"
+                style={{ boxShadow: insetSunken, borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #000000)', backgroundColor: 'var(--win95-content-bg, #ffffff)' }}
                   placeholder="#ff00ff"
                 />
               </div>
