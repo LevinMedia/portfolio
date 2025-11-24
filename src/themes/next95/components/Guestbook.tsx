@@ -143,7 +143,7 @@ export default function Guestbook() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[#111]">Loading...</div>
+        <div className="text-sm" style={{ color: 'var(--win95-content-text, #111)' }}>Loading...</div>
       </div>
     )
   }
@@ -154,16 +154,17 @@ export default function Guestbook() {
       {!isFormVisible && (
         <button
           onClick={() => setIsFormVisible(true)}
-          className="w-full px-4 py-3 text-sm text-[#000] font-bold flex items-center justify-center gap-2"
+          className="w-full px-4 py-3 text-sm font-bold flex items-center justify-center gap-2"
           style={{
-            background: '#A7A7A7',
-            boxShadow: '-4px -4px 0 0 rgba(0, 0, 0, 0.50) inset, 4px 4px 0 0 rgba(255, 255, 255, 0.50) inset'
+            background: 'var(--win95-button-face, #A7A7A7)',
+            color: 'var(--win95-text, #000)',
+            boxShadow: '-4px -4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 4px 4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#B1B1B1';
+            e.currentTarget.style.background = 'var(--win95-button-hover, #B1B1B1)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#A7A7A7';
+            e.currentTarget.style.background = 'var(--win95-button-face, #A7A7A7)';
           }}
         >
           <PencilSquareIcon className="w-5 h-5" />
@@ -173,18 +174,31 @@ export default function Guestbook() {
 
       {/* Add New Entry Form */}
       {isFormVisible && (
-        <div className="bg-white border-2 border-[#808080] p-4 @container">
+        <>
+        <div 
+          className="border-2 p-4 @container"
+          style={{
+            backgroundColor: 'var(--win95-content-bg, #ffffff)',
+            borderColor: 'var(--win95-border-mid, #808080)',
+            color: 'var(--win95-content-text, #000000)'
+          }}
+        >
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name Field */}
           <div>
-            <label className="block text-xs font-bold text-[#111] mb-1">
+            <label className="block text-xs font-bold mb-1" style={{ color: 'var(--win95-content-text, #111)' }}>
               Your Name
             </label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="block w-full px-2 py-1 border-2 border-[#808080] text-sm text-[#111] bg-white focus:outline-none focus:border-[#0000ff]"
+              className="block w-full px-2 py-1 border-2 text-sm focus:outline-none"
+              style={{
+                borderColor: 'var(--win95-border-mid, #808080)',
+                backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                color: 'var(--win95-content-text, #111)'
+              }}
               placeholder="Enter your name"
               required
               maxLength={100}
@@ -193,44 +207,96 @@ export default function Guestbook() {
 
           {/* Message Field */}
           <div>
-            <label className="block text-xs font-bold text-[#111] mb-1">
+            <label className="block text-xs font-bold mb-1" style={{ color: 'var(--win95-content-text, #111)' }}>
               Your Message
             </label>
             <div className="relative gb-editor">
               <style jsx global>{`
                 .gb-editor .crepe-editor {
-                  border: 2px solid #808080 !important;
+                  border: 2px solid var(--win95-border-mid, #808080) !important;
                   border-radius: 0 !important;
-                  background-color: white !important;
-                  background: white !important;
+                  background-color: var(--win95-content-bg, white) !important;
+                  background: var(--win95-content-bg, white) !important;
+                  color: var(--win95-content-text, #000) !important;
+                  outline: none !important;
+                  box-shadow: inset -2px -2px 0 0 var(--win95-border-light, #fff), inset 2px 2px 0 0 var(--win95-border-dark, #000) !important;
+                }
+                .gb-editor .crepe-editor:focus,
+                .gb-editor .crepe-editor:focus-within {
+                  border: 2px solid var(--win95-border-mid, #808080) !important;
+                  outline: none !important;
+                  box-shadow: inset -2px -2px 0 0 var(--win95-border-light, #fff), inset 2px 2px 0 0 var(--win95-border-dark, #000) !important;
                 }
                 .gb-editor .milkdown,
                 .gb-editor .milkdown-theme-nord,
                 .gb-editor .editor,
                 .gb-editor [contenteditable],
-                .gb-editor .ProseMirror {
-                  background-color: white !important;
-                  background: white !important;
+                .gb-editor .ProseMirror,
+                .gb-editor .ProseMirror *,
+                .gb-editor .ProseMirror p,
+                .gb-editor .ProseMirror div,
+                .gb-editor .ProseMirror span {
+                  background-color: var(--win95-content-bg, white) !important;
+                  background: var(--win95-content-bg, white) !important;
+                  color: var(--win95-content-text, #000) !important;
+                }
+                .gb-editor .ProseMirror::placeholder,
+                .gb-editor .ProseMirror .placeholder,
+                .gb-editor [contenteditable]::placeholder,
+                .gb-editor [data-placeholder]::before {
+                  color: var(--win95-content-text, #666) !important;
+                  opacity: 0.5 !important;
                 }
                 /* Slash menu styling */
-                .milkdown-slash-menu,
-                .milkdown-slash-menu * {
-                  background-color: white !important;
-                  background: white !important;
-                  border: 2px solid #808080 !important;
+                .milkdown-slash-menu {
+                  background-color: var(--win95-content-bg, white) !important;
+                  background: var(--win95-content-bg, white) !important;
+                  border: 2px solid var(--win95-border-mid, #808080) !important;
                   border-radius: 0 !important;
+                  box-shadow: inset -2px -2px 0 0 var(--win95-border-dark, #000), inset 2px 2px 0 0 var(--win95-border-light, #fff) !important;
+                  padding: 0 !important;
+                }
+                .milkdown-slash-menu *,
+                .milkdown-slash-menu > *,
+                .milkdown-slash-menu div,
+                .milkdown-slash-menu [role="menu"],
+                .milkdown-slash-menu svg,
+                .milkdown-slash-menu span {
+                  border: none !important;
+                  border-radius: 0 !important;
+                  background: transparent !important;
+                  box-shadow: none !important;
                 }
                 .milkdown-slash-menu [role="menuitem"],
                 .milkdown-slash-menu button {
-                  background-color: white !important;
-                  color: #000 !important;
+                  background-color: transparent !important;
+                  background: transparent !important;
+                  color: var(--win95-content-text, #000) !important;
                   border-radius: 0 !important;
+                  border: none !important;
+                  box-shadow: none !important;
+                  padding: 8px 12px !important;
+                  font-weight: 600 !important;
+                }
+                .milkdown-slash-menu [role="menuitem"] svg,
+                .milkdown-slash-menu button svg {
+                  color: var(--win95-content-text, #000) !important;
+                  fill: currentColor !important;
+                  stroke: currentColor !important;
                 }
                 .milkdown-slash-menu [role="menuitem"]:hover,
                 .milkdown-slash-menu [role="menuitem"][data-active="true"],
                 .milkdown-slash-menu button:hover {
-                  background-color: #000080 !important;
+                  background-color: var(--next95-primary, #000080) !important;
+                  background: var(--next95-primary, #000080) !important;
                   color: white !important;
+                }
+                .milkdown-slash-menu [role="menuitem"]:hover svg,
+                .milkdown-slash-menu [role="menuitem"][data-active="true"] svg,
+                .milkdown-slash-menu button:hover svg {
+                  color: white !important;
+                  fill: currentColor !important;
+                  stroke: currentColor !important;
                 }
               `}</style>
               <MilkdownEditor
@@ -245,13 +311,13 @@ export default function Guestbook() {
 
           {/* Social Links */}
           <div>
-            <label className="block text-xs font-bold text-[#111] mb-2">
+            <label className="block text-xs font-bold mb-2" style={{ color: 'var(--win95-content-text, #111)' }}>
               Your Social Links (Optional)
             </label>
             <div className="grid grid-cols-1 @[400px]:grid-cols-2 gap-3">
               {['linkedin', 'threads', 'twitter', 'instagram'].map((platform) => (
                 <div key={platform}>
-                  <label className="block text-xs text-[#666] mb-1 capitalize">
+                  <label className="block text-xs mb-1 capitalize" style={{ color: 'var(--win95-content-text, #666)' }}>
                     {getSocialIcon(platform)} {platform}
                   </label>
                   <Input
@@ -264,7 +330,12 @@ export default function Guestbook() {
                         [platform]: e.target.value
                       }
                     }))}
-                    className="block w-full px-2 py-1 border-2 border-[#808080] text-xs text-[#111] bg-white focus:outline-none focus:border-[#0000ff]"
+                    className="block w-full px-2 py-1 border-2 text-xs focus:outline-none"
+                    style={{
+                      borderColor: 'var(--win95-border-mid, #808080)',
+                      backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                      color: 'var(--win95-content-text, #111)'
+                    }}
                     placeholder={`https://${platform}.com/yourusername`}
                   />
                 </div>
@@ -284,70 +355,80 @@ export default function Guestbook() {
               <div className="text-sm text-[#006600] font-bold">{success}</div>
             </div>
           )}
-
-          {/* Submit Buttons */}
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsFormVisible(false)}
-              className="px-4 py-2 text-sm text-[#000] font-bold"
-              style={{
-                background: '#A7A7A7',
-                boxShadow: '-4px -4px 0 0 rgba(0, 0, 0, 0.50) inset, 4px 4px 0 0 rgba(255, 255, 255, 0.50) inset'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#B1B1B1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#A7A7A7';
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 text-sm text-[#000] font-bold flex items-center gap-2"
-              style={{
-                background: isSubmitting ? '#969696' : '#A7A7A7',
-                boxShadow: isSubmitting 
-                  ? '-4px -4px 0 0 rgba(255, 255, 255, 0.50) inset, 4px 4px 0 0 rgba(0, 0, 0, 0.50) inset'
-                  : '-4px -4px 0 0 rgba(0, 0, 0, 0.50) inset, 4px 4px 0 0 rgba(255, 255, 255, 0.50) inset'
-              }}
-              onMouseEnter={(e) => {
-                if (!isSubmitting) {
-                  e.currentTarget.style.background = '#B1B1B1';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSubmitting) {
-                  e.currentTarget.style.background = '#A7A7A7';
-                }
-              }}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <PaperAirplaneIcon className="h-4 w-4" />
-                  Add to Guestbook
-                </>
-              )}
-            </button>
-          </div>
         </form>
       </div>
+
+      {/* Submit Buttons - Outside form in chrome area */}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setIsFormVisible(false)}
+          className="px-4 py-2 text-sm font-bold"
+          style={{
+            background: 'var(--win95-button-face, #A7A7A7)',
+            color: 'var(--win95-text, #000)',
+            boxShadow: '-4px -4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 4px 4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--win95-button-hover, #B1B1B1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--win95-button-face, #A7A7A7)';
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm font-bold flex items-center gap-2"
+          style={{
+            background: isSubmitting ? 'var(--win95-border-mid, #969696)' : 'var(--win95-button-face, #A7A7A7)',
+            color: 'var(--win95-text, #000)',
+            boxShadow: isSubmitting 
+              ? '-4px -4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset, 4px 4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset'
+              : '-4px -4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 4px 4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
+          }}
+          onMouseEnter={(e) => {
+            if (!isSubmitting) {
+              e.currentTarget.style.background = 'var(--win95-button-hover, #B1B1B1)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isSubmitting) {
+              e.currentTarget.style.background = 'var(--win95-button-face, #A7A7A7)';
+            }
+          }}
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+              Adding...
+            </>
+          ) : (
+            <>
+              <PaperAirplaneIcon className="h-4 w-4" />
+              Add to Guestbook
+            </>
+          )}
+        </button>
+      </div>
+      </> 
       )}
 
       {/* Guestbook Entries */}
       <div className="space-y-4">
         {entries.length === 0 ? (
-          <div className="text-center py-12 bg-white border-2 border-[#808080] p-4">
-            <UserIcon className="h-12 w-12 text-[#666] mx-auto mb-4" />
-            <p className="text-[#666]">No messages yet. Be the first to leave one! 🎉</p>
+          <div 
+            className="text-center py-12 border-2 p-4"
+            style={{
+              backgroundColor: 'var(--win95-content-bg, #ffffff)',
+              borderColor: 'var(--win95-border-mid, #808080)',
+              color: 'var(--win95-content-text, #666)'
+            }}
+          >
+            <UserIcon className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--win95-content-text, #666)' }} />
+            <p>No messages yet. Be the first to leave one! 🎉</p>
           </div>
         ) : (
           entries.map((entry) => {
@@ -357,38 +438,49 @@ export default function Guestbook() {
             return (
               <div
                 key={entry.id}
-                className="bg-white border-2 border-[#808080] p-3"
+                className="border-2 p-3"
+                style={{
+                  backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                  borderColor: 'var(--win95-border-mid, #808080)',
+                  color: 'var(--win95-content-text, #000000)'
+                }}
               >
               {/* Entry Header */}
               <div className="flex items-start mb-3">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-[#0000ff] flex items-center justify-center border-2 border-[#000]">
+                  <div 
+                    className="w-10 h-10 flex items-center justify-center border-2"
+                    style={{
+                      backgroundColor: 'var(--next95-primary, #0000ff)',
+                      borderColor: 'var(--win95-text, #000)'
+                    }}
+                  >
                     <span className="text-white font-bold text-sm">
                       {entry.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-[#111]">{entry.name}</h3>
-                    <p className="text-xs text-[#666]">{formatDate(entry.created_at)}</p>
+                    <h3 className="font-bold text-sm" style={{ color: 'var(--win95-content-text, #111)' }}>{entry.name}</h3>
+                    <p className="text-xs" style={{ color: 'var(--win95-content-text, #666)' }}>{formatDate(entry.created_at)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Message Content */}
-              <div className="prose prose-sm max-w-none mb-3 text-[#111]">
+              <div className="prose prose-sm max-w-none mb-3" style={{ color: 'var(--win95-content-text, #111)' }}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({ children }) => <h1 className="text-lg font-bold text-[#111] mb-2 mt-3">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-base font-bold text-[#111] mb-2 mt-3">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-sm font-bold text-[#111] mb-2 mt-2">{children}</h3>,
-                    h4: ({ children }) => <h4 className="text-sm font-bold text-[#111] mb-1 mt-2">{children}</h4>,
-                    h5: ({ children }) => <h5 className="text-sm font-bold text-[#111] mb-1 mt-2">{children}</h5>,
-                    h6: ({ children }) => <h6 className="text-xs font-bold text-[#111] mb-1 mt-1">{children}</h6>,
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-3" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-bold mb-2 mt-2" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-sm font-bold mb-1 mt-2" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h4>,
+                    h5: ({ children }) => <h5 className="text-sm font-bold mb-1 mt-2" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h5>,
+                    h6: ({ children }) => <h6 className="text-xs font-bold mb-1 mt-1" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h6>,
                     p: ({ children }) => <p className="mb-2 last:mb-0 text-sm">{children}</p>,
                     ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-sm">{children}</ul>,
                     ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-sm">{children}</ol>,
-                    blockquote: ({ children }) => <blockquote className="border-l-4 border-[#0000ff] pl-3 italic text-[#666] my-2 text-sm">{children}</blockquote>,
+                    blockquote: ({ children }) => <blockquote className="border-l-4 pl-3 italic my-2 text-sm" style={{ borderColor: 'var(--next95-primary, #0000ff)', color: 'var(--win95-content-text, #666)' }}>{children}</blockquote>,
                     img: ({ src, alt }) => {
                       if (!src) return null
                       return (
@@ -414,7 +506,7 @@ export default function Guestbook() {
                       </pre>
                     ),
                     a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#0000ff] underline hover:text-[#ff00ff]">
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--next95-primary)] underline hover:text-[var(--next95-secondary)]">
                         {children}
                       </a>
                     )
@@ -426,10 +518,10 @@ export default function Guestbook() {
 
               {/* Social Links */}
               {activeSocialLinks.length > 0 && (
-                <div className="pt-2 border-t-2 border-[#808080]">
+                <div className="pt-2 border-t-2" style={{ borderColor: 'var(--win95-border-mid, #808080)' }}>
                   {shouldStackSocialLinks ? (
                     <div className="flex flex-col items-start space-y-1">
-                      <span className="text-xs text-[#666] font-bold">Connect:</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--win95-content-text, #666)' }}>Connect:</span>
                       <div className="flex flex-wrap gap-2">
                         {activeSocialLinks.map(([platform, url]) => (
                           <a
@@ -437,7 +529,10 @@ export default function Guestbook() {
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-[#0000ff] hover:text-[#ff00ff] transition-colors"
+                            className="flex items-center space-x-1 transition-colors"
+                            style={{ color: 'var(--next95-primary, #0000ff)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--next95-secondary').trim() || '#ff00ff'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff'}
                           >
                             <span>{getSocialIcon(platform)}</span>
                             <span className="text-xs capitalize underline">{platform}</span>
@@ -447,14 +542,14 @@ export default function Guestbook() {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-3">
-                      <span className="text-xs text-[#666] font-bold">Connect:</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--win95-content-text, #666)' }}>Connect:</span>
                       {activeSocialLinks.map(([platform, url]) => (
                         <a
                           key={platform}
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center space-x-1 text-[#0000ff] hover:text-[#ff00ff] transition-colors"
+                          className="flex items-center space-x-1 text-[var(--next95-primary)] hover:text-[var(--next95-secondary)] transition-colors"
                         >
                           <span>{getSocialIcon(platform)}</span>
                           <span className="text-xs capitalize underline">{platform}</span>

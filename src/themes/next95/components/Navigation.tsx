@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWindowManager } from '../context/WindowManagerContext';
+import Next95Button from './Next95Button';
 
 export default function Navigation() {
   const { windows, setActiveWindow, restoreWindow } = useWindowManager();
@@ -29,45 +30,44 @@ export default function Navigation() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       {/* Windows 95 Taskbar */}
-      <div className="bg-[#9F9F9F] border-t-2 border-t-[#dfdfdf] h-[56px] flex items-center justify-between px-[4px] shadow-[inset_0_4px_0_#ffffff]">
+      <div 
+        className="border-t-2 h-[56px] flex items-center justify-between px-[4px]"
+        style={{
+          backgroundColor: 'var(--win95-taskbar-bg, #9F9F9F)',
+          borderTopColor: 'var(--win95-border-light, #dfdfdf)',
+          boxShadow: 'inset 0 4px 0 var(--win95-border-light, #ffffff)'
+        }}
+      >
         {/* Start Button */}
-        <button
+        <Next95Button
           onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
-          className={`
-            flex items-center gap-2 px-3 py-1 text-base font-bold 
-            text-[#000]
-            h-[44px] min-w-[80px]
-            transition-all
-          `}
-          style={{
-            background: '#A7A7A7',
-            boxShadow: isStartMenuOpen 
-              ? '-4px -4px 0 0 rgba(255, 255, 255, 0.50) inset, 4px 4px 0 0 rgba(0, 0, 0, 0.50) inset'
-              : '-4px -4px 0 0 rgba(0, 0, 0, 0.50) inset, 4px 4px 0 0 rgba(255, 255, 255, 0.50) inset'
-          }}
-          onMouseEnter={(e) => {
-            if (!isStartMenuOpen) {
-              e.currentTarget.style.background = '#B1B1B1';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#A7A7A7';
-          }}
+          isActive={isStartMenuOpen}
+          className="flex items-center gap-2 px-3 py-1 text-base font-bold h-[44px] min-w-[80px]"
         >
-          <div className="w-5 h-5 border border-[#000] rounded-full flex items-center justify-center bg-[#ffffff] flex-shrink-0">
-            <span className="text-[10px] font-bold font-[family-name:var(--font-geist-mono)] leading-none">LM</span>
+          <div 
+            className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              border: '1px solid var(--win95-text, #000)',
+              backgroundColor: 'var(--win95-content-bg, #ffffff)'
+            }}
+          >
+            <span 
+              className="text-[10px] font-bold font-[family-name:var(--font-geist-mono)] leading-none"
+              style={{ color: 'var(--win95-text, #000)' }}
+            >
+              LM
+            </span>
           </div>
           <span className="leading-none">Start</span>
-        </button>
+        </Next95Button>
 
         {/* Task Area */}
         <div className="flex-1 mx-2 h-full flex items-center gap-1">
           {/* Running applications */}
           <div className="flex-1 flex items-center gap-[4px] overflow-x-auto">
             {windows.map((window) => (
-              <button
+              <Next95Button
                 key={window.id}
-                data-window-id={window.id}
                 onClick={() => {
                   if (window.isMinimized) {
                     restoreWindow(window.id);
@@ -75,40 +75,35 @@ export default function Navigation() {
                     setActiveWindow(window.id);
                   }
                 }}
-                className={`px-4 py-2 text-sm h-[44px] max-w-[180px] truncate transition-all ${window.isActive && !window.isMinimized ? 'text-[#000]' : 'text-[#000]'}`}
-                style={{
-                  background: '#A7A7A7',
-                  boxShadow: (window.isActive && !window.isMinimized)
-                    ? '-4px -4px 0 0 rgba(255, 255, 255, 0.50) inset, 4px 4px 0 0 rgba(0, 0, 0, 0.50) inset'
-                    : '-4px -4px 0 0 rgba(0, 0, 0, 0.50) inset, 4px 4px 0 0 rgba(255, 255, 255, 0.50) inset'
-                }}
-                onMouseEnter={(e) => {
-                  if (!window.isActive) {
-                    e.currentTarget.style.background = '#B1B1B1';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#A7A7A7';
-                }}
-                title={window.title}
+                isActive={window.isActive && !window.isMinimized}
+                className="px-4 py-2 text-sm h-[44px] max-w-[180px] truncate"
               >
                 {window.title}
-              </button>
+              </Next95Button>
             ))}
           </div>
         </div>
 
         {/* System Tray with Clock */}
         <div className="flex items-center h-full">
-          <div className="w-[3px] h-[80%] border-l-2 border-l-[#808080] border-r-2 border-r-[#ffffff]" />
+          <div 
+            className="w-[3px] h-[80%]"
+            style={{
+              borderLeft: '2px solid var(--win95-border-mid, #808080)',
+              borderRight: '2px solid var(--win95-border-light, #ffffff)'
+            }}
+          />
           <div 
             className="px-4 py-2 min-w-[80px] text-center h-[44px] flex items-center justify-center"
             style={{
-              background: '#A7A7A7',
-              boxShadow: '-4px -4px 0 0 rgba(255, 255, 255, 0.50) inset, 4px 4px 0 0 rgba(0, 0, 0, 0.50) inset'
+              background: 'var(--win95-button-face, #A7A7A7)',
+              boxShadow: '-4px -4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset, 4px 4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset'
             }}
           >
-            <span className="text-sm text-[#000] font-['MS_Sans_Serif',system-ui,sans-serif]">
+            <span 
+              className="text-sm font-['MS_Sans_Serif',system-ui,sans-serif]"
+              style={{ color: 'var(--win95-text, #000)' }}
+            >
               {currentTime}
             </span>
           </div>

@@ -99,6 +99,7 @@ export default function Window({
   const [restoreState, setRestoreState] = useState({ x: constrained.x, y: constrained.y, width: constrained.width, height: constrained.height });
   const [initialPosition] = useState({ x: constrained.x, y: constrained.y });
   const windowRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Register window on mount, unregister on unmount
   useEffect(() => {
@@ -147,6 +148,29 @@ export default function Window({
     }
     
     setActiveWindow(id);
+  };
+
+  const handleTitleBarDoubleClick = () => {
+    if (!contentRef.current) return;
+    
+    const viewportHeight = window.innerHeight - 56; // Account for taskbar
+    const padding = 20; // Top and bottom margin
+    const titleBarHeight = 30; // Height of title bar
+    
+    // Get the actual content height
+    const contentHeight = contentRef.current.scrollHeight;
+    const totalWindowHeight = contentHeight + titleBarHeight;
+    const maxHeight = viewportHeight - (padding * 2);
+    
+    // If total window height is taller than max available height, use max height
+    // Otherwise, fit to content height + title bar
+    const newHeight = Math.min(totalWindowHeight, maxHeight);
+    
+    // Center vertically if using max height
+    const newY = totalWindowHeight > maxHeight ? padding : position.y;
+    
+    setSize({ width: size.width, height: newHeight });
+    setPosition({ x: position.x, y: newY });
   };
 
   useEffect(() => {
@@ -254,44 +278,83 @@ export default function Window({
       <div
         className="h-full w-full overflow-hidden"
         style={{
-          border: '1px solid #000000',
-          borderTop: '3px solid #ffffff',
-          borderLeft: '3px solid #ffffff',
-          borderBottom: '3px solid #000000',
-          borderRight: '3px solid #000000'
+          border: '1px solid var(--win95-border-dark, #000000)',
+          borderTop: '3px solid var(--win95-border-light, #ffffff)',
+          borderLeft: '3px solid var(--win95-border-light, #ffffff)',
+          borderBottom: '3px solid var(--win95-border-dark, #000000)',
+          borderRight: '3px solid var(--win95-border-dark, #000000)'
         }}
       >
         {/* Title Bar */}
         <div
-          className={`flex items-center justify-between px-1 py-1 select-none ${
-            isActive
-              ? 'bg-gradient-to-r from-[#000080] to-[#1084d0]'
-              : 'bg-gradient-to-r from-[#808080] to-[#a0a0a0]'
-          } ${draggable ? 'cursor-move' : ''}`}
+          className={`flex items-center justify-between px-1 py-1 select-none ${draggable ? 'cursor-move' : ''}`}
+          style={{
+            background: isActive 
+              ? 'var(--next95-window-header, linear-gradient(90deg, #000080 0%, #1084d0 100%))'
+              : 'linear-gradient(90deg, var(--win95-inactive-start, #808080) 0%, var(--win95-inactive-end, #a0a0a0) 100%)',
+            color: isActive ? 'var(--next95-window-header-text, #ffffff)' : 'var(--win95-text, #ffffff)'
+          }}
           onMouseDown={handleMouseDown}
+          onDoubleClick={handleTitleBarDoubleClick}
         >
         <div className="flex items-center gap-1 px-1">
           {icon && <span className="flex-shrink-0">{icon}</span>}
-          <span className="text-sm font-bold text-white truncate">{title}</span>
+          <span className="text-sm font-bold truncate">{title}</span>
         </div>
         
         {/* Window Controls */}
         <div className="flex gap-[2px]">
           <button
             onClick={handleMinimize}
-            className="w-6 h-6 flex items-center justify-center border border-[#ffffff] border-b-[#000000] border-r-[#000000] bg-[#c0c0c0] text-[#000] font-bold text-xs hover:bg-[#dfdfdf] shadow-[inset_1px_1px_0_#ffffff,inset_-1px_-1px_0_#808080] active:shadow-[inset_-1px_-1px_0_#ffffff,inset_1px_1px_0_#808080]"
+            className="w-6 h-6 flex items-center justify-center font-bold text-xs"
+            style={{
+              border: '1px solid var(--win95-border-light, #ffffff)',
+              borderBottom: '1px solid var(--win95-border-dark, #000000)',
+              borderRight: '1px solid var(--win95-border-dark, #000000)',
+              background: 'var(--win95-button-face, #c0c0c0)',
+              color: 'var(--win95-text, #000)',
+              boxShadow: 'inset 1px 1px 0 var(--win95-border-light, #ffffff), inset -1px -1px 0 var(--win95-border-mid, #808080)'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--win95-button-hover, #dfdfdf)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--win95-button-face, #c0c0c0)'}
+            onMouseDown={(e) => e.currentTarget.style.boxShadow = 'inset -1px -1px 0 var(--win95-border-light, #ffffff), inset 1px 1px 0 var(--win95-border-mid, #808080)'}
+            onMouseUp={(e) => e.currentTarget.style.boxShadow = 'inset 1px 1px 0 var(--win95-border-light, #ffffff), inset -1px -1px 0 var(--win95-border-mid, #808080)'}
           >
             <span className="mb-2">_</span>
           </button>
           <button
             onClick={handleMaximize}
-            className="w-6 h-6 flex items-center justify-center border border-[#ffffff] border-b-[#000000] border-r-[#000000] bg-[#c0c0c0] text-[#000] font-bold text-xs hover:bg-[#dfdfdf] shadow-[inset_1px_1px_0_#ffffff,inset_-1px_-1px_0_#808080] active:shadow-[inset_-1px_-1px_0_#ffffff,inset_1px_1px_0_#808080]"
+            className="w-6 h-6 flex items-center justify-center font-bold text-xs"
+            style={{
+              border: '1px solid var(--win95-border-light, #ffffff)',
+              borderBottom: '1px solid var(--win95-border-dark, #000000)',
+              borderRight: '1px solid var(--win95-border-dark, #000000)',
+              background: 'var(--win95-button-face, #c0c0c0)',
+              color: 'var(--win95-text, #000)',
+              boxShadow: 'inset 1px 1px 0 var(--win95-border-light, #ffffff), inset -1px -1px 0 var(--win95-border-mid, #808080)'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--win95-button-hover, #dfdfdf)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--win95-button-face, #c0c0c0)'}
+            onMouseDown={(e) => e.currentTarget.style.boxShadow = 'inset -1px -1px 0 var(--win95-border-light, #ffffff), inset 1px 1px 0 var(--win95-border-mid, #808080)'}
+            onMouseUp={(e) => e.currentTarget.style.boxShadow = 'inset 1px 1px 0 var(--win95-border-light, #ffffff), inset -1px -1px 0 var(--win95-border-mid, #808080)'}
           >
             □
           </button>
           <button
             onClick={handleClose}
-            className="w-6 h-6 flex items-center justify-center border border-[#ffffff] border-b-[#000000] border-r-[#000000] bg-[#c0c0c0] text-[#000] font-bold text-sm hover:bg-[#dfdfdf] shadow-[inset_1px_1px_0_#ffffff,inset_-1px_-1px_0_#808080] active:shadow-[inset_-1px_-1px_0_#ffffff,inset_1px_1px_0_#808080]"
+            className="w-6 h-6 flex items-center justify-center font-bold text-sm"
+            style={{
+              border: '1px solid var(--win95-border-light, #ffffff)',
+              borderBottom: '1px solid var(--win95-border-dark, #000000)',
+              borderRight: '1px solid var(--win95-border-dark, #000000)',
+              background: 'var(--win95-button-face, #c0c0c0)',
+              color: 'var(--win95-text, #000)',
+              boxShadow: 'inset 1px 1px 0 var(--win95-border-light, #ffffff), inset -1px -1px 0 var(--win95-border-mid, #808080)'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--win95-button-hover, #dfdfdf)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--win95-button-face, #c0c0c0)'}
+            onMouseDown={(e) => e.currentTarget.style.boxShadow = 'inset -1px -1px 0 var(--win95-border-light, #ffffff), inset 1px 1px 0 var(--win95-border-mid, #808080)'}
+            onMouseUp={(e) => e.currentTarget.style.boxShadow = 'inset 1px 1px 0 var(--win95-border-light, #ffffff), inset -1px -1px 0 var(--win95-border-mid, #808080)'}
           >
             ×
           </button>
@@ -299,7 +362,14 @@ export default function Window({
       </div>
 
         {/* Window Content */}
-        <div className={`flex-1 overflow-auto bg-[#c0c0c0] @container ${size.height > 0 ? '' : 'h-auto'}`} style={size.height > 0 ? { height: 'calc(100% - 30px)' } : {}}>
+        <div 
+          ref={contentRef}
+          className={`flex-1 overflow-auto @container ${size.height > 0 ? '' : 'h-auto'}`} 
+          style={{ 
+            background: 'var(--win95-button-face, #c0c0c0)',
+            ...(size.height > 0 ? { height: 'calc(100% - 30px)' } : {})
+          }}
+        >
           {children}
         </div>
 
@@ -309,7 +379,7 @@ export default function Window({
             onMouseDown={handleResizeStart}
             className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
             style={{
-              background: 'linear-gradient(135deg, transparent 0%, transparent 50%, #808080 50%, #808080 100%)',
+              background: `linear-gradient(135deg, transparent 0%, transparent 50%, var(--win95-border-mid, #808080) 50%, var(--win95-border-mid, #808080) 100%)`,
               zIndex: 10
             }}
           />

@@ -1,8 +1,10 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import Window from './Window';
+import Next95Button from './Next95Button';
 
 interface HowdyData {
   image_src: string;
@@ -17,25 +19,6 @@ interface HowdyProps {
   onSiteSettingsClick?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
-}
-
-function Win95Button({
-  children,
-  onClick,
-  className = ''
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-6 py-2 text-sm border-2 border-[#ffffff] border-b-[#000000] border-r-[#000000] bg-[#c0c0c0] text-[#000] shadow-[inset_1px_1px_0_#dfdfdf,inset_-1px_-1px_0_#808080] hover:shadow-[inset_-1px_-1px_0_#dfdfdf,inset_1px_1px_0_#808080] active:shadow-[inset_-1px_-1px_0_#ffffff,inset_1px_1px_0_#000000] active:bg-[#c0c0c0] min-w-[120px] ${className}`}
-    >
-      {children}
-    </button>
-  );
 }
 
 export default function Howdy({
@@ -107,6 +90,11 @@ export default function Howdy({
     <Window
       id="welcome"
       title="Howdy"
+      icon={
+        remoteData?.image_src ? (
+          <Image src={remoteData.image_src} alt="" width={16} height={16} className="object-cover" />
+        ) : undefined
+      }
       defaultWidth={windowWidth}
       defaultX={defaultX}
       defaultY={defaultY}
@@ -120,7 +108,10 @@ export default function Howdy({
           <div className="flex flex-col gap-3 @[500px]:gap-4 @[700px]:gap-6 min-h-full @[450px]:flex-row @[450px]:items-center">
             {/* Photo - square and full width when vertical, portrait when horizontal */}
             <div className="flex-shrink-0">
-              <div className="relative w-full aspect-square @[450px]:w-32 @[450px]:h-44 @[450px]:aspect-auto @[600px]:w-40 @[600px]:h-56 @[700px]:w-48 @[700px]:h-64 @[800px]:w-56 @[800px]:h-72 @[900px]:w-64 @[900px]:h-80 @[1000px]:w-72 @[1000px]:h-96 @[1100px]:w-80 @[1100px]:h-[26rem] @[1200px]:w-96 @[1200px]:h-[32rem] border-2 border-[#000] bg-[#ffe45c] overflow-hidden">
+              <div 
+                className="relative w-full aspect-square @[450px]:w-32 @[450px]:h-44 @[450px]:aspect-auto @[600px]:w-40 @[600px]:h-56 @[700px]:w-48 @[700px]:h-64 @[800px]:w-56 @[800px]:h-72 @[900px]:w-64 @[900px]:h-80 @[1000px]:w-72 @[1000px]:h-96 @[1100px]:w-80 @[1100px]:h-[26rem] @[1200px]:w-96 @[1200px]:h-[32rem] border-2 bg-[#ffe45c] overflow-hidden"
+                style={{ borderColor: 'var(--win95-text, #000)' }}
+              >
                 <Image 
                   src={content.image_src} 
                   alt={content.image_alt} 
@@ -134,12 +125,12 @@ export default function Howdy({
             
             {/* Text Content - left aligned when stacked, scales with both width and height */}
             <div className="flex-1 space-y-1 @[500px]:space-y-2 @[700px]:space-y-3 @[900px]:space-y-4">
-              <p className="text-lg @[400px]:text-xl @[600px]:text-2xl @[700px]:text-3xl @[800px]:text-4xl @[900px]:text-5xl @[1000px]:text-5xl @[1200px]:text-6xl font-bold text-[#111] leading-tight text-left">
+              <p className="text-lg @[400px]:text-xl @[600px]:text-2xl @[700px]:text-3xl @[800px]:text-4xl @[900px]:text-5xl @[1000px]:text-5xl @[1200px]:text-6xl font-bold leading-tight text-left" style={{ color: 'var(--win95-content-text, #111)' }}>
                 {content.greeting}
               </p>
               {error && <p className="text-xs text-destructive">{error}</p>}
               {listItems.length > 0 && (
-                <ul className="list-none space-y-1 @[500px]:space-y-1.5 @[700px]:space-y-2 @[900px]:space-y-3 text-sm @[400px]:text-base @[600px]:text-lg @[700px]:text-xl @[800px]:text-2xl @[900px]:text-3xl @[1000px]:text-3xl @[1200px]:text-4xl text-[#111]">
+                <ul className="list-none space-y-1 @[500px]:space-y-1.5 @[700px]:space-y-2 @[900px]:space-y-3 text-sm @[400px]:text-base @[600px]:text-lg @[700px]:text-xl @[800px]:text-2xl @[900px]:text-3xl @[1000px]:text-3xl @[1200px]:text-4xl" style={{ color: 'var(--win95-content-text, #111)' }}>
                   {listItems.map((item, index) => {
                     const [emoji, ...rest] = item.split(' ');
                     return (
@@ -158,23 +149,29 @@ export default function Howdy({
         </div>
 
         {/* Buttons - fixed at bottom */}
-        <div className="flex-shrink-0 border-t border-[#808080] bg-[#c0c0c0] p-3 @[350px]:p-4 @[600px]:p-6 @[800px]:p-8">
+        <div 
+          className="flex-shrink-0 border-t p-3 @[350px]:p-4 @[600px]:p-6 @[800px]:p-8"
+          style={{
+            borderColor: 'var(--win95-border-mid, #808080)',
+            backgroundColor: 'var(--win95-button-face, #c0c0c0)'
+          }}
+        >
           <div className="flex flex-col @[450px]:flex-row gap-2 @[600px]:gap-3 @[800px]:gap-4">
             <div className="flex-1">
-              <Win95Button 
+              <Next95Button 
                 onClick={onSelectedWorksClick} 
                 className="w-full text-sm @[400px]:text-base @[600px]:text-lg @[800px]:text-xl @/h-[600px]:text-xl @[450px]/h-[700px]:text-2xl py-2 @[600px]:py-3 @[800px]:py-4 @/h-[500px]:py-4 @/h-[600px]:py-5 @[450px]/h-[700px]:py-6"
               >
                 Selected Works
-              </Win95Button>
+              </Next95Button>
             </div>
             <div className="flex-1">
-              <Win95Button 
+              <Next95Button 
                 onClick={onSiteSettingsClick} 
                 className="w-full text-sm @[400px]:text-base @[600px]:text-lg @[800px]:text-xl @/h-[600px]:text-xl @[450px]/h-[700px]:text-2xl py-2 @[600px]:py-3 @[800px]:py-4 @/h-[500px]:py-4 @/h-[600px]:py-5 @[450px]/h-[700px]:py-6"
               >
                 System Settings
-              </Win95Button>
+              </Next95Button>
             </div>
           </div>
         </div>

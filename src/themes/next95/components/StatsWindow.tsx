@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Window from './Window';
 import { useWindowManager } from '../context/WindowManagerContext';
 import StatsContent from './StatsContent';
+import Image from 'next/image';
 
 interface StatsWindowProps {
   onClose: () => void;
@@ -30,6 +31,7 @@ export default function StatsWindow({ onClose }: StatsWindowProps) {
     <Window
       id="stats"
       title="System Stats"
+      icon={<Image src="/Stats.png" alt="Stats" width={16} height={16} />}
       defaultWidth={windowWidth}
       defaultHeight={windowHeight}
       defaultX={defaultX}
@@ -38,7 +40,10 @@ export default function StatsWindow({ onClose }: StatsWindowProps) {
       draggable={true}
       resizable={true}
     >
-      <div className="h-full overflow-y-auto overflow-x-hidden bg-[#c0c0c0] @container">
+      <div 
+        className="h-full overflow-y-auto overflow-x-hidden @container"
+        style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}
+      >
         <div className="px-4 pb-4">
           <StatsContent />
         </div>

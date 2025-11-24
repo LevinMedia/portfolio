@@ -266,7 +266,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     yAxisSelection.call(yAxis)
 
     // Horizontal gridlines aligned to y ticks; baseline solid, others dotted
-    const borderColor = '#808080' // Win95 gray
+    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--win95-border-mid').trim() || '#808080'
     const grid = svg.append('g').attr('class', 'y-grid')
     grid
       .selectAll('line')
@@ -292,8 +292,9 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('width', width - margin.left - margin.right)
       .attr('height', height - margin.top - margin.bottom)
 
-    const accent = '#ff00ff' // Magenta for visitors
-    const primary = '#0000ff' // Blue for views
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--next95-secondary').trim() || '#ff00ff' // Magenta for visitors
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff' // Blue for views
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--win95-content-text').trim() || '#000000'
 
     const plot = svg.append('g').attr('clip-path', `url(#${clipPathId.current})`)
 
@@ -314,7 +315,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('width', barWidth)
       .attr('height', d => height - margin.bottom - y(d.views))
       .attr('fill', primary)
-      .attr('stroke', '#000000')
+      .attr('stroke', textColor)
       .attr('stroke-width', 0.5)
 
     // Draw Visitors bars
@@ -328,7 +329,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('width', barWidth)
       .attr('height', d => height - margin.bottom - y(d.visitors))
       .attr('fill', accent)
-      .attr('stroke', '#000000')
+      .attr('stroke', textColor)
       .attr('stroke-width', 0.5)
 
     // SVG legend removed; legend is rendered inline with the title
@@ -354,19 +355,20 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     const tipLine = tip.append('line')
       .attr('y1', margin.top)
       .attr('y2', height - margin.bottom)
-      .style('stroke', '#000000')
+      .style('stroke', textColor)
       .attr('stroke-width', 1)
       .attr('stroke-dasharray', '4,4')
 
     const tipBox = tip.append('g')
+    const contentBg = getComputedStyle(document.documentElement).getPropertyValue('--win95-content-bg').trim() || '#ffffff'
     const tipRect = tipBox.append('rect')
       .attr('rx', 0)
       .attr('ry', 0)
-      .attr('fill', '#ffffcc') // Light yellow tooltip background (Win95 style)
-      .attr('stroke', '#000000')
+      .attr('fill', contentBg)
+      .attr('stroke', textColor)
       .attr('stroke-width', 1)
     const tipText = tipBox.append('text')
-      .attr('fill', '#000000')
+      .attr('fill', textColor)
       .attr('font-size', 11)
       .attr('font-family', 'MS Sans Serif, system-ui, sans-serif')
 
@@ -440,18 +442,24 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   }, [points, agg, containerWidth, chartHeight])
 
   return (
-    <div className="bg-white border-2 border-[#808080] p-3">
+    <div 
+      className="border-2 p-3"
+      style={{
+        backgroundColor: 'var(--win95-content-bg, #ffffff)',
+        borderColor: 'var(--win95-border-mid, #808080)'
+      }}
+    >
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-3 flex-wrap">
           {/* Legend inline */}
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3" style={{ backgroundColor: '#0000ff' }} />
-              <span className="text-[#111]">Views</span>
+              <span className="inline-block w-3 h-3" style={{ backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff' }} />
+              <span style={{ color: 'var(--win95-content-text, #111)' }}>Views</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3" style={{ backgroundColor: '#ff00ff' }} />
-              <span className="text-[#111]">Visitors</span>
+              <span className="inline-block w-3 h-3" style={{ backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--next95-secondary').trim() || '#ff00ff' }} />
+              <span style={{ color: 'var(--win95-content-text, #111)' }}>Visitors</span>
             </div>
           </div>
         </div>
@@ -461,20 +469,40 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
               <Listbox.Button 
                 className={`w-full text-left px-2 pr-6 py-1 text-xs relative ${allowedAggs.length === 1 ? 'opacity-60 cursor-not-allowed' : ''}`}
                 style={{
-                  background: '#A7A7A7',
-                  color: '#000',
-                  boxShadow: '-2px -2px 0 0 rgba(0, 0, 0, 0.50) inset, 2px 2px 0 0 rgba(255, 255, 255, 0.50) inset'
+                  background: 'var(--win95-button-face, #A7A7A7)',
+                  color: 'var(--win95-text, #000)',
+                  boxShadow: '-2px -2px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 2px 2px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
                 }}
               >
                 {agg}
-                <ChevronDownIcon className="w-3 h-3 absolute right-1 top-1/2 -translate-y-1/2 text-[#111]" />
+                <ChevronDownIcon 
+                  className="w-3 h-3 absolute right-1 top-1/2 -translate-y-1/2"
+                  style={{ color: 'var(--win95-text, #111)' }}
+                />
               </Listbox.Button>
-              <Listbox.Options className="absolute left-0 right-0 mt-1 max-h-60 overflow-auto bg-white border-2 border-[#808080] z-10 w-full">
+              <Listbox.Options 
+                className="absolute left-0 right-0 mt-1 max-h-60 overflow-auto border-2 z-10 w-full"
+                style={{
+                  backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                  borderColor: 'var(--win95-border-mid, #808080)'
+                }}
+              >
                 {allowedAggs.map(option => (
                   <Listbox.Option 
                     key={option} 
                     value={option} 
-                    className="px-2 py-1 text-xs hover:bg-[#000080] hover:text-white cursor-pointer text-[#111]"
+                    className="px-2 py-1 text-xs cursor-pointer"
+                    style={{
+                      color: 'var(--win95-content-text, #111)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff'
+                      e.currentTarget.style.color = '#ffffff'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--win95-content-text').trim() || '#111'
+                    }}
                   >
                     {option}
                   </Listbox.Option>

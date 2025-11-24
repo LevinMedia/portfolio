@@ -43,13 +43,19 @@ export default function AboutWindow({ onClose }: AboutWindowProps) {
       resizable
       draggable
     >
-      <div className="h-full overflow-y-auto bg-white">
+      <div 
+        className="h-full overflow-y-auto"
+        style={{
+          backgroundColor: 'var(--win95-content-bg, #ffffff)',
+          color: 'var(--win95-content-text, #000000)'
+        }}
+      >
         <div className="p-4">
           {/* Content - max-width 768px for text */}
           <div className="mx-auto work-content-wrapper @container" style={{ maxWidth: '768px' }}>
-            <div className="work-detail-content text-sm @[600px]:text-base text-[#111] leading-relaxed">
+            <div className="work-detail-content text-sm @[600px]:text-base leading-relaxed" style={{ color: 'var(--win95-content-text, #111)' }}>
               {/* About this site section */}
-              <h2 className="text-xl @[600px]:text-2xl font-bold text-[#111] mb-3 mt-0">About this site</h2>
+              <h2 className="text-xl @[600px]:text-2xl font-bold mb-3 mt-0" style={{ color: 'var(--win95-content-text, #111)' }}>About this site</h2>
               <p className="mb-4">
                 Building and maintaining a portfolio site has always been at the absolute bottom of my list of things I'm excited to spend time on. But... there's this new thing — I dunno if you've heard of it — it's called AI, and it's kind of revolutionizing software development. 😏
               </p>
@@ -57,13 +63,24 @@ export default function AboutWindow({ onClose }: AboutWindowProps) {
                 So this site is a bit of an experiment. It's the product of AI-assisted software development (distinctly different from "vibe coding"). I've open-sourced the whole thing too, for anyone who wants a nifty little portfolio site to tinker with. Go ahead, take a peek under the hood. Heck, open an issue and tell me what I did wrong — or better yet, just make a PR and fix it!
               </p>
               <p className="mb-4">
-                <a href="https://github.com/levinmedia/portfolio" target="_blank" rel="noopener noreferrer" className="text-[#0000ff] underline hover:text-[#800080] visited:text-[#800080]">
+                <a 
+                  href="https://github.com/levinmedia/portfolio" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="underline"
+                  style={{ 
+                    color: 'var(--next95-primary, #0000ff)',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--next95-secondary').trim() || '#ff00ff'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff'}
+                >
                   https://github.com/levinmedia/portfolio
                 </a>
               </p>
 
               {/* About David section */}
-              <h2 className="text-xl @[600px]:text-2xl font-bold text-[#111] mb-3 mt-6">About David</h2>
+              <h2 className="text-xl @[600px]:text-2xl font-bold mb-3 mt-6" style={{ color: 'var(--win95-content-text, #111)' }}>About David</h2>
               <p className="mb-4">
                 David is a software architect with a designer's mindset and a builder's instinct. He specializes in designing complex, data-driven experiences that feel intuitive and efficient — especially in areas where the stakes are high, the logic is deep, and the edge cases matter.
               </p>
@@ -73,12 +90,19 @@ export default function AboutWindow({ onClose }: AboutWindowProps) {
               <p className="mb-4">
                 Outside of work, he's a husband, a dad, a surfer, a skier, and an incurable tinkerer. He likes to build things — digital and physical — and is usually chasing a better system, a smoother flow, or a smarter solution. If he's not sketching out a product idea, he's probably in the ocean or working on a side project with his daughter.
               </p>
-              <p className="mb-4 text-xs text-[#666] italic">
+              <p className="mb-4 text-xs italic" style={{ color: 'var(--win95-content-text, #666)' }}>
                 And yes, this was absolutely written by AI, and edited lightly for style, context, and clarity.
               </p>
 
               {/* Published Date */}
-              <div className="mx-auto text-xs text-[#666] border-t-2 border-[#808080] pt-2 mt-4" style={{ maxWidth: '768px' }}>
+              <div 
+                className="mx-auto text-xs border-t-2 pt-2 mt-4" 
+                style={{ 
+                  maxWidth: '768px',
+                  color: 'var(--win95-content-text, #666)',
+                  borderColor: 'var(--win95-border-mid, #808080)'
+                }}
+              >
                 Last updated: {new Date().toLocaleDateString()}
               </div>
             </div>

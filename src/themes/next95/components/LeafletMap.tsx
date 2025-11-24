@@ -1,9 +1,9 @@
 'use client'
 
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { useEffect, useState, useMemo, useCallback } from 'react'
 import Supercluster from 'supercluster'
 
 // Hook to detect dark mode
@@ -53,7 +53,7 @@ const getCSSVariable = (varName: string): string => {
 // Create cluster icon - Win95 style square with blue background
 const createClusterIcon = (count: number) => {
   const size = count < 10 ? 32 : count < 100 ? 40 : 48
-  const blueColor = '#0000ff' // Same blue as chart views
+  const blueColor = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff' // Same as chart views
   
   return L.divIcon({
     html: `<div style="
@@ -80,7 +80,7 @@ const createClusterIcon = (count: number) => {
 // Create single marker icon - Win95 style square
 const createSingleMarkerIcon = (count: number) => {
   const size = 32
-  const blueColor = '#0000ff' // Same blue as chart views
+  const blueColor = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff' // Same as chart views
   
   return L.divIcon({
     html: `<div style="
@@ -300,12 +300,20 @@ export default function LeafletMap({ points }: LeafletMapProps) {
     typeof p.latitude === 'number' && typeof p.longitude === 'number'
   )
 
-  // Win95 style - CartoDB Voyager (has white oceans with darker landmass)
-  const tileLayerConfig = {
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd'
-  }
+  // Switch tile layer based on dark mode
+  const tileLayerConfig = isDarkMode
+    ? {
+        // Dark mode - Stadia AlidadeSmoothDark
+        url: "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png",
+        attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
+        subdomains: ''
+      }
+    : {
+        // Light mode - CartoDB Voyager (white oceans with darker landmass)
+        url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd'
+      }
 
   if (validPoints.length === 0) {
     return (

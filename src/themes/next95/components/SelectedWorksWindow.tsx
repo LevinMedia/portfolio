@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Window from './Window';
 import { useWindowManager } from '../context/WindowManagerContext';
+import Image from 'next/image';
 
 interface SelectedWork {
   id: string;
@@ -62,6 +63,7 @@ export default function SelectedWorksWindow({ onClose, onOpenWork }: SelectedWor
     <Window
       id="selected-works"
       title="Selected Works"
+      icon={<Image src="/folder.png" alt="Folder" width={16} height={16} />}
       defaultWidth={windowWidth}
       defaultHeight={windowHeight}
       defaultX={defaultX}
@@ -70,29 +72,50 @@ export default function SelectedWorksWindow({ onClose, onOpenWork }: SelectedWor
       draggable={true}
       resizable={true}
     >
-      <div className="h-full flex flex-col bg-white">
+      <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)' }}>
         {/* List Header */}
-        <div className="flex border-b border-[#808080] bg-[#c0c0c0] text-xs font-bold">
+        <div 
+          className="flex border-b text-xs font-bold"
+          style={{
+            borderColor: 'var(--win95-border-mid, #808080)',
+            backgroundColor: 'var(--win95-button-face, #c0c0c0)',
+            color: 'var(--win95-text, #000)'
+          }}
+        >
           <div className="flex-1 px-2 py-1 border-r border-[#808080]">Name</div>
           <div className="w-32 px-2 py-1 border-r border-[#808080]">Type</div>
           <div className="w-32 px-2 py-1">Modified</div>
         </div>
 
         {/* List Content */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', color: 'var(--win95-content-text, #000)' }}>
           {loading ? (
-            <div className="p-4 text-sm text-[#111]">Loading...</div>
+            <div className="p-4 text-sm">Loading...</div>
           ) : works.length === 0 ? (
-            <div className="p-4 text-sm text-[#111]">No works found.</div>
+            <div className="p-4 text-sm">No works found.</div>
           ) : (
             works.map((work, index) => (
               <div
                 key={work.id}
-                className={`flex items-center px-1 py-0.5 text-sm cursor-pointer text-[#111] ${
+                className={`flex items-center px-1 py-0.5 text-sm cursor-pointer ${
                   selectedIndex === index 
-                    ? 'bg-[#000080]/20' 
-                    : 'hover:bg-[#e0e0e0]'
+                    ? '' 
+                    : ''
                 }`}
+                style={{
+                  color: 'var(--win95-content-text, #111)',
+                  backgroundColor: selectedIndex === index ? 'rgba(0, 0, 128, 0.2)' : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedIndex !== index) {
+                    e.currentTarget.style.backgroundColor = 'var(--win95-button-hover, #e0e0e0)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedIndex !== index) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
                 onClick={() => setSelectedIndex(index)}
                 onDoubleClick={() => {
                   // Open the work detail window
@@ -119,7 +142,14 @@ export default function SelectedWorksWindow({ onClose, onOpenWork }: SelectedWor
         </div>
 
         {/* Status Bar */}
-        <div className="border-t border-[#808080] bg-[#c0c0c0] px-2 py-1 text-xs text-[#111]">
+        <div 
+          className="border-t px-2 py-1 text-xs"
+          style={{
+            borderColor: 'var(--win95-border-mid, #808080)',
+            backgroundColor: 'var(--win95-button-face, #c0c0c0)',
+            color: 'var(--win95-text, #111)'
+          }}
+        >
           {works.length} object(s)
         </div>
       </div>

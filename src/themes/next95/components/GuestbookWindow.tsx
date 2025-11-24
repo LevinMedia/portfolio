@@ -3,6 +3,7 @@
 import Window from './Window';
 import { useWindowManager } from '../context/WindowManagerContext';
 import Guestbook from './Guestbook';
+import Image from 'next/image';
 
 interface GuestbookWindowProps {
   onClose: () => void;
@@ -29,6 +30,7 @@ export default function GuestbookWindow({ onClose }: GuestbookWindowProps) {
     <Window
       id="guestbook"
       title="Guestbook"
+      icon={<Image src="/guestbook-icon.png" alt="Guestbook" width={16} height={16} />}
       defaultWidth={windowWidth}
       defaultHeight={windowHeight}
       defaultX={defaultX}
@@ -37,8 +39,11 @@ export default function GuestbookWindow({ onClose }: GuestbookWindowProps) {
       draggable={true}
       resizable={true}
     >
-      <div className="h-full overflow-y-auto overflow-x-hidden bg-[#c0c0c0] @container">
-        <div className="p-4 flex justify-center">
+      <div 
+        className="h-full overflow-y-auto overflow-x-hidden @container p-4"
+        style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}
+      >
+        <div className="flex justify-center">
           <div className="w-full max-w-[600px]">
             <Guestbook />
           </div>

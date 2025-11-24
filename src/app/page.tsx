@@ -22,6 +22,7 @@ import StatsWindow from "@/themes/next95/components/StatsWindow";
 import WorkHistoryWindow from "@/themes/next95/components/WorkHistoryWindow";
 import GuestbookWindow from "@/themes/next95/components/GuestbookWindow";
 import AboutWindow from "@/themes/next95/components/AboutWindow";
+import SystemSettingsWindow from "@/themes/next95/components/SystemSettingsWindow";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
@@ -42,8 +43,10 @@ function HomeContent() {
   const [isWorkHistoryWindowOpen, setIsWorkHistoryWindowOpen] = useState(false); // Next95 Work History window
   const [isGuestbookWindowOpen, setIsGuestbookWindowOpen] = useState(false); // Next95 Guestbook window
   const [isAboutWindowOpen, setIsAboutWindowOpen] = useState(false); // Next95 About window
+  const [isSystemSettingsWindowOpen, setIsSystemSettingsWindowOpen] = useState(false); // Next95 System Settings window
   const [openWorkWindows, setOpenWorkWindows] = useState<Array<{ slug: string; title: string }>>([]); // Track open work detail windows
   const [howdyImageSrc, setHowdyImageSrc] = useState<string>('/guestbook-icon.png'); // Fallback to guestbook icon
+  const [isDarkMode, setIsDarkMode] = useState(false); // Track dark mode state
 
   // Determine current page title based on open drawer
   const pageTitle = isWorkHistoryOpen ? 'Work History'
@@ -75,6 +78,58 @@ function HomeContent() {
     
     if (theme.id === 'next95') {
       void fetchHowdyImage();
+    }
+  }, [theme.id]);
+
+  // Initialize Next95 theme colors
+  useEffect(() => {
+    if (theme.id === 'next95') {
+      const savedSettings = localStorage.getItem('next95-settings');
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings);
+          const root = document.documentElement;
+          root.style.setProperty('--next95-primary', settings.primaryColor || '#0000ff');
+          root.style.setProperty('--next95-secondary', settings.secondaryColor || '#ff00ff');
+          
+          // Apply window header settings
+          if (settings.windowHeaderType === 'solid') {
+            root.style.setProperty('--next95-window-header', settings.windowHeaderSolid || '#000080');
+            // Calculate text color for solid backgrounds
+            const hex = (settings.windowHeaderSolid || '#000080').replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            root.style.setProperty('--next95-window-header-text', luminance > 0.5 ? '#000000' : '#ffffff');
+          } else if (settings.windowHeaderGradient) {
+            root.style.setProperty('--next95-window-header', settings.windowHeaderGradient);
+            root.style.setProperty('--next95-window-header-text', '#ffffff');
+          }
+        } catch (error) {
+          console.error('Error loading Next95 settings:', error);
+        }
+      }
+    }
+  }, [theme.id]);
+
+  // Track dark mode changes for Next95 theme
+  useEffect(() => {
+    if (theme.id === 'next95') {
+      const checkDarkMode = () => {
+        setIsDarkMode(document.documentElement.classList.contains('dark'));
+      };
+      
+      checkDarkMode();
+      
+      // Watch for dark mode changes
+      const observer = new MutationObserver(checkDarkMode);
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      
+      return () => observer.disconnect();
     }
   }, [theme.id]);
 
@@ -182,6 +237,14 @@ function HomeContent() {
         </div>
       )}
 
+      {/* Dark Mode Scrim - 67% opacity black overlay for Next95 theme in dark mode */}
+      {theme.id === 'next95' && isDarkMode && (
+        <div 
+          className="absolute inset-0 z-[0.5] pointer-events-none transition-opacity duration-300"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.67)' }}
+        />
+      )}
+
       {/* Grid Pattern Overlay */}
       {showGridPattern && (
         <div className="absolute inset-0 z-[1] pointer-events-none" style={{
@@ -266,14 +329,14 @@ function HomeContent() {
                 <Image src="/System-settings.png" alt="System Settings" width={72} height={72} />
               }
               label="System Settings"
-              onClick={() => setIsSiteSettingsOpen(true)}
+              onClick={() => setIsSystemSettingsWindowOpen(true)}
             />
           </div>
         )}
 
         <ThemeHowdy 
           onSelectedWorksClick={() => setIsSelectedWorksWindowOpen(true)} 
-          onSiteSettingsClick={() => setIsSiteSettingsOpen(true)} 
+          onSiteSettingsClick={() => setIsSystemSettingsWindowOpen(true)} 
           isOpen={isHowdyOpen}
           onClose={() => setIsHowdyOpen(false)}
         />
@@ -321,6 +384,13 @@ function HomeContent() {
         {/* Next95 About Window */}
         {theme.id === 'next95' && isAboutWindowOpen && (
           <AboutWindow onClose={() => setIsAboutWindowOpen(false)} />
+        )}
+
+        {/* Next95 System Settings Window */}
+        {theme.id === 'next95' && isSystemSettingsWindowOpen && (
+          <SystemSettingsWindow 
+            onClose={() => setIsSystemSettingsWindowOpen(false)} 
+          />
         )}
       
 

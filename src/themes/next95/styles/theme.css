@@ -24,6 +24,28 @@
   --radius: 0;
   --font-geist-mono: var(--font-geist-mono);
   --font-geist-sans: var(--font-inter);
+  
+  /* Next95 theme-specific colors (customizable) */
+  --next95-primary: #0000ff; /* Blue - for links, borders, charts (views), map markers */
+  --next95-secondary: #ff00ff; /* Magenta - for charts (visitors), accents */
+  --next95-window-header: linear-gradient(90deg, #000080 0%, #1084d0 100%); /* Window header gradient */
+  --next95-window-header-text: #ffffff; /* Window header text color */
+  
+  /* Windows 95 UI colors (light mode) */
+  --win95-button-face: #9F9F9F; /* Window chrome/frame - matches taskbar */
+  --win95-button-hover: #dfdfdf;
+  --win95-border-light: #ffffff;
+  --win95-border-mid: #808080;
+  --win95-border-dark: #000000;
+  --win95-text: #000000;
+  --win95-content-bg: #ffffff; /* Content area background */
+  --win95-content-text: #000000; /* Content text color */
+  --win95-inactive-start: #808080;
+  --win95-inactive-end: #a0a0a0;
+  --win95-taskbar-bg: #9F9F9F; /* Taskbar background */
+  --win95-button-pressed: #959595; /* Pressed button state - more subtle */
+  --win95-bevel-light: rgba(255, 255, 255, 0.35);
+  --win95-bevel-dark: rgba(0, 0, 0, 0.35);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -45,6 +67,22 @@
     --destructive: #8b0000;
     --destructive-foreground: #ffffff;
     --ring: #000080;
+    
+    /* Windows 95 UI colors (dark mode) - light still comes from top-left */
+    --win95-button-face: #2a2a2a; /* Window chrome/frame - matches taskbar */
+    --win95-button-hover: #454545;
+    --win95-border-light: #5a5a5a; /* Lighter gray for highlights (top/left) */
+    --win95-border-mid: #4a4a4a; /* Mid-tone for subtle borders */
+    --win95-border-dark: #1a1a1a; /* Very dark for shadows (bottom/right) */
+    --win95-text: #e0e0e0;
+    --win95-content-bg: #1a1a1a; /* Almost black content area */
+    --win95-content-text: #e0e0e0; /* Light text for content */
+    --win95-inactive-start: #4a4a4a;
+    --win95-inactive-end: #3a3a3a;
+    --win95-taskbar-bg: #2a2a2a; /* Dark taskbar */
+    --win95-button-pressed: #252525; /* Pressed button state - more subtle in dark mode */
+    --win95-bevel-light: rgba(255, 255, 255, 0.4);
+    --win95-bevel-dark: rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -66,6 +104,22 @@
   --destructive: #8b0000;
   --destructive-foreground: #ffffff;
   --ring: #000080;
+  
+  /* Windows 95 UI colors (dark mode) - light still comes from top-left */
+  --win95-button-face: #3a3a3a; /* Much darker window chrome */
+  --win95-button-hover: #454545;
+  --win95-border-light: #5a5a5a; /* Lighter gray for highlights (top/left) */
+  --win95-border-mid: #4a4a4a; /* Mid-tone for subtle borders */
+  --win95-border-dark: #1a1a1a; /* Very dark for shadows (bottom/right) */
+  --win95-text: #e0e0e0;
+  --win95-content-bg: #1a1a1a; /* Almost black content area */
+  --win95-content-text: #e0e0e0; /* Light text for content */
+  --win95-inactive-start: #4a4a4a;
+  --win95-inactive-end: #3a3a3a;
+  --win95-taskbar-bg: #2a2a2a; /* Dark taskbar */
+  --win95-button-pressed: #252525; /* Pressed button state - more subtle in dark mode */
+  --win95-bevel-light: rgba(255, 255, 255, 0.4);
+  --win95-bevel-dark: rgba(0, 0, 0, 0.4);
 }
 
 html,

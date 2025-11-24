@@ -114,6 +114,15 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
     <Window
       id={`work-${slug}`}
       title={title}
+      icon={
+        <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
+          <rect x="2" y="1" width="10" height="14" fill="#ffffff" stroke="#000" />
+          <path d="M8 1 L12 1 L12 5 L8 5 Z" fill="#e0e0e0" stroke="#000" />
+          <line x1="4" y1="7" x2="10" y2="7" stroke="#000" />
+          <line x1="4" y1="9" x2="10" y2="9" stroke="#000" />
+          <line x1="4" y1="11" x2="8" y2="11" stroke="#000" />
+        </svg>
+      }
       defaultWidth={windowWidth}
       defaultHeight={windowHeight}
       defaultX={defaultX}
@@ -123,15 +132,33 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
       resizable={true}
     >
       {loading ? (
-        <div className="h-full overflow-y-auto overflow-x-hidden bg-white p-4">
-          <div className="text-sm text-[#111]">Loading...</div>
+        <div 
+          className="h-full overflow-y-auto overflow-x-hidden p-4"
+          style={{
+            backgroundColor: 'var(--win95-content-bg, #ffffff)',
+            color: 'var(--win95-content-text, #000000)'
+          }}
+        >
+          <div className="text-sm">Loading...</div>
         </div>
       ) : error ? (
-        <div className="h-full overflow-y-auto overflow-x-hidden bg-white p-4">
+        <div 
+          className="h-full overflow-y-auto overflow-x-hidden p-4"
+          style={{
+            backgroundColor: 'var(--win95-content-bg, #ffffff)',
+            color: 'var(--win95-content-text, #000000)'
+          }}
+        >
           <div className="text-sm text-red-600">{error}</div>
         </div>
       ) : work ? (
-        <div className="h-full overflow-y-auto overflow-x-hidden bg-white">
+        <div 
+          className="h-full overflow-y-auto overflow-x-hidden"
+          style={{
+            backgroundColor: 'var(--win95-content-bg, #ffffff)',
+            color: 'var(--win95-content-text, #000000)'
+          }}
+        >
           {/* Feature Image with Title Overlay - flush under header */}
           {work.feature_image_url && (
             <div className="relative w-full" style={{ height: '40vh', minHeight: '250px' }}>
@@ -168,22 +195,22 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
                 }
                 
                 return (
-                  <div key={index} className="work-detail-content text-sm @[600px]:text-base text-[#111] leading-relaxed">
+                  <div key={index} className="work-detail-content text-sm @[600px]:text-base leading-relaxed">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                       components={{
-                        h1: ({ children }) => <h1 className="text-2xl @[600px]:text-3xl font-bold text-[#111] mb-4 mt-6">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-xl @[600px]:text-2xl font-bold text-[#111] mb-3 mt-5">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-lg @[600px]:text-xl font-bold text-[#111] mb-3 mt-4">{children}</h3>,
-                        h4: ({ children }) => <h4 className="text-base @[600px]:text-lg font-bold text-[#111] mb-2 mt-3">{children}</h4>,
-                        h5: ({ children }) => <h5 className="text-sm @[600px]:text-base font-bold text-[#111] mb-2 mt-3">{children}</h5>,
-                        h6: ({ children }) => <h6 className="text-xs @[600px]:text-sm font-bold text-[#111] mb-2 mt-2">{children}</h6>,
+                        h1: ({ children }) => <h1 className="text-2xl @[600px]:text-3xl font-bold mb-4 mt-6" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-xl @[600px]:text-2xl font-bold mb-3 mt-5" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-lg @[600px]:text-xl font-bold mb-3 mt-4" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h3>,
+                        h4: ({ children }) => <h4 className="text-base @[600px]:text-lg font-bold mb-2 mt-3" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h4>,
+                        h5: ({ children }) => <h5 className="text-sm @[600px]:text-base font-bold mb-2 mt-3" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h5>,
+                        h6: ({ children }) => <h6 className="text-xs @[600px]:text-sm font-bold mb-2 mt-2" style={{ color: 'var(--win95-content-text, #111)' }}>{children}</h6>,
                         p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
                         ul: ({ children }) => <ul className="list-disc mb-4 space-y-2" style={{ paddingLeft: '1.5rem' }}>{children}</ul>,
                         ol: ({ children }) => <ol className="list-decimal mb-4 space-y-2" style={{ paddingLeft: '1.5rem' }}>{children}</ol>,
                         li: ({ children }) => <li>{children}</li>,
-                        blockquote: ({ children }) => <blockquote className="border-l-4 border-[#808080] pl-4 italic text-[#666] my-4">{children}</blockquote>,
+                        blockquote: ({ children }) => <blockquote className="border-l-4 pl-4 italic my-4" style={{ borderColor: 'var(--win95-border-mid, #808080)', color: 'var(--win95-content-text, #666)' }}>{children}</blockquote>,
                         img: ({ src, alt }) => {
                           if (!src) return null;
                           return (
@@ -199,17 +226,39 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
                         strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                         em: ({ children }) => <em className="italic">{children}</em>,
                         code: ({ children }) => (
-                          <code className="bg-[#f0f0f0] px-1 py-0.5 border border-[#ccc] text-xs font-mono">
+                          <code 
+                            className="px-1 py-0.5 border text-xs font-mono"
+                            style={{
+                              backgroundColor: 'var(--win95-button-face, #f0f0f0)',
+                              borderColor: 'var(--win95-border-mid, #ccc)',
+                              color: 'var(--win95-text, #000)'
+                            }}
+                          >
                             {children}
                           </code>
                         ),
                         pre: ({ children }) => (
-                          <pre className="bg-[#f0f0f0] p-4 border-2 border-[#808080] overflow-x-auto my-4">
+                          <pre 
+                            className="p-4 border-2 overflow-x-auto my-4"
+                            style={{
+                              backgroundColor: 'var(--win95-button-face, #f0f0f0)',
+                              borderColor: 'var(--win95-border-mid, #808080)',
+                              color: 'var(--win95-text, #000)'
+                            }}
+                          >
                             {children}
                           </pre>
                         ),
                         a: ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#0000ff] underline hover:text-[#800080] visited:text-[#800080]">
+                          <a 
+                            href={href} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="underline"
+                            style={{ color: 'var(--next95-primary, #0000ff)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--next95-secondary').trim() || '#ff00ff'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = getComputedStyle(document.documentElement).getPropertyValue('--next95-primary').trim() || '#0000ff'}
+                          >
                             {children}
                           </a>
                         ),
@@ -250,15 +299,28 @@ export default function WorkDetailWindow({ slug, title, onClose }: WorkDetailWin
 
             {/* Published Date */}
             {work.published_at && (
-              <div className="mx-auto text-xs text-[#666] border-t-2 border-[#808080] pt-2 mt-4" style={{ maxWidth: '768px' }}>
+              <div 
+                className="mx-auto text-xs border-t-2 pt-2 mt-4" 
+                style={{ 
+                  maxWidth: '768px',
+                  color: 'var(--win95-content-text, #666)',
+                  borderColor: 'var(--win95-border-mid, #808080)'
+                }}
+              >
                 Published: {new Date(work.published_at).toLocaleDateString()}
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="h-full overflow-y-auto overflow-x-hidden bg-white p-4">
-          <div className="text-sm text-[#111]">Work not found</div>
+        <div 
+          className="h-full overflow-y-auto overflow-x-hidden p-4"
+          style={{
+            backgroundColor: 'var(--win95-content-bg, #ffffff)',
+            color: 'var(--win95-content-text, #000000)'
+          }}
+        >
+          <div className="text-sm">Work not found</div>
         </div>
       )}
     </Window>

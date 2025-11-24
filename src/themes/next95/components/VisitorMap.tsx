@@ -8,8 +8,14 @@ import dynamic from 'next/dynamic'
 const LeafletMap = dynamic(() => import('./LeafletMap'), { 
   ssr: false,
   loading: () => (
-    <div className="h-80 bg-white border-2 border-[#808080] flex items-center justify-center">
-      <div className="text-[#111]">Loading map...</div>
+    <div 
+      className="h-80 border-2 flex items-center justify-center"
+      style={{
+        backgroundColor: 'var(--win95-content-bg, #ffffff)',
+        borderColor: 'var(--win95-border-mid, #808080)'
+      }}
+    >
+      <div style={{ color: 'var(--win95-content-text, #111)' }}>Loading map...</div>
     </div>
   )
 })
