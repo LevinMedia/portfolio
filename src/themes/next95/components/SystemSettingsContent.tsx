@@ -467,7 +467,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
             </label>
 
             {settings.windowHeaderType === 'solid' && (
-              <div className="mt-2 ml-6">
+              <div className="mt-2">
                 <label className="block text-sm font-medium mb-1">Header Color</label>
                 <div className="flex items-center gap-2">
                   <input
@@ -503,7 +503,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
             </label>
 
             {settings.windowHeaderType === 'gradient' && (
-              <div className="mt-2 ml-6 space-y-3">
+              <div className="mt-2 space-y-3">
                 <div>
                   <label className="block text-sm font-medium mb-2">Presets</label>
                   <div className="grid grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 gap-2">

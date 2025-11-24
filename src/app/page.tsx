@@ -397,81 +397,85 @@ function HomeContent() {
       
       <ThemeNavigation />
 
-      {/* Work History Drawer */}
-      <Drawer
-        isOpen={isWorkHistoryOpen}
-        onClose={handleWorkHistoryClose}
-        title="Work History"
-        icon={<BriefcaseIcon className="w-6 h-6" />}
-        showLinkedInButton={true}
-        linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
-        lazyMount
-      >
-        <WorkHistoryContent />
-      </Drawer>
+      {theme.id !== 'next95' && (
+        <>
+          {/* Work History Drawer */}
+          <Drawer
+            isOpen={isWorkHistoryOpen}
+            onClose={handleWorkHistoryClose}
+            title="Work History"
+            icon={<BriefcaseIcon className="w-6 h-6" />}
+            showLinkedInButton={true}
+            linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
+            lazyMount
+          >
+            <WorkHistoryContent />
+          </Drawer>
 
-              {/* About Drawer */}
-        <Drawer
-          isOpen={isAboutOpen}
-          onClose={handleAboutClose}
-          title="About"
-          icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
-        lazyMount
-        >
-          <AboutContent />
-        </Drawer>
+          {/* About Drawer */}
+          <Drawer
+            isOpen={isAboutOpen}
+            onClose={handleAboutClose}
+            title="About"
+            icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
+            lazyMount
+          >
+            <AboutContent />
+          </Drawer>
 
-        {/* Selected Works Drawer */}
-        <Drawer
-          isOpen={isSelectedWorksOpen}
-          onClose={handleSelectedWorksClose}
-          title="Selected works"
-          icon={<CommandLineIcon className="w-6 h-6" />}
-          contentPadding="p-0"
-          maxWidth=""
-        lazyMount
-        >
-          <SelectedWorksContent />
-        </Drawer>
+          {/* Selected Works Drawer */}
+          <Drawer
+            isOpen={isSelectedWorksOpen}
+            onClose={handleSelectedWorksClose}
+            title="Selected works"
+            icon={<CommandLineIcon className="w-6 h-6" />}
+            contentPadding="p-0"
+            maxWidth=""
+            lazyMount
+          >
+            <SelectedWorksContent />
+          </Drawer>
 
-        {/* Site Settings Drawer */}
-        <Drawer
-          isOpen={isSiteSettingsOpen}
-          onClose={handleSiteSettingsClose}
-          title="Site Settings"
-          icon={<CogIcon className="w-6 h-6" />}
-          contentPadding="p-4"
-          maxWidth="max-w-4xl"
-        lazyMount
-        >
-          <SiteSettingsContent />
-        </Drawer>
+          {/* Site Settings Drawer */}
+          <Drawer
+            isOpen={isSiteSettingsOpen}
+            onClose={handleSiteSettingsClose}
+            title="Site Settings"
+            icon={<CogIcon className="w-6 h-6" />}
+            contentPadding="p-4"
+            maxWidth="max-w-4xl"
+            lazyMount
+          >
+            <SiteSettingsContent />
+          </Drawer>
 
-        {/* Guestbook Drawer */}
-        <Drawer
-          isOpen={isGuestbookOpen}
-          onClose={handleGuestbookClose}
-          title="Guestbook"
-          icon={<PencilSquareIcon className="w-6 h-6" />}
-          contentPadding="p-4"
-          maxWidth="max-w-4xl"
-        lazyMount
-        >
-          <Guestbook />
-        </Drawer>
+          {/* Guestbook Drawer */}
+          <Drawer
+            isOpen={isGuestbookOpen}
+            onClose={handleGuestbookClose}
+            title="Guestbook"
+            icon={<PencilSquareIcon className="w-6 h-6" />}
+            contentPadding="p-4"
+            maxWidth="max-w-4xl"
+            lazyMount
+          >
+            <Guestbook />
+          </Drawer>
 
-        {/* Stats Drawer */}
-        <Drawer
-          isOpen={isStatsOpen}
-          onClose={handleStatsClose}
-          title="Site Statistics"
-          icon={<ChartBarSquareIcon className="w-6 h-6" />}
-          contentPadding="p-4"
-          maxWidth="max-w-6xl"
-        lazyMount
-        >
-          <StatsContent />
-        </Drawer>
+          {/* Stats Drawer */}
+          <Drawer
+            isOpen={isStatsOpen}
+            onClose={handleStatsClose}
+            title="Site Statistics"
+            icon={<ChartBarSquareIcon className="w-6 h-6" />}
+            contentPadding="p-4"
+            maxWidth="max-w-6xl"
+            lazyMount
+          >
+            <StatsContent />
+          </Drawer>
+        </>
+      )}
       </div>
     </div>
   );
