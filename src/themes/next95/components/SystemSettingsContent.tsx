@@ -1,23 +1,33 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { CSSProperties } from 'react'
+
+type WallpaperId = 'teal' | 'sunset' | 'grid'
+type ScreensaverId = 'none' | 'pipes' | 'stars'
 
 interface Next95Settings {
-  primaryColor: string // Used for: links, borders, chart views, map markers
-  secondaryColor: string // Used for: chart visitors
+  primaryColor: string
+  secondaryColor: string
   windowHeaderType: 'solid' | 'gradient'
   windowHeaderSolid: string
-  windowHeaderGradient: string // CSS gradient string
+  windowHeaderGradient: string
   colorMode: 'light' | 'dark' | 'system'
+  desktopWallpaper: WallpaperId
+  screensaverMode: ScreensaverId
+  screensaverTimeout: number
 }
 
 const defaultSettings: Next95Settings = {
-  primaryColor: '#0000ff', // Blue
-  secondaryColor: '#ff00ff', // Magenta
+  primaryColor: '#0000ff',
+  secondaryColor: '#ff00ff',
   windowHeaderType: 'gradient',
   windowHeaderSolid: '#000080',
-  windowHeaderGradient: 'linear-gradient(90deg, #000080 0%, #1084d0 100%)', // Default blue gradient
-  colorMode: 'system'
+  windowHeaderGradient: 'linear-gradient(90deg, #000080 0%, #1084d0 100%)',
+  colorMode: 'system',
+  desktopWallpaper: 'teal',
+  screensaverMode: 'none',
+  screensaverTimeout: 10
 }
 
 const colorPresets = [
@@ -38,33 +48,84 @@ const gradientPresets = [
   { name: 'Orange', gradient: 'linear-gradient(90deg, #ff8c00 0%, #ffa500 100%)' }
 ]
 
-export default function SystemSettingsContent() {
+const wallpaperOptions: Array<{
+  id: WallpaperId
+  label: string
+  description: string
+  previewStyle: CSSProperties
+}> = [
+  {
+    id: 'teal',
+    label: 'Classic Teal',
+    description: 'Original Next95 desktop',
+    previewStyle: {
+      backgroundColor: '#008080'
+    }
+  },
+  {
+    id: 'sunset',
+    label: 'Sunset Glow',
+    description: 'Win95 Plus! inspired gradient',
+    previewStyle: {
+      backgroundImage: 'linear-gradient(135deg, #d16ba5 0%, #86a8e7 50%, #5ffbf1 100%)'
+    }
+  },
+  {
+    id: 'grid',
+    label: 'Retro Grid',
+    description: 'Neon grid overlay',
+    previewStyle: {
+      backgroundColor: '#031b34',
+      backgroundImage: `
+        linear-gradient(90deg, rgba(0,255,255,0.25) 1px, transparent 1px),
+        linear-gradient(rgba(0,255,255,0.25) 1px, transparent 1px),
+        radial-gradient(circle at center, rgba(0,128,255,0.25), transparent 60%)
+      `,
+      backgroundSize: '40px 40px, 40px 40px, cover'
+    }
+  }
+]
+
+const screensaverOptions: Array<{ id: ScreensaverId; label: string; description: string }> = [
+  { id: 'none', label: 'None', description: 'Disable screen saver' },
+  { id: 'pipes', label: '3D Pipes', description: 'Classic maze of pipes' },
+  { id: 'stars', label: 'Starfield', description: 'Fly through space forever' }
+]
+
+interface SystemSettingsContentProps {
+  activeTab: 'desktop' | 'appearance'
+}
+
+export default function SystemSettingsContent({ activeTab }: SystemSettingsContentProps) {
   const [settings, setSettings] = useState<Next95Settings>(defaultSettings)
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedPreset, setSelectedPreset] = useState<string>('Classic')
-  const [selectedGradient, setSelectedGradient] = useState<string>('')
+  const [selectedPreset, setSelectedPreset] = useState('Classic')
+  const [selectedGradient, setSelectedGradient] = useState('')
   const [gradientStops, setGradientStops] = useState<Array<{ color: string; position: number }>>([
     { color: '#000080', position: 0 },
     { color: '#1084d0', position: 100 }
   ])
 
+  const bevelLight = 'var(--win95-bevel-light, rgba(255, 255, 255, 0.35))'
+  const bevelDark = 'var(--win95-bevel-dark, rgba(0, 0, 0, 0.35))'
+  const insetSunken = `inset -2px -2px 0 0 ${bevelLight}, inset 2px 2px 0 0 ${bevelDark}`
+  const insetRaised = `inset -2px -2px 0 0 ${bevelDark}, inset 2px 2px 0 0 ${bevelLight}`
+
   useEffect(() => {
-    // Load settings from localStorage
     const savedSettings = localStorage.getItem('next95-settings')
     const savedPreset = localStorage.getItem('next95-preset')
     const savedGradient = localStorage.getItem('next95-gradient-preset')
-    
+
     if (savedSettings) {
       try {
         const parsedSettings = JSON.parse(savedSettings)
         setSettings({ ...defaultSettings, ...parsedSettings })
-        
-        // Parse gradient stops if it's a custom gradient
+
         if (parsedSettings.windowHeaderGradient && parsedSettings.windowHeaderType === 'gradient') {
           const matches = parsedSettings.windowHeaderGradient.match(/#[0-9a-fA-F]{6}/g)
           const positions = parsedSettings.windowHeaderGradient.match(/(\d+)%/g)
           if (matches && positions) {
-            setGradientStops(matches.map((color, i) => ({
+            setGradientStops(matches.map((color: string, i: number) => ({
               color,
               position: parseInt(positions[i])
             })))
@@ -74,21 +135,11 @@ export default function SystemSettingsContent() {
         console.error('Error parsing saved settings:', error)
       }
     } else {
-      // Initialize with defaults
       applySettings(defaultSettings)
     }
-    
-    if (savedPreset) {
-      setSelectedPreset(savedPreset)
-    }
-    
-    if (savedGradient) {
-      setSelectedGradient(savedGradient)
-    } else {
-      // Default to Classic Blue if nothing saved
-      setSelectedGradient('Classic Blue')
-    }
-    
+
+    setSelectedPreset(savedPreset ?? 'Classic')
+    setSelectedGradient(savedGradient ?? 'Classic Blue')
     setIsLoading(false)
   }, [])
 
@@ -99,23 +150,34 @@ export default function SystemSettingsContent() {
     }
   }, [settings, isLoading])
 
+  const applyWallpaper = (wallpaperId: WallpaperId) => {
+    const wallpaper = wallpaperOptions.find((option) => option.id === wallpaperId) ?? wallpaperOptions[0]
+    const root = document.documentElement
+    const fallbackColor = (wallpaper.previewStyle.backgroundColor as string) ?? '#008080'
+    root.style.setProperty('--background', fallbackColor)
+    document.body.style.backgroundColor = fallbackColor
+    if (wallpaper.previewStyle.backgroundImage) {
+      document.body.style.backgroundImage = wallpaper.previewStyle.backgroundImage as string
+      const bgSize = wallpaper.previewStyle.backgroundSize
+      document.body.style.backgroundSize = typeof bgSize === 'string' ? bgSize : 'cover'
+    } else {
+      document.body.style.backgroundImage = 'none'
+    }
+  }
+
   const applySettings = (newSettings: Next95Settings) => {
     const root = document.documentElement
-    
-    // Apply custom colors as CSS variables
     root.style.setProperty('--next95-primary', newSettings.primaryColor)
     root.style.setProperty('--next95-secondary', newSettings.secondaryColor)
-    
-    // Apply window header settings
+
     if (newSettings.windowHeaderType === 'solid') {
       root.style.setProperty('--next95-window-header', newSettings.windowHeaderSolid)
       root.style.setProperty('--next95-window-header-text', getTextColorForBackground(newSettings.windowHeaderSolid))
     } else {
       root.style.setProperty('--next95-window-header', newSettings.windowHeaderGradient)
-      root.style.setProperty('--next95-window-header-text', '#ffffff') // White text for gradients
+      root.style.setProperty('--next95-window-header-text', '#ffffff')
     }
-    
-    // Apply color mode
+
     if (newSettings.colorMode === 'dark') {
       root.classList.add('dark')
       root.classList.remove('light')
@@ -123,7 +185,6 @@ export default function SystemSettingsContent() {
       root.classList.add('light')
       root.classList.remove('dark')
     } else {
-      // System mode
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (systemPrefersDark) {
         root.classList.add('dark')
@@ -133,66 +194,35 @@ export default function SystemSettingsContent() {
         root.classList.remove('dark')
       }
     }
-    
-    console.log('Next95 settings applied:', {
-      primary: newSettings.primaryColor,
-      secondary: newSettings.secondaryColor,
-      windowHeaderType: newSettings.windowHeaderType,
-      windowHeader: newSettings.windowHeaderType === 'solid' ? newSettings.windowHeaderSolid : newSettings.windowHeaderGradient,
-      colorMode: newSettings.colorMode
-    })
+
+    applyWallpaper(newSettings.desktopWallpaper)
   }
 
-  // Helper function to determine text color based on background
-  const getTextColorForBackground = (bgColor: string): string => {
-    // Convert hex to RGB
+  const getTextColorForBackground = (bgColor: string) => {
     const hex = bgColor.replace('#', '')
     const r = parseInt(hex.substr(0, 2), 16)
     const g = parseInt(hex.substr(2, 2), 16)
     const b = parseInt(hex.substr(4, 2), 16)
-    
-    // Calculate relative luminance
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    
-    // Return white for dark backgrounds, black for light backgrounds
     return luminance > 0.5 ? '#000000' : '#ffffff'
   }
 
   const handleColorChange = (colorType: 'primary' | 'secondary', color: string) => {
     setSelectedPreset('Custom')
-    
-    const newSettings = { 
-      ...settings, 
-      [`${colorType}Color`]: color 
-    }
+    const newSettings = { ...settings, [`${colorType}Color`]: color }
     setSettings(newSettings)
-    
-    const root = document.documentElement
-    root.style.setProperty(`--next95-${colorType}`, color)
-    
-    localStorage.setItem('next95-settings', JSON.stringify(newSettings))
+    document.documentElement.style.setProperty(`--next95-${colorType}`, color)
     localStorage.setItem('next95-preset', 'Custom')
   }
 
   const handleWindowHeaderTypeChange = (type: 'solid' | 'gradient') => {
-    const newSettings = {
-      ...settings,
-      windowHeaderType: type
-    }
-    setSettings(newSettings)
+    setSettings((prev) => ({ ...prev, windowHeaderType: type }))
   }
 
   const handleColorModeChange = (mode: 'light' | 'dark' | 'system') => {
-    const newSettings = {
-      ...settings,
-      colorMode: mode
-    }
+    const newSettings = { ...settings, colorMode: mode }
     setSettings(newSettings)
-    
-    // Save to localStorage
     localStorage.setItem('next95-settings', JSON.stringify(newSettings))
-    
-    // Apply the color mode immediately
     const root = document.documentElement
     if (mode === 'dark') {
       root.classList.add('dark')
@@ -201,7 +231,6 @@ export default function SystemSettingsContent() {
       root.classList.add('light')
       root.classList.remove('dark')
     } else {
-      // System mode
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (systemPrefersDark) {
         root.classList.add('dark')
@@ -214,66 +243,36 @@ export default function SystemSettingsContent() {
   }
 
   const handleWindowHeaderSolidChange = (color: string) => {
-    const newSettings = {
-      ...settings,
-      windowHeaderSolid: color,
-      windowHeaderType: 'solid' as const
-    }
-    setSettings(newSettings)
+    setSettings((prev) => ({ ...prev, windowHeaderSolid: color, windowHeaderType: 'solid' }))
     setSelectedGradient('Custom')
   }
 
-  const applyGradientPreset = (preset: typeof gradientPresets[0]) => {
+  const applyGradientPreset = (preset: typeof gradientPresets[number]) => {
     setSelectedGradient(preset.name)
-    const newSettings = {
-      ...settings,
-      windowHeaderGradient: preset.gradient,
-      windowHeaderType: 'gradient' as const
-    }
-    setSettings(newSettings)
+    setSettings((prev) => ({ ...prev, windowHeaderGradient: preset.gradient, windowHeaderType: 'gradient' }))
     localStorage.setItem('next95-gradient-preset', preset.name)
-    
-    // Parse gradient to update stops
     const matches = preset.gradient.match(/#[0-9a-fA-F]{6}/g)
     const positions = preset.gradient.match(/(\d+)%/g)
     if (matches && positions) {
-      setGradientStops(matches.map((color, i) => ({
-        color,
-        position: parseInt(positions[i])
-      })))
+      setGradientStops(matches.map((color, i) => ({ color, position: parseInt(positions[i]) })))
     }
   }
 
   const handleGradientStopChange = (index: number, field: 'color' | 'position', value: string | number) => {
     const newStops = [...gradientStops]
-    newStops[index] = {
-      ...newStops[index],
-      [field]: value
-    }
-    
-    // Sort by position
+    newStops[index] = { ...newStops[index], [field]: value }
     newStops.sort((a, b) => a.position - b.position)
     setGradientStops(newStops)
-    
-    // Build gradient string
-    const gradientString = `linear-gradient(90deg, ${newStops.map(stop => `${stop.color} ${stop.position}%`).join(', ')})`
-    
-    const newSettings = {
-      ...settings,
-      windowHeaderGradient: gradientString,
-      windowHeaderType: 'gradient' as const
-    }
-    setSettings(newSettings)
+    const gradientString = `linear-gradient(90deg, ${newStops.map((stop) => `${stop.color} ${stop.position}%`).join(', ')})`
+    setSettings((prev) => ({ ...prev, windowHeaderGradient: gradientString, windowHeaderType: 'gradient' }))
     setSelectedGradient('Custom')
     localStorage.setItem('next95-gradient-preset', 'Custom')
   }
 
   const addGradientStop = () => {
-    // Find a good position for the new stop (midpoint of largest gap)
     const sortedStops = [...gradientStops].sort((a, b) => a.position - b.position)
     let maxGap = 0
     let maxGapIndex = 0
-    
     for (let i = 0; i < sortedStops.length - 1; i++) {
       const gap = sortedStops[i + 1].position - sortedStops[i].position
       if (gap > maxGap) {
@@ -281,49 +280,29 @@ export default function SystemSettingsContent() {
         maxGapIndex = i
       }
     }
-    
     const newPosition = Math.round((sortedStops[maxGapIndex].position + sortedStops[maxGapIndex + 1].position) / 2)
-    const newColor = sortedStops[maxGapIndex].color // Use color from left side
-    
+    const newColor = sortedStops[maxGapIndex].color
     const newStops = [...gradientStops, { color: newColor, position: newPosition }].sort((a, b) => a.position - b.position)
     setGradientStops(newStops)
-    
-    // Build and apply gradient
-    const gradientString = `linear-gradient(90deg, ${newStops.map(stop => `${stop.color} ${stop.position}%`).join(', ')})`
-    const newSettings = {
-      ...settings,
-      windowHeaderGradient: gradientString,
-      windowHeaderType: 'gradient' as const
-    }
-    setSettings(newSettings)
+    const gradientString = `linear-gradient(90deg, ${newStops.map((stop) => `${stop.color} ${stop.position}%`).join(', ')})`
+    setSettings((prev) => ({ ...prev, windowHeaderGradient: gradientString, windowHeaderType: 'gradient' }))
     setSelectedGradient('Custom')
     localStorage.setItem('next95-gradient-preset', 'Custom')
   }
 
   const removeGradientStop = (index: number) => {
-    if (gradientStops.length > 2) {
-      const newStops = gradientStops.filter((_, i) => i !== index).sort((a, b) => a.position - b.position)
-      setGradientStops(newStops)
-      
-      const gradientString = `linear-gradient(90deg, ${newStops.map(stop => `${stop.color} ${stop.position}%`).join(', ')})`
-      const newSettings = {
-        ...settings,
-        windowHeaderGradient: gradientString,
-        windowHeaderType: 'gradient' as const
-      }
-      setSettings(newSettings)
-      setSelectedGradient('Custom')
-      localStorage.setItem('next95-gradient-preset', 'Custom')
-    }
+    if (gradientStops.length <= 2) return
+    const newStops = gradientStops.filter((_, i) => i !== index).sort((a, b) => a.position - b.position)
+    setGradientStops(newStops)
+    const gradientString = `linear-gradient(90deg, ${newStops.map((stop) => `${stop.color} ${stop.position}%`).join(', ')})`
+    setSettings((prev) => ({ ...prev, windowHeaderGradient: gradientString, windowHeaderType: 'gradient' }))
+    setSelectedGradient('Custom')
+    localStorage.setItem('next95-gradient-preset', 'Custom')
   }
 
-  const applyPreset = (preset: typeof colorPresets[0]) => {
+  const applyPreset = (preset: typeof colorPresets[number]) => {
     setSelectedPreset(preset.name)
-    setSettings(prev => ({
-      ...prev,
-      primaryColor: preset.primary,
-      secondaryColor: preset.secondary
-    }))
+    setSettings((prev) => ({ ...prev, primaryColor: preset.primary, secondaryColor: preset.secondary }))
     localStorage.setItem('next95-preset', preset.name)
   }
 
@@ -332,36 +311,96 @@ export default function SystemSettingsContent() {
     localStorage.setItem('next95-preset', 'Custom')
   }
 
-  const isPresetSelected = (presetName: string) => {
-    return selectedPreset === presetName
+  const isPresetSelected = (presetName: string) => selectedPreset === presetName
+
+  const handleDesktopWallpaperChange = (wallpaperId: WallpaperId) => {
+    setSettings((prev) => ({ ...prev, desktopWallpaper: wallpaperId }))
+    applyWallpaper(wallpaperId)
+  }
+
+  const handleScreensaverModeChange = (mode: ScreensaverId) => {
+    setSettings((prev) => ({ ...prev, screensaverMode: mode }))
+  }
+
+  const handleScreensaverTimeoutChange = (timeout: number) => {
+    setSettings((prev) => ({ ...prev, screensaverTimeout: Math.max(1, timeout) }))
   }
 
   if (isLoading) {
     return (
-      <div 
-        className="flex items-center justify-center h-64"
-        style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}
-      >
+      <div className="flex items-center justify-center h-64" style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}>
         <div className="text-sm">Loading...</div>
       </div>
     )
   }
 
-  return (
-    <div 
-      className="p-4 space-y-4 overflow-auto"
-      style={{ 
-        backgroundColor: 'var(--win95-button-face, #c0c0c0)',
-        maxHeight: 'calc(100vh - 200px)'
-      }}
-    >
-      <style jsx>{`
-        input[type="radio"]:checked {
-          accent-color: var(--next95-primary, #0000ff);
-        }
-      `}</style>
-      
-      {/* Color Mode Section */}
+  const renderDesktopTab = () => (
+    <>
+      <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
+        <div className="text-sm font-bold">Desktop Background</div>
+        <div className="grid grid-cols-1 @[600px]:grid-cols-3 gap-2">
+          {wallpaperOptions.map((option) => {
+            const isActive = settings.desktopWallpaper === option.id
+            return (
+              <button
+                key={option.id}
+                onClick={() => handleDesktopWallpaperChange(option.id)}
+                className="p-2 text-left border-2"
+                style={{
+                  borderColor: isActive ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
+                  backgroundColor: 'var(--win95-button-face, #c0c0c0)',
+                  boxShadow: isActive ? insetSunken : insetRaised
+                }}
+              >
+                <div className="h-20 border mb-2" style={{ ...option.previewStyle, borderColor: 'var(--win95-border-dark, #000)' }} />
+                <div className="font-bold text-sm">{option.label}</div>
+                <div className="text-xs" style={{ color: 'var(--win95-content-text, #666)' }}>{option.description}</div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
+        <div className="text-sm font-bold">Screen Saver</div>
+        <div className="grid grid-cols-1 @[500px]:grid-cols-3 gap-2">
+          {screensaverOptions.map((option) => {
+            const isActive = settings.screensaverMode === option.id
+            return (
+              <button
+                key={option.id}
+                onClick={() => handleScreensaverModeChange(option.id)}
+                className="p-2 text-left border-2"
+                style={{
+                  borderColor: isActive ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
+                  backgroundColor: 'var(--win95-button-face, #c0c0c0)',
+                  boxShadow: isActive ? insetSunken : insetRaised
+                }}
+              >
+                <div className="font-bold text-sm mb-1">{option.label}</div>
+                <div className="text-xs" style={{ color: 'var(--win95-content-text, #666)' }}>{option.description}</div>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="border-2 p-3" style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)', borderColor: 'var(--win95-border-mid, #808080)' }}>
+          <div className="text-sm font-bold mb-2">Wait Time (minutes)</div>
+          <input
+            type="number"
+            min={1}
+            value={settings.screensaverTimeout}
+            onChange={(e) => handleScreensaverTimeoutChange(parseInt(e.target.value, 10) || 1)}
+            className="w-24 px-2 py-1 border-2 border-[#808080]"
+            style={{ boxShadow: insetSunken }}
+          />
+        </div>
+      </div>
+    </>
+  )
+
+  const renderAppearanceTab = () => (
+    <>
       <div 
         className="border-2 p-3"
         style={{
@@ -370,9 +409,7 @@ export default function SystemSettingsContent() {
           borderColor: 'var(--win95-border-mid, #808080)'
         }}
       >
-        <div className="text-sm font-bold mb-3">
-          Color Mode
-        </div>
+        <div className="text-sm font-bold mb-3">Color Mode</div>
         <div className="space-y-2">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -406,8 +443,7 @@ export default function SystemSettingsContent() {
           </label>
         </div>
       </div>
-      
-      {/* Window Header Section */}
+
       <div 
         className="border-2 p-3"
         style={{
@@ -416,11 +452,7 @@ export default function SystemSettingsContent() {
           borderColor: 'var(--win95-border-mid, #808080)'
         }}
       >
-        <div className="text-sm font-bold mb-3">
-          Window Headers
-        </div>
-        
-        {/* Type Selection */}
+        <div className="text-sm font-bold mb-3">Window Headers</div>
         <div className="space-y-2">
           <div>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -433,34 +465,31 @@ export default function SystemSettingsContent() {
               />
               <span className="text-sm">Solid Color</span>
             </label>
-            
-            {/* Solid Color Picker */}
+
             {settings.windowHeaderType === 'solid' && (
               <div className="mt-2 ml-6">
-                <label className="block text-sm font-medium mb-1">
-                  Header Color
-                </label>
+                <label className="block text-sm font-medium mb-1">Header Color</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={settings.windowHeaderSolid}
                     onChange={(e) => handleWindowHeaderSolidChange(e.target.value)}
                     className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
-                    style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
+                    style={{ boxShadow: insetSunken }}
                   />
                   <input
                     type="text"
                     value={settings.windowHeaderSolid}
                     onChange={(e) => handleWindowHeaderSolidChange(e.target.value)}
                     className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
-                    style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
+                    style={{ boxShadow: insetSunken }}
                     placeholder="#000080"
                   />
                 </div>
               </div>
             )}
           </div>
-          
+
           <div>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -472,123 +501,105 @@ export default function SystemSettingsContent() {
               />
               <span className="text-sm">Gradient</span>
             </label>
-            
-            {/* Gradient Options */}
+
             {settings.windowHeaderType === 'gradient' && (
               <div className="mt-2 ml-6 space-y-3">
-            {/* Gradient Presets */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Presets</label>
-              <div className="grid grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 gap-2">
-                {gradientPresets.map((preset) => {
-                  const isSelected = selectedGradient === preset.name
-                  return (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Presets</label>
+                  <div className="grid grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 gap-2">
+                    {gradientPresets.map((preset) => {
+                      const isSelected = selectedGradient === preset.name
+                      return (
+                        <button
+                          key={preset.name}
+                          onClick={() => applyGradientPreset(preset)}
+                          className={`p-2 border-2 text-sm text-left ${
+                            isSelected ? '' : 'hover:border-[#000]'
+                          }`}
+                          style={{
+                            borderColor: isSelected ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
+                            backgroundColor: isSelected ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
+                          boxShadow: isSelected ? insetSunken : insetRaised
+                          }}
+                        >
+                          <div className="mb-1">
+                            <div className="h-6 border border-black" style={{ background: preset.gradient }} />
+                          </div>
+                          <div className="font-medium">{preset.name}</div>
+                        </button>
+                      )
+                    })}
                     <button
-                      key={preset.name}
-                      onClick={() => applyGradientPreset(preset)}
+                      onClick={() => setSelectedGradient('Custom')}
                       className={`p-2 border-2 text-sm text-left ${
-                        isSelected 
-                          ? '' 
-                          : 'hover:border-[#000]'
+                        selectedGradient === 'Custom' ? '' : 'hover:border-[#000]'
                       }`}
                       style={{
-                        borderColor: isSelected ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
-                        backgroundColor: isSelected ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
-                        boxShadow: isSelected 
-                          ? 'inset -2px -2px 0 0 var(--win95-border-light, #fff), inset 2px 2px 0 0 var(--win95-border-dark, #000)'
-                          : 'inset -2px -2px 0 0 var(--win95-border-dark, #000), inset 2px 2px 0 0 var(--win95-border-light, #fff)'
+                        borderColor: selectedGradient === 'Custom' ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
+                        backgroundColor: selectedGradient === 'Custom' ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
+                        boxShadow: selectedGradient === 'Custom' ? insetSunken : insetRaised
                       }}
                     >
                       <div className="mb-1">
-                        <div 
-                          className="h-6 border border-black" 
-                          style={{ background: preset.gradient }}
-                        />
+                        <div className="h-6 border border-black" style={{ background: settings.windowHeaderGradient }} />
                       </div>
-                      <div className="font-medium">{preset.name}</div>
+                      <div className="font-medium">Custom</div>
                     </button>
-                  )
-                })}
-                <button
-                  onClick={() => setSelectedGradient('Custom')}
-                  className={`p-2 border-2 text-sm text-left ${
-                    selectedGradient === 'Custom'
-                      ? '' 
-                      : 'hover:border-[#000]'
-                  }`}
-                  style={{
-                    borderColor: selectedGradient === 'Custom' ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
-                    backgroundColor: selectedGradient === 'Custom' ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
-                    boxShadow: selectedGradient === 'Custom'
-                      ? 'inset -2px -2px 0 0 var(--win95-border-light, #fff), inset 2px 2px 0 0 var(--win95-border-dark, #000)'
-                      : 'inset -2px -2px 0 0 var(--win95-border-dark, #000), inset 2px 2px 0 0 var(--win95-border-light, #fff)'
-                  }}
-                >
-                  <div className="mb-1">
-                    <div 
-                      className="h-6 border border-black" 
-                      style={{ background: settings.windowHeaderGradient }}
-                    />
                   </div>
-                  <div className="font-medium">Custom</div>
-                </button>
-              </div>
-            </div>
+                </div>
 
-            {/* Custom Gradient Stops */}
-            {selectedGradient === 'Custom' && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Gradient Stops</label>
-                <div className="space-y-2">
-                  {gradientStops.map((stop, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={stop.color}
-                        onChange={(e) => handleGradientStopChange(index, 'color', e.target.value)}
+                {selectedGradient === 'Custom' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Gradient Stops</label>
+                    <div className="space-y-2">
+                      {gradientStops.map((stop, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={stop.color}
+                            onChange={(e) => handleGradientStopChange(index, 'color', e.target.value)}
                         className="w-8 h-8 border-2 border-[#808080] cursor-pointer"
-                        style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={stop.position}
-                        onChange={(e) => handleGradientStopChange(index, 'position', parseInt(e.target.value))}
+                        style={{ boxShadow: insetSunken }}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={stop.position}
+                            onChange={(e) => handleGradientStopChange(index, 'position', parseInt(e.target.value))}
                         className="w-16 px-2 py-1 border-2 border-[#808080] text-xs"
-                        style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
-                      />
-                      <span className="text-xs">%</span>
-                      {gradientStops.length > 2 && (
+                        style={{ boxShadow: insetSunken }}
+                          />
+                          <span className="text-xs">%</span>
+                          {gradientStops.length > 2 && (
                         <button
-                          onClick={() => removeGradientStop(index)}
-                          className="px-2 py-1 text-xs border-2 border-[#808080]"
-                          style={{ boxShadow: 'inset -2px -2px 0 0 #000, inset 2px 2px 0 0 #fff' }}
+                              onClick={() => removeGradientStop(index)}
+                              className="px-2 py-1 text-xs border-2 border-[#808080]"
+                          style={{ boxShadow: insetRaised }}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {gradientStops.length < 5 && (
+                    <button
+                          onClick={addGradientStop}
+                          className="w-full px-2 py-1 text-xs border-2 border-[#808080]"
+                      style={{ boxShadow: insetRaised }}
                         >
-                          Remove
+                          Add Stop
                         </button>
                       )}
                     </div>
-                  ))}
-                  {gradientStops.length < 5 && (
-                    <button
-                      onClick={addGradientStop}
-                      className="w-full px-2 py-1 text-xs border-2 border-[#808080]"
-                      style={{ boxShadow: 'inset -2px -2px 0 0 #000, inset 2px 2px 0 0 #fff' }}
-                    >
-                      Add Stop
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Color Presets Section */}
       <div 
         className="border-2 p-3"
         style={{
@@ -597,9 +608,7 @@ export default function SystemSettingsContent() {
           borderColor: 'var(--win95-border-mid, #808080)'
         }}
       >
-        <div className="text-sm font-bold mb-3">
-          Accent Colors
-        </div>
+        <div className="text-sm font-bold mb-3">Accent Colors</div>
         <div className="grid grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 gap-2">
           {colorPresets.map((preset) => {
             const isSelected = isPresetSelected(preset.name)
@@ -608,70 +617,46 @@ export default function SystemSettingsContent() {
                 key={preset.name}
                 onClick={() => applyPreset(preset)}
                 className={`p-2 border-2 text-sm text-left ${
-                  isSelected 
-                    ? '' 
-                    : 'hover:border-[#000]'
+                  isSelected ? '' : 'hover:border-[#000]'
                 }`}
                 style={{
                   borderColor: isSelected ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
                   backgroundColor: isSelected ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
-                  boxShadow: isSelected 
-                    ? 'inset -2px -2px 0 0 var(--win95-border-light, #fff), inset 2px 2px 0 0 var(--win95-border-dark, #000)'
-                    : 'inset -2px -2px 0 0 var(--win95-border-dark, #000), inset 2px 2px 0 0 var(--win95-border-light, #fff)'
+                  boxShadow: isSelected ? insetSunken : insetRaised
                 }}
               >
                 <div className="flex gap-1 mb-1">
-                  <div 
-                    className="w-6 h-6 border border-black" 
-                    style={{ backgroundColor: preset.primary }}
-                  />
-                  <div 
-                    className="w-6 h-6 border border-black" 
-                    style={{ backgroundColor: preset.secondary }}
-                  />
+                  <div className="w-6 h-6 border border-black" style={{ backgroundColor: preset.primary }} />
+                  <div className="w-6 h-6 border border-black" style={{ backgroundColor: preset.secondary }} />
                 </div>
                 <div className="font-medium">{preset.name}</div>
               </button>
             )
           })}
-          
-          {/* Custom Preset */}
+
           <button
             onClick={handleCustom}
             className={`p-2 border-2 text-sm text-left ${
-              isPresetSelected('Custom')
-                ? '' 
-                : 'hover:border-[#000]'
+              isPresetSelected('Custom') ? '' : 'hover:border-[#000]'
             }`}
             style={{
               borderColor: isPresetSelected('Custom') ? 'var(--next95-primary, #000080)' : 'var(--win95-border-mid, #808080)',
               backgroundColor: isPresetSelected('Custom') ? 'rgba(0, 0, 128, 0.1)' : 'transparent',
-              boxShadow: isPresetSelected('Custom')
-                ? 'inset -2px -2px 0 0 var(--win95-border-light, #fff), inset 2px 2px 0 0 var(--win95-border-dark, #000)'
-                : 'inset -2px -2px 0 0 var(--win95-border-dark, #000), inset 2px 2px 0 0 var(--win95-border-light, #fff)'
+              boxShadow: isPresetSelected('Custom') ? insetSunken : insetRaised
             }}
           >
             <div className="flex gap-1 mb-1">
-              <div 
-                className="w-6 h-6 border border-black" 
-                style={{ backgroundColor: settings.primaryColor }}
-              />
-              <div 
-                className="w-6 h-6 border border-black" 
-                style={{ backgroundColor: settings.secondaryColor }}
-              />
+              <div className="w-6 h-6 border border-black" style={{ backgroundColor: settings.primaryColor }} />
+              <div className="w-6 h-6 border border-black" style={{ backgroundColor: settings.secondaryColor }} />
             </div>
             <div className="font-medium">Custom</div>
           </button>
         </div>
 
-        {/* Custom Colors - Only show when Custom preset is selected */}
         {isPresetSelected('Custom') && (
           <div className="mt-3 space-y-3">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Primary Color
-              </label>
+              <label className="block text-sm font-medium mb-1">Primary Color</label>
               <div className="text-xs mb-2" style={{ color: 'var(--win95-content-text, #666)' }}>
                 Used for links, borders, chart views, and map markers
               </div>
@@ -680,24 +665,22 @@ export default function SystemSettingsContent() {
                   type="color"
                   value={settings.primaryColor}
                   onChange={(e) => handleColorChange('primary', e.target.value)}
-                  className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
-                  style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
+                className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
+                style={{ boxShadow: insetSunken }}
                 />
                 <input
                   type="text"
                   value={settings.primaryColor}
                   onChange={(e) => handleColorChange('primary', e.target.value)}
-                  className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
-                  style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
+                className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
+                style={{ boxShadow: insetSunken }}
                   placeholder="#0000ff"
                 />
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Secondary Color
-              </label>
+              <label className="block text-sm font-medium mb-1">Secondary Color</label>
               <div className="text-xs mb-2" style={{ color: 'var(--win95-content-text, #666)' }}>
                 Used for chart visitors and accents
               </div>
@@ -706,15 +689,15 @@ export default function SystemSettingsContent() {
                   type="color"
                   value={settings.secondaryColor}
                   onChange={(e) => handleColorChange('secondary', e.target.value)}
-                  className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
-                  style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
+                className="w-12 h-8 border-2 border-[#808080] cursor-pointer"
+                style={{ boxShadow: insetSunken }}
                 />
                 <input
                   type="text"
                   value={settings.secondaryColor}
                   onChange={(e) => handleColorChange('secondary', e.target.value)}
-                  className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
-                  style={{ boxShadow: 'inset -2px -2px 0 0 #fff, inset 2px 2px 0 0 #000' }}
+                className="flex-1 px-2 py-1 border-2 border-[#808080] text-sm"
+                style={{ boxShadow: insetSunken }}
                   placeholder="#ff00ff"
                 />
               </div>
@@ -722,7 +705,18 @@ export default function SystemSettingsContent() {
           </div>
         )}
       </div>
+    </>
+  )
+
+  return (
+    <div className="p-4 space-y-4 overflow-auto h-full" style={{ backgroundColor: 'var(--win95-button-face, #c0c0c0)' }}>
+      <style jsx>{`
+        input[type='radio']:checked {
+          accent-color: var(--next95-primary, #0000ff);
+        }
+      `}</style>
+
+      {activeTab === 'desktop' ? renderDesktopTab() : renderAppearanceTab()}
     </div>
   )
 }
-

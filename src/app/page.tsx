@@ -405,6 +405,7 @@ function HomeContent() {
         icon={<BriefcaseIcon className="w-6 h-6" />}
         showLinkedInButton={true}
         linkedInUrl="https://www.linkedin.com/in/levinmedia/details/experience/"
+        lazyMount
       >
         <WorkHistoryContent />
       </Drawer>
@@ -415,6 +416,7 @@ function HomeContent() {
           onClose={handleAboutClose}
           title="About"
           icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
+        lazyMount
         >
           <AboutContent />
         </Drawer>
@@ -427,6 +429,7 @@ function HomeContent() {
           icon={<CommandLineIcon className="w-6 h-6" />}
           contentPadding="p-0"
           maxWidth=""
+        lazyMount
         >
           <SelectedWorksContent />
         </Drawer>
@@ -439,6 +442,7 @@ function HomeContent() {
           icon={<CogIcon className="w-6 h-6" />}
           contentPadding="p-4"
           maxWidth="max-w-4xl"
+        lazyMount
         >
           <SiteSettingsContent />
         </Drawer>
@@ -451,6 +455,7 @@ function HomeContent() {
           icon={<PencilSquareIcon className="w-6 h-6" />}
           contentPadding="p-4"
           maxWidth="max-w-4xl"
+        lazyMount
         >
           <Guestbook />
         </Drawer>
@@ -463,6 +468,7 @@ function HomeContent() {
           icon={<ChartBarSquareIcon className="w-6 h-6" />}
           contentPadding="p-4"
           maxWidth="max-w-6xl"
+        lazyMount
         >
           <StatsContent />
         </Drawer>
