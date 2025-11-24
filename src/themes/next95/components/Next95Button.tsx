@@ -8,13 +8,17 @@ interface Next95ButtonProps {
   onClick?: () => void;
   className?: string;
   isActive?: boolean;
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 export default function Next95Button({
   children,
   onClick,
   className = '',
-  isActive = false
+  isActive = false,
+  disabled = false,
+  type = 'button'
 }: Next95ButtonProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -24,11 +28,13 @@ export default function Next95Button({
 
   return (
     <Button
+      type={type}
+      disabled={disabled}
       onClick={onClick}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
+      onMouseDown={() => !disabled && setIsPressed(true)}
+      onMouseUp={() => !disabled && setIsPressed(false)}
       onMouseEnter={(e) => {
-        if (!isPressed) {
+        if (!isPressed && !disabled) {
           e.currentTarget.style.filter = 'brightness(1.1)';
         }
       }}
@@ -36,7 +42,7 @@ export default function Next95Button({
         e.currentTarget.style.filter = 'brightness(1)';
         setIsPressed(false);
       }}
-      className={`px-4 py-2 text-sm transition-all ${className}`}
+      className={`px-4 py-2 text-sm transition-all ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${className}`}
       style={{
         background: isPressed
           ? 'var(--win95-button-pressed, #959595)'

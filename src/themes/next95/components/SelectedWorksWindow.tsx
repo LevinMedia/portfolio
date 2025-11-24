@@ -117,10 +117,8 @@ export default function SelectedWorksWindow({ onClose, onOpenWork }: SelectedWor
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }
                 }}
-                onClick={() => setSelectedIndex(index)}
-                onDoubleClick={() => {
-                  // Open the work detail window
-                  console.log('Double-clicked work:', work);
+                onClick={() => {
+                  setSelectedIndex(index);
                   onOpenWork(work.slug, work.title);
                 }}
               >

@@ -13,19 +13,22 @@ interface StatsWindowProps {
 export default function StatsWindow({ onClose }: StatsWindowProps) {
   const { windows } = useWindowManager();
 
-  // Calculate cascaded position based on number of open windows
-  const windowWidth = 900;
-  const windowHeight = 600;
   const cascadeOffset = 40;
-  
-  const windowCount = windows.length;
-  const cascadeLevel = windowCount > 0 ? windowCount - 1 : 0;
-  
-  const baseX = typeof window !== 'undefined' ? (window.innerWidth - windowWidth) / 2 : 100;
-  const baseY = typeof window !== 'undefined' ? (window.innerHeight - windowHeight) / 2 : 100;
-  
-  const defaultX = baseX + (cascadeLevel * cascadeOffset);
-  const defaultY = baseY + (cascadeLevel * cascadeOffset);
+  const cascadeLevel = windows.length > 0 ? windows.length - 1 : 0;
+
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 768;
+  const taskbarHeight = 56;
+  const verticalPadding = 40; // 20px top + 20px bottom
+
+  const windowWidth = Math.min(1000, viewportWidth - 40);
+  const windowHeight = viewportHeight - taskbarHeight - verticalPadding;
+
+  const baseX = typeof window !== 'undefined' ? Math.max(20, (viewportWidth - windowWidth) / 2) : 100;
+  const baseY = 20;
+
+  const defaultX = baseX + cascadeLevel * cascadeOffset;
+  const defaultY = baseY + cascadeLevel * cascadeOffset;
 
   return (
     <Window

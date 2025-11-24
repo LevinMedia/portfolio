@@ -8,6 +8,7 @@ interface RegisteredWindow {
   isMinimized: boolean;
   slug?: string;
   zIndex: number;
+  order: number;
 }
 
 export interface TaskbarWindow extends RegisteredWindow {
@@ -30,7 +31,8 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
   const [windows, setWindows] = useState<RegisteredWindow[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const windowsRef = useRef<RegisteredWindow[]>([]);
-  const nextZIndexRef = useRef(1);
+  const nextZIndexRef = useRef(300);
+  const nextOrderRef = useRef(1);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -45,7 +47,8 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
         return prev.map(w => w.id === id ? { ...w, title, slug } : w);
       }
       const newZIndex = nextZIndexRef.current++;
-      return [...prev, { id, title, slug, isMinimized: false, zIndex: newZIndex }];
+      const newOrder = nextOrderRef.current++;
+      return [...prev, { id, title, slug, isMinimized: false, zIndex: newZIndex, order: newOrder }];
     });
     setActiveWindowId(id);
   }, []);
@@ -90,7 +93,7 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       ...w,
       isActive: w.id === activeWindowId
     }))
-    .sort((a, b) => a.zIndex - b.zIndex);
+    .sort((a, b) => a.order - b.order);
 
   return (
     <WindowManagerContext.Provider value={{

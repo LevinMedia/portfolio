@@ -12,19 +12,22 @@ interface GuestbookWindowProps {
 export default function GuestbookWindow({ onClose }: GuestbookWindowProps) {
   const { windows } = useWindowManager();
 
-  // Calculate cascaded position based on number of open windows
-  const windowWidth = 700;
-  const windowHeight = 600;
   const cascadeOffset = 40;
-  
-  const windowCount = windows.length;
-  const cascadeLevel = windowCount > 0 ? windowCount - 1 : 0;
-  
-  const baseX = typeof window !== 'undefined' ? (window.innerWidth - windowWidth) / 2 : 100;
-  const baseY = typeof window !== 'undefined' ? (window.innerHeight - windowHeight) / 2 : 100;
-  
-  const defaultX = baseX + (cascadeLevel * cascadeOffset);
-  const defaultY = baseY + (cascadeLevel * cascadeOffset);
+  const cascadeLevel = windows.length > 0 ? windows.length - 1 : 0;
+
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 768;
+  const taskbarHeight = 56;
+  const verticalPadding = 40;
+
+  const windowWidth = Math.min(800, viewportWidth - 40);
+  const windowHeight = viewportHeight - taskbarHeight - verticalPadding;
+
+  const baseX = typeof window !== 'undefined' ? Math.max(20, (viewportWidth - windowWidth) / 2) : 100;
+  const baseY = 20;
+
+  const defaultX = baseX + cascadeLevel * cascadeOffset;
+  const defaultY = baseY + cascadeLevel * cascadeOffset;
 
   return (
     <Window

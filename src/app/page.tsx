@@ -27,18 +27,36 @@ import NotFoundWindow from "@/themes/next95/components/NotFoundWindow";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
+const WALLPAPER_STYLES: Record<string, { backgroundColor?: string; backgroundImage?: string; backgroundSize?: string }> = {
+  teal: {
+    backgroundColor: '#008080'
+  },
+  sunset: {
+    backgroundImage: 'linear-gradient(135deg, #d16ba5 0%, #86a8e7 50%, #5ffbf1 100%)'
+  },
+  grid: {
+    backgroundColor: '#031b34',
+    backgroundImage: `
+      linear-gradient(90deg, rgba(0,255,255,0.25) 1px, transparent 1px),
+      linear-gradient(rgba(0,255,255,0.25) 1px, transparent 1px),
+      radial-gradient(circle at center, rgba(0,128,255,0.25), transparent 60%)
+    `,
+    backgroundSize: '40px 40px, 40px 40px, cover'
+  }
+};
+
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
-  const { windows } = useWindowManager();
+  const { windows, setActiveWindow, restoreWindow } = useWindowManager();
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false);
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
-  const [activeWindow, setActiveWindow] = useState<string | null>(null);
+  const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
   const [isHowdyOpen, setIsHowdyOpen] = useState(false); // Howdy window state
   const [isSelectedWorksWindowOpen, setIsSelectedWorksWindowOpen] = useState(false); // Next95 Selected Works window
   const [isStatsWindowOpen, setIsStatsWindowOpen] = useState(false); // Next95 Stats window
@@ -51,6 +69,62 @@ function HomeContent() {
   const [isDarkMode, setIsDarkMode] = useState(false); // Track dark mode state
   const [isNotFoundWindowOpen, setIsNotFoundWindowOpen] = useState(false);
   const [notFoundPath, setNotFoundPath] = useState('');
+  const applyColorMode = useCallback((mode: 'light' | 'dark' | 'system') => {
+    const root = document.documentElement;
+    if (mode === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else if (mode === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemPrefersDark) {
+        root.classList.add('dark');
+        root.classList.remove('light');
+      } else {
+        root.classList.add('light');
+        root.classList.remove('dark');
+      }
+    }
+  }, []);
+
+  const applyWallpaper = useCallback((wallpaperId?: string) => {
+    const wallpaper = (wallpaperId && WALLPAPER_STYLES[wallpaperId]) || WALLPAPER_STYLES.teal;
+    const fallbackColor = wallpaper?.backgroundColor || '#008080';
+    document.documentElement.style.setProperty('--background', fallbackColor);
+    document.body.style.backgroundColor = fallbackColor;
+    if (wallpaper?.backgroundImage) {
+      document.body.style.backgroundImage = wallpaper.backgroundImage;
+      document.body.style.backgroundSize = wallpaper.backgroundSize || 'cover';
+    } else {
+      document.body.style.backgroundImage = 'none';
+    }
+  }, []);
+
+  const bringWindowToFront = useCallback((slug: string) => {
+    if (theme.id !== 'next95') return false;
+    const target = windows.find(w => w.slug === slug);
+    if (!target) return false;
+    if (target.isMinimized) {
+      restoreWindow(target.id);
+    } else {
+      setActiveWindow(target.id);
+    }
+    return true;
+  }, [windows, restoreWindow, setActiveWindow, theme.id]);
+
+  const handleDesktopIconClick = useCallback((slug: string, isOpen: boolean, open: (value: boolean) => void) => {
+    if (isOpen) {
+      const handled = bringWindowToFront(slug);
+      if (!handled) {
+        open(true);
+      }
+      return;
+    }
+    open(true);
+  }, [bringWindowToFront]);
+
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return window.location.pathname || '/';
@@ -101,6 +175,8 @@ function HomeContent() {
           const root = document.documentElement;
           root.style.setProperty('--next95-primary', settings.primaryColor || '#0000ff');
           root.style.setProperty('--next95-secondary', settings.secondaryColor || '#ff00ff');
+          applyColorMode(settings.colorMode || 'light');
+          applyWallpaper(settings.desktopWallpaper);
           
           // Apply window header settings
           if (settings.windowHeaderType === 'solid') {
@@ -119,9 +195,12 @@ function HomeContent() {
         } catch (error) {
           console.error('Error loading Next95 settings:', error);
         }
+      } else {
+        applyColorMode('light');
+        applyWallpaper('teal');
       }
     }
-  }, [theme.id]);
+  }, [theme.id, applyColorMode, applyWallpaper]);
 
   // Track dark mode changes for Next95 theme
   useEffect(() => {
@@ -159,13 +238,13 @@ function HomeContent() {
     setIsSiteSettingsOpen(showSiteSettings);
     
     // Set active window based on what's open
-    if (showWorkHistory) setActiveWindow('work-history');
-    else if (showAbout) setActiveWindow('about');
-    else if (showSelectedWorks) setActiveWindow('selected-works');
-    else if (showGuestbook) setActiveWindow('guestbook');
-    else if (showStats) setActiveWindow('stats');
-    else if (showSiteSettings) setActiveWindow('site-settings');
-    else setActiveWindow(null);
+    if (showWorkHistory) setActiveDrawer('work-history');
+    else if (showAbout) setActiveDrawer('about');
+    else if (showSelectedWorks) setActiveDrawer('selected-works');
+    else if (showGuestbook) setActiveDrawer('guestbook');
+    else if (showStats) setActiveDrawer('stats');
+    else if (showSiteSettings) setActiveDrawer('site-settings');
+    else setActiveDrawer(null);
   }, [searchParams]);
 
   const handlePathNavigation = useCallback((path: string) => {
@@ -362,7 +441,7 @@ function HomeContent() {
       <div className="relative z-10 col-span-6 contents">
         {/* Desktop Icons - only show in next95 theme */}
         {theme.id === 'next95' && (
-          <div className="fixed top-4 left-4 bottom-20 z-20 flex flex-col flex-wrap gap-2 content-start">
+          <div className="fixed top-4 left-4 bottom-20 z-[200] flex flex-col flex-wrap gap-2 content-start pointer-events-auto">
             <DesktopIcon 
               icon={
                 <Image 
@@ -374,7 +453,7 @@ function HomeContent() {
                 />
               }
               label="Howdy"
-              onClick={() => setIsHowdyOpen(true)}
+              onClick={() => handleDesktopIconClick('howdy', isHowdyOpen, setIsHowdyOpen)}
             />
             <DesktopIcon
               icon={
@@ -387,42 +466,42 @@ function HomeContent() {
                 </svg>
               }
               label="About"
-              onClick={() => setIsAboutWindowOpen(true)}
+              onClick={() => handleDesktopIconClick('about', isAboutWindowOpen, setIsAboutWindowOpen)}
             />
             <DesktopIcon 
               icon={
                 <Image src="/work-history.png" alt="Work History" width={72} height={72} />
               }
               label="Work History"
-              onClick={() => setIsWorkHistoryWindowOpen(true)}
+              onClick={() => handleDesktopIconClick('work-history', isWorkHistoryWindowOpen, setIsWorkHistoryWindowOpen)}
             />
             <DesktopIcon 
               icon={
                 <Image src="/folder.png" alt="Selected Works" width={72} height={72} />
               }
               label="Selected Works"
-              onClick={() => setIsSelectedWorksWindowOpen(true)}
+              onClick={() => handleDesktopIconClick('selected-works', isSelectedWorksWindowOpen, setIsSelectedWorksWindowOpen)}
             />
             <DesktopIcon 
               icon={
                 <Image src="/Stats.png" alt="Stats" width={72} height={72} />
               }
               label="Stats"
-              onClick={() => setIsStatsWindowOpen(true)}
+              onClick={() => handleDesktopIconClick('stats', isStatsWindowOpen, setIsStatsWindowOpen)}
             />
             <DesktopIcon 
               icon={
                 <Image src="/guestbook-icon.png" alt="Guestbook" width={72} height={72} />
               }
               label="Guestbook"
-              onClick={() => setIsGuestbookWindowOpen(true)}
+              onClick={() => handleDesktopIconClick('guestbook', isGuestbookWindowOpen, setIsGuestbookWindowOpen)}
             />
             <DesktopIcon 
               icon={
                 <Image src="/System-settings.png" alt="System Settings" width={72} height={72} />
               }
               label="System Settings"
-              onClick={() => setIsSystemSettingsWindowOpen(true)}
+              onClick={() => handleDesktopIconClick('system-settings', isSystemSettingsWindowOpen, setIsSystemSettingsWindowOpen)}
             />
           </div>
         )}

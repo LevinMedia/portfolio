@@ -15,10 +15,22 @@ export default function SystemSettingsWindow({ onClose }: SystemSettingsWindowPr
   const { windows } = useWindowManager()
   const [activeTab, setActiveTab] = useState<'desktop' | 'appearance'>('appearance')
 
-  // Calculate cascaded position based on number of open windows
-  const cascade = windows.length * 30
-  const defaultX = 100 + cascade
-  const defaultY = 80 + cascade
+  const cascadeOffset = 40
+  const cascadeLevel = windows.length > 0 ? windows.length - 1 : 0
+
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 768
+  const taskbarHeight = 56
+  const verticalPadding = 40
+
+  const windowWidth = Math.min(960, viewportWidth - 40)
+  const windowHeight = viewportHeight - taskbarHeight - verticalPadding
+
+  const baseX = typeof window !== 'undefined' ? Math.max(20, (viewportWidth - windowWidth) / 2) : 100
+  const baseY = 20
+
+  const defaultX = baseX + cascadeLevel * cascadeOffset
+  const defaultY = baseY + cascadeLevel * cascadeOffset
 
   const tabs = [
     { id: 'desktop' as const, label: 'Desktop & Screen Saver' },
@@ -31,8 +43,8 @@ export default function SystemSettingsWindow({ onClose }: SystemSettingsWindowPr
       slug="system-settings"
       title="System Settings"
       icon={<Image src="/System-settings.png" alt="System Settings" width={16} height={16} />}
-      defaultWidth={820}
-      defaultHeight={560}
+      defaultWidth={windowWidth}
+      defaultHeight={windowHeight}
       defaultX={defaultX}
       defaultY={defaultY}
       onClose={onClose}

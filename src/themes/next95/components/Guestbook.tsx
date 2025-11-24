@@ -6,6 +6,7 @@ import { Input } from '@headlessui/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import MilkdownEditor from '@/app/components/MilkdownEditor'
+import Next95Button from './Next95Button'
 
 interface SocialLinks {
   linkedin?: string
@@ -152,24 +153,13 @@ export default function Guestbook() {
     <div className="space-y-4">
       {/* Big Button to Show Form */}
       {!isFormVisible && (
-        <button
+        <Next95Button
           onClick={() => setIsFormVisible(true)}
-          className="w-full px-4 py-3 text-sm font-bold flex items-center justify-center gap-2"
-          style={{
-            background: 'var(--win95-button-face, #A7A7A7)',
-            color: 'var(--win95-text, #000)',
-            boxShadow: '-4px -4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 4px 4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--win95-button-hover, #B1B1B1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--win95-button-face, #A7A7A7)';
-          }}
+          className="w-full flex items-center justify-center gap-2 py-3 text-base font-bold"
         >
           <PencilSquareIcon className="w-5 h-5" />
           Leave a message on my wall
-        </button>
+        </Next95Button>
       )}
 
       {/* Add New Entry Form */}
@@ -360,45 +350,17 @@ export default function Guestbook() {
 
       {/* Submit Buttons - Outside form in chrome area */}
       <div className="flex justify-end gap-2">
-        <button
+        <Next95Button
           type="button"
           onClick={() => setIsFormVisible(false)}
-          className="px-4 py-2 text-sm font-bold"
-          style={{
-            background: 'var(--win95-button-face, #A7A7A7)',
-            color: 'var(--win95-text, #000)',
-            boxShadow: '-4px -4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 4px 4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--win95-button-hover, #B1B1B1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--win95-button-face, #A7A7A7)';
-          }}
+          className="min-w-[110px] justify-center"
         >
           Cancel
-        </button>
-        <button
+        </Next95Button>
+        <Next95Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="px-4 py-2 text-sm font-bold flex items-center gap-2"
-          style={{
-            background: isSubmitting ? 'var(--win95-border-mid, #969696)' : 'var(--win95-button-face, #A7A7A7)',
-            color: 'var(--win95-text, #000)',
-            boxShadow: isSubmitting 
-              ? '-4px -4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset, 4px 4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset'
-              : '-4px -4px 0 0 var(--win95-border-dark, rgba(0, 0, 0, 0.50)) inset, 4px 4px 0 0 var(--win95-border-light, rgba(255, 255, 255, 0.50)) inset'
-          }}
-          onMouseEnter={(e) => {
-            if (!isSubmitting) {
-              e.currentTarget.style.background = 'var(--win95-button-hover, #B1B1B1)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSubmitting) {
-              e.currentTarget.style.background = 'var(--win95-button-face, #A7A7A7)';
-            }
-          }}
+          className="min-w-[160px] flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>
@@ -411,7 +373,7 @@ export default function Guestbook() {
               Add to Guestbook
             </>
           )}
-        </button>
+        </Next95Button>
       </div>
       </> 
       )}
