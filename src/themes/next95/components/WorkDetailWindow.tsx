@@ -15,7 +15,7 @@ interface WorkDetail {
   slug: string;
   content: string;
   feature_image_url?: string;
-  thumbnail_crop?: any;
+  thumbnail_crop?: unknown;
   display_order: number;
   published_at: string;
 }

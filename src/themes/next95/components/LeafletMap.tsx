@@ -45,6 +45,7 @@ const fixLeafletIcons = () => {
 }
 
 // Get CSS variable value
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getCSSVariable = (varName: string): string => {
   if (typeof window === 'undefined') return '#0891b2' // fallback
   return getComputedStyle(document.documentElement).getPropertyValue(`--${varName}`).trim() || '#0891b2'

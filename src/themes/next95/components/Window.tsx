@@ -38,7 +38,7 @@ export default function Window({
   draggable = true,
   className = ''
 }: WindowProps) {
-  const { registerWindow, unregisterWindow, setActiveWindow, windows, minimizeWindow, restoreWindow } = useWindowManager();
+  const { registerWindow, unregisterWindow, setActiveWindow, windows, minimizeWindow } = useWindowManager();
   
   // Calculate constrained size and position based on viewport
   const getConstrainedDimensions = () => {
@@ -99,7 +99,7 @@ export default function Window({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [restoreState, setRestoreState] = useState({ x: constrained.x, y: constrained.y, width: constrained.width, height: constrained.height });
-  const [initialPosition] = useState({ x: constrained.x, y: constrained.y });
+  // const [initialPosition] = useState({ x: constrained.x, y: constrained.y });
   const windowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 

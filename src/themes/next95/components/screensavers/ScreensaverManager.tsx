@@ -37,7 +37,7 @@ export default function ScreensaverManager() {
     loadSettings()
 
     const handleSettingsChange = (e: Event) => {
-      const customEvent = e as CustomEvent<any>
+      const customEvent = e as CustomEvent<{ screensaverMode?: ScreensaverId; screensaverTimeout?: number }>;
       if (customEvent.detail) {
         setConfig({
           screensaverMode: customEvent.detail.screensaverMode || 'none',

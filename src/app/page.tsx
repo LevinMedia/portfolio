@@ -171,7 +171,7 @@ function HomeContent() {
 
   useEffect(() => {
     const handleOpenWindow = (event: Event) => {
-      const customEvent = event as CustomEvent<any>;
+      const customEvent = event as CustomEvent<{ slug: string; initialTab?: 'desktop' | 'appearance' } | string>;
       const detail = customEvent.detail;
       const slug = typeof detail === 'string' ? detail : detail.slug;
       

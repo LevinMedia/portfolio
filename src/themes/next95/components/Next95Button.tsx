@@ -3,23 +3,16 @@
 import React, { useState, forwardRef } from 'react';
 import { Button } from '@headlessui/react';
 
-interface Next95ButtonProps {
+interface Next95ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
   isActive?: boolean;
-  disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
-  [key: string]: any;
 }
 
 const Next95Button = forwardRef<HTMLButtonElement, Next95ButtonProps>(({
   children,
-  onClick,
   className = '',
   isActive = false,
   disabled = false,
-  type = 'button',
   ...props
 }, ref) => {
   const [isPressed, setIsPressed] = useState(false);
@@ -31,9 +24,7 @@ const Next95Button = forwardRef<HTMLButtonElement, Next95ButtonProps>(({
   return (
     <Button
       ref={ref}
-      type={type}
       disabled={disabled}
-      onClick={onClick}
       onMouseDown={() => !disabled && setIsPressed(true)}
       onMouseUp={() => !disabled && setIsPressed(false)}
       onMouseEnter={(e) => {

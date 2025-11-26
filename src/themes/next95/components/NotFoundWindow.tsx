@@ -37,9 +37,9 @@ export default function NotFoundWindow({ attemptedPath, onClose }: NotFoundWindo
           color: 'var(--win95-content-text, #000000)'
         }}
       >
-        <div className="font-bold text-base">This window doesn't exist.</div>
+        <div className="font-bold text-base">This window doesn&apos;t exist.</div>
         <p>
-          We couldn't find anything for <span className="font-mono">{attemptedPath || '/'}</span>.
+          We couldn&apos;t find anything for <span className="font-mono">{attemptedPath || '/'}</span>.
           Check the link and try again, or pick a window from the desktop.
         </p>
         <button

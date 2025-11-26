@@ -7,7 +7,7 @@ import type { ThemeComponentKey, ThemeComponentLoader } from '@/lib/themes/types
 import type NavigationDefault from '@/themes/my-first-theme/components/Navigation';
 import type HowdyDefault from '@/themes/my-first-theme/components/Howdy';
 
-type ExtractProps<T> = T extends (props: infer P) => any ? P : Record<string, never>;
+type ExtractProps<T> = T extends (props: infer P) => unknown ? P : Record<string, never>;
 
 type NavigationProps = ExtractProps<typeof NavigationDefault>;
 type HowdyPropsBase = ExtractProps<typeof HowdyDefault>;
@@ -18,7 +18,7 @@ interface HowdyProps extends HowdyPropsBase {
   onClose?: () => void;
 }
 
-const componentCache = new Map<string, ComponentType<any>>();
+const componentCache = new Map<string, ComponentType<unknown>>();
 
 const defaultNavigationLoader: ThemeComponentLoader<NavigationProps> = () =>
   import('@/themes/my-first-theme/components/Navigation');

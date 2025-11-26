@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Window from './Window';
 import { useWindowManager } from '../context/WindowManagerContext';
 import StatsContent from './StatsContent';

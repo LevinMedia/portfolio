@@ -151,6 +151,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
       localStorage.setItem('next95-settings', JSON.stringify(settings))
       document.dispatchEvent(new CustomEvent('next95-settings-changed', { detail: settings }))
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings, isLoading])
 
   const applyWallpaper = (wallpaperId: WallpaperId) => {
