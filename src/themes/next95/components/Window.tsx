@@ -180,9 +180,27 @@ export default function Window({
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      const headerHeight = 30;
+      const taskbarHeight = 56;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Constrain Y so header stays within desktop area (above taskbar)
+      const minY = 0;
+      const maxY = viewportHeight - taskbarHeight - headerHeight;
+      const constrainedY = Math.max(minY, Math.min(newY, maxY));
+
+      // Constrain X so at least some part of the header remains visible
+      const minX = 30 - size.width; // Keep at least 30px of right side visible
+      const maxX = viewportWidth - 30; // Keep at least 30px of left side visible
+      const constrainedX = Math.max(minX, Math.min(newX, maxX));
+
       setPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
+        x: constrainedX,
+        y: constrainedY
       });
     };
 
