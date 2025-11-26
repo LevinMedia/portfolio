@@ -416,12 +416,23 @@ function StartMenuAuthRow({ closeMenu }: { closeMenu: () => void }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
 
-  useEffect(() => {
+  const checkAuth = () => {
     const storedEmail = localStorage.getItem('next95-user-email');
     if (storedEmail) {
       setIsAuthenticated(true);
       setEmail(storedEmail);
+    } else {
+      setIsAuthenticated(false);
+      setEmail(null);
     }
+  };
+
+  useEffect(() => {
+    checkAuth();
+    
+    // Listen for storage events (login from other tabs/windows)
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
   const handleAuthClick = () => {
@@ -429,11 +440,10 @@ function StartMenuAuthRow({ closeMenu }: { closeMenu: () => void }) {
       localStorage.removeItem('next95-user-email');
       setIsAuthenticated(false);
       setEmail(null);
+      // Dispatch event to notify other components
+      window.dispatchEvent(new Event('storage'));
     } else {
-      const mockEmail = 'guest@levin.media';
-      localStorage.setItem('next95-user-email', mockEmail);
-      setIsAuthenticated(true);
-      setEmail(mockEmail);
+      document.dispatchEvent(new CustomEvent('next95-open-window', { detail: 'login' }));
     }
     closeMenu();
   };
@@ -452,19 +462,11 @@ function StartMenuAuthRow({ closeMenu }: { closeMenu: () => void }) {
           className="flex items-center justify-center flex-shrink-0"
           style={{ width: '32px', height: '32px' }}
         >
-            {/* Using window.svg as Shut Down icon for now */}
-            <Image 
-              src="/window.svg" 
-              alt="" 
-              width={32} 
-              height={32} 
-              className="object-contain"
-            />
         </div>
       {isAuthenticated ? (
-        <span>Log Off {email ?? 'User'}...</span>
+        <span>Log out {email ? `(${email})` : ''}...</span>
       ) : (
-        <span>Shut Down...</span>
+        <span>Log in...</span>
       )}
     </button>
   );

@@ -31,11 +31,20 @@ const navigation = [
   { name: 'Manage Guestbook', href: '/admin/guestbook', icon: HomeIcon },
 ]
 
+import {
+  ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline'
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [adminUser, setAdminUser] = useState<{ username: string; email: string } | null>(null)
   const router = useRouter()
   const pathname = usePathname()
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem('admin_user')
+    router.push('/admin/login')
+  }
 
   useEffect(() => {
     // Skip authentication check for login and secure setup pages
@@ -125,11 +134,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </nav>
             </div>
             <div className="flex-shrink-0 flex border-t border-border/20 p-4">
-              <div className="flex items-center">
+              <div className="flex items-center w-full">
                 <div>
                   <div className="text-base font-medium text-foreground">{adminUser.username}</div>
                   <div className="text-sm font-medium text-muted-foreground">{adminUser.email}</div>
                 </div>
+                <div className="flex-1" />
+                <button
+                  onClick={handleSignOut}
+                  className="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted"
+                  title="Sign out"
+                >
+                  <ArrowRightOnRectangleIcon className="h-6 w-6" />
+                </button>
               </div>
             </div>
           </div>
@@ -180,10 +197,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </span>
                   </div>
                 </div>
-                <div className="ml-3 flex-1">
-                  <div className="text-sm font-medium text-foreground">{adminUser.username}</div>
-                  <div className="text-xs text-muted-foreground">{adminUser.email}</div>
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="text-sm font-medium text-foreground truncate">{adminUser.username}</div>
+                  <div className="text-xs text-muted-foreground truncate">{adminUser.email}</div>
                 </div>
+                <button
+                  onClick={handleSignOut}
+                  className="ml-2 p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted"
+                  title="Sign out"
+                >
+                  <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                </button>
               </div>
             </div>
           </div>

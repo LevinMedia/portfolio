@@ -132,7 +132,7 @@ export default function ScreensaverManager() {
   if (!activeScreensaver || activeScreensaver === 'none') return null
 
   return (
-    <div className="fixed inset-0 z-[9999] cursor-none bg-black">
+    <div className="fixed inset-0 z-[10000] cursor-none bg-black">
       {activeScreensaver === 'stars' && <Starfield />}
       {activeScreensaver === 'pipes' && <Pipes />}
       {activeScreensaver === 'mystify' && <Mystify />}

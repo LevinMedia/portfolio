@@ -23,6 +23,7 @@ import WorkHistoryWindow from "@/themes/next95/components/WorkHistoryWindow";
 import GuestbookWindow from "@/themes/next95/components/GuestbookWindow";
 import AboutWindow from "@/themes/next95/components/AboutWindow";
 import SystemSettingsWindow from "@/themes/next95/components/SystemSettingsWindow";
+import LoginWindow from "@/themes/next95/components/LoginWindow";
 import NotFoundWindow from "@/themes/next95/components/NotFoundWindow";
 import ScreensaverManager from "@/themes/next95/components/screensavers/ScreensaverManager";
 
@@ -65,6 +66,7 @@ function HomeContent() {
   const [isGuestbookWindowOpen, setIsGuestbookWindowOpen] = useState(false); // Next95 Guestbook window
   const [isAboutWindowOpen, setIsAboutWindowOpen] = useState(false); // Next95 About window
   const [isSystemSettingsWindowOpen, setIsSystemSettingsWindowOpen] = useState(false); // Next95 System Settings window
+  const [isLoginWindowOpen, setIsLoginWindowOpen] = useState(false); // Next95 Login window
   const [systemSettingsInitialTab, setSystemSettingsInitialTab] = useState<'desktop' | 'appearance'>('appearance');
   const [openWorkWindows, setOpenWorkWindows] = useState<Array<{ slug: string; title: string }>>([]); // Track open work detail windows
   const [howdyImageSrc, setHowdyImageSrc] = useState<string>('/guestbook-icon.png'); // Fallback to guestbook icon
@@ -198,6 +200,9 @@ function HomeContent() {
           }
           setIsSystemSettingsWindowOpen(true);
           break;
+        case 'login':
+          setIsLoginWindowOpen(true);
+          break;
         default:
           break;
       }
@@ -305,9 +310,10 @@ function HomeContent() {
     const isStats = normalizedSlug === 'stats';
     const isGuestbook = normalizedSlug === 'guestbook';
     const isSystemSettings = normalizedSlug === 'system-settings';
+    const isLogin = normalizedSlug === 'login';
     const isNotFoundSlug = normalizedSlug === '404';
     const isRoot = normalizedSlug === '';
-    const isKnownSlug = isRoot || isHowdy || isAbout || isWorkHistory || isSelectedWorks || isStats || isGuestbook || isSystemSettings || isNotFoundSlug;
+    const isKnownSlug = isRoot || isHowdy || isAbout || isWorkHistory || isSelectedWorks || isStats || isGuestbook || isSystemSettings || isLogin || isNotFoundSlug;
     const shouldShowNotFound = !isKnownSlug;
 
     setIsHowdyOpen(prev => (isHowdy ? true : prev));
@@ -317,6 +323,7 @@ function HomeContent() {
     setIsStatsWindowOpen(prev => (isStats ? true : prev));
     setIsGuestbookWindowOpen(prev => (isGuestbook ? true : prev));
     setIsSystemSettingsWindowOpen(prev => (isSystemSettings ? true : prev));
+    setIsLoginWindowOpen(prev => (isLogin ? true : prev));
     setIsNotFoundWindowOpen(isNotFoundSlug || shouldShowNotFound);
 
     if (isSelectedWorks && detail) {
@@ -613,6 +620,11 @@ function HomeContent() {
             onClose={() => setIsSystemSettingsWindowOpen(false)}
             initialTab={systemSettingsInitialTab}
           />
+        )}
+
+        {/* Next95 Login Window */}
+        {theme.id === 'next95' && isLoginWindowOpen && (
+          <LoginWindow onClose={() => setIsLoginWindowOpen(false)} />
         )}
 
         {/* Not Found Window */}
