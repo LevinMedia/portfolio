@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
+import Next95Button from './Next95Button'
 
 type WallpaperId = 'teal' | 'sunset' | 'grid'
 type ScreensaverId = 'none' | 'pipes' | 'stars'
@@ -386,21 +387,34 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
           })}
         </div>
 
-        <div className="p-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', color: 'var(--win95-content-text, #000000)' }}>
-          <div className="text-sm font-bold mb-2" style={{ color: 'var(--win95-text, #000000)' }}>Wait Time (minutes)</div>
-          <input
-            type="number"
-            min={1}
-            value={settings.screensaverTimeout}
-            onChange={(e) => handleScreensaverTimeoutChange(parseInt(e.target.value, 10) || 1)}
-            className="w-24 px-2 py-1 border-2 text-sm"
-            style={{
-              borderColor: 'var(--win95-border-mid, #808080)',
-              color: 'var(--win95-content-text, #000000)',
-              backgroundColor: 'var(--win95-content-bg, #ffffff)',
-              boxShadow: insetSunken
+        <div className="p-3 flex items-end gap-4" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', color: 'var(--win95-content-text, #000000)' }}>
+          <div>
+            <div className="text-sm font-bold mb-2" style={{ color: 'var(--win95-content-text, #000000)' }}>Wait Time (minutes)</div>
+            <input
+              type="number"
+              min={1}
+              value={settings.screensaverTimeout}
+              onChange={(e) => handleScreensaverTimeoutChange(parseInt(e.target.value, 10) || 1)}
+              className="w-24 px-2 py-1 border-2 text-sm"
+              style={{
+                borderColor: 'var(--win95-border-mid, #808080)',
+                color: 'var(--win95-content-text, #000000)',
+                backgroundColor: 'var(--win95-content-bg, #ffffff)',
+                boxShadow: insetSunken
+              }}
+            />
+          </div>
+          <Next95Button
+            onClick={() => {
+              if (settings.screensaverMode !== 'none') {
+                document.dispatchEvent(new CustomEvent('next95-preview-screensaver', { detail: settings.screensaverMode }))
+              }
             }}
-          />
+            disabled={settings.screensaverMode === 'none'}
+            className="px-6 py-1 text-sm font-bold"
+          >
+            Preview
+          </Next95Button>
         </div>
       </div>
     </>

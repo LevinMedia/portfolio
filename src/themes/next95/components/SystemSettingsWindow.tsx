@@ -9,11 +9,12 @@ import Next95Button from './Next95Button'
 
 interface SystemSettingsWindowProps {
   onClose: () => void
+  initialTab?: 'desktop' | 'appearance'
 }
 
-export default function SystemSettingsWindow({ onClose }: SystemSettingsWindowProps) {
+export default function SystemSettingsWindow({ onClose, initialTab = 'appearance' }: SystemSettingsWindowProps) {
   const { windows } = useWindowManager()
-  const [activeTab, setActiveTab] = useState<'desktop' | 'appearance'>('appearance')
+  const [activeTab, setActiveTab] = useState<'desktop' | 'appearance'>(initialTab)
 
   const cascadeOffset = 40
   const cascadeLevel = windows.length > 0 ? windows.length - 1 : 0

@@ -351,15 +351,15 @@ export default function Guestbook() {
       {/* Submit Buttons - Outside form in chrome area */}
       <div className="flex justify-end gap-2">
         <Next95Button
-          type="button"
-          onClick={() => setIsFormVisible(false)}
+              type="button"
+              onClick={() => setIsFormVisible(false)}
           className="min-w-[110px] justify-center"
-        >
-          Cancel
+            >
+              Cancel
         </Next95Button>
         <Next95Button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+              disabled={isSubmitting}
           className="min-w-[160px] flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
@@ -367,9 +367,9 @@ export default function Guestbook() {
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
               Adding...
             </>
-          ) : (
+              ) : (
             <>
-              <PaperAirplaneIcon className="h-4 w-4" />
+                <PaperAirplaneIcon className="h-4 w-4" />
               Add to Guestbook
             </>
           )}
@@ -405,7 +405,7 @@ export default function Guestbook() {
                   backgroundColor: 'var(--win95-content-bg, #ffffff)',
                   borderColor: 'var(--win95-border-mid, #808080)',
                   color: 'var(--win95-content-text, #000000)'
-                }}
+              }}
               >
               {/* Entry Header */}
               <div className="flex items-start mb-3">

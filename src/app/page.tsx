@@ -24,6 +24,7 @@ import GuestbookWindow from "@/themes/next95/components/GuestbookWindow";
 import AboutWindow from "@/themes/next95/components/AboutWindow";
 import SystemSettingsWindow from "@/themes/next95/components/SystemSettingsWindow";
 import NotFoundWindow from "@/themes/next95/components/NotFoundWindow";
+import ScreensaverManager from "@/themes/next95/components/screensavers/ScreensaverManager";
 
 import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
@@ -64,6 +65,7 @@ function HomeContent() {
   const [isGuestbookWindowOpen, setIsGuestbookWindowOpen] = useState(false); // Next95 Guestbook window
   const [isAboutWindowOpen, setIsAboutWindowOpen] = useState(false); // Next95 About window
   const [isSystemSettingsWindowOpen, setIsSystemSettingsWindowOpen] = useState(false); // Next95 System Settings window
+  const [systemSettingsInitialTab, setSystemSettingsInitialTab] = useState<'desktop' | 'appearance'>('appearance');
   const [openWorkWindows, setOpenWorkWindows] = useState<Array<{ slug: string; title: string }>>([]); // Track open work detail windows
   const [howdyImageSrc, setHowdyImageSrc] = useState<string>('/guestbook-icon.png'); // Fallback to guestbook icon
   const [isDarkMode, setIsDarkMode] = useState(false); // Track dark mode state
@@ -164,6 +166,48 @@ function HomeContent() {
       void fetchHowdyImage();
     }
   }, [theme.id]);
+
+  useEffect(() => {
+    const handleOpenWindow = (event: Event) => {
+      const customEvent = event as CustomEvent<any>;
+      const detail = customEvent.detail;
+      const slug = typeof detail === 'string' ? detail : detail.slug;
+      
+      switch (slug) {
+        case 'howdy':
+          setIsHowdyOpen(true);
+          break;
+        case 'about':
+          setIsAboutWindowOpen(true);
+          break;
+        case 'work-history':
+          setIsWorkHistoryWindowOpen(true);
+          break;
+        case 'selected-works':
+          setIsSelectedWorksWindowOpen(true);
+          break;
+        case 'stats':
+          setIsStatsWindowOpen(true);
+          break;
+        case 'guestbook':
+          setIsGuestbookWindowOpen(true);
+          break;
+        case 'system-settings':
+          if (typeof detail === 'object' && detail.initialTab) {
+            setSystemSettingsInitialTab(detail.initialTab);
+          }
+          setIsSystemSettingsWindowOpen(true);
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('next95-open-window', handleOpenWindow as EventListener);
+    return () => {
+      document.removeEventListener('next95-open-window', handleOpenWindow as EventListener);
+    };
+  }, []);
 
   // Initialize Next95 theme colors
   useEffect(() => {
@@ -439,9 +483,11 @@ function HomeContent() {
 
       {/* Content Layer */}
       <div className="relative z-10 col-span-6 contents">
+        {theme.id === 'next95' && <ScreensaverManager />}
+        
         {/* Desktop Icons - only show in next95 theme */}
         {theme.id === 'next95' && (
-          <div className="fixed top-4 left-4 bottom-20 z-[200] flex flex-col flex-wrap gap-2 content-start pointer-events-auto">
+          <div className="fixed top-4 left-4 bottom-20 z-20 flex flex-col flex-wrap gap-2 content-start pointer-events-auto">
             <DesktopIcon 
               icon={
                 <Image 
@@ -564,7 +610,8 @@ function HomeContent() {
         {/* Next95 System Settings Window */}
         {theme.id === 'next95' && isSystemSettingsWindowOpen && (
           <SystemSettingsWindow 
-            onClose={() => setIsSystemSettingsWindowOpen(false)} 
+            onClose={() => setIsSystemSettingsWindowOpen(false)}
+            initialTab={systemSettingsInitialTab}
           />
         )}
 
