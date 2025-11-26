@@ -49,7 +49,7 @@ function useThemedComponent<Props>(
       try {
         const mod = await loader();
         const LoadedComponent = mod.default as ComponentType<Props>;
-        componentCache.set(cacheKey, LoadedComponent);
+        componentCache.set(cacheKey, LoadedComponent as ComponentType<unknown>);
         if (!cancelled) {
           setComponent(() => LoadedComponent);
         }
