@@ -47,8 +47,8 @@ function useThemedComponent<Props>(
 
     const loadComponent = async () => {
       try {
-        const module = await loader();
-        const LoadedComponent = module.default as ComponentType<Props>;
+        const mod = await loader();
+        const LoadedComponent = mod.default as ComponentType<Props>;
         componentCache.set(cacheKey, LoadedComponent);
         if (!cancelled) {
           setComponent(() => LoadedComponent);

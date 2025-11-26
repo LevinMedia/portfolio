@@ -3,10 +3,12 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as THREE from 'three'
 
 const GRID_SIZE = 20
 const PIPE_RADIUS = 0.4
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SEGMENT_LENGTH = 2
 const MAX_PIPES = 3
 const SPEED = 0.1 // Time between updates

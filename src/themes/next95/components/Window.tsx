@@ -28,7 +28,9 @@ export default function Window({
   children,
   slug,
   onClose,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onMinimize,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onMaximize,
   defaultWidth = 600,
   defaultHeight,

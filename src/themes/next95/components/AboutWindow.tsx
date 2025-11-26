@@ -61,7 +61,7 @@ export default function AboutWindow({ onClose }: AboutWindowProps) {
                 Building and maintaining a portfolio site has always been at the absolute bottom of my list of things I&apos;m excited to spend time on. But... there&apos;s this new thing — I dunno if you&apos;ve heard of it — it&apos;s called AI, and it&apos;s kind of revolutionizing software development. 😏
               </p>
               <p className="mb-4">
-                So this site is a bit of an experiment. It&apos;s the product of AI-assisted software development (distinctly different from "vibe coding"). I&apos;ve open-sourced the whole thing too, for anyone who wants a nifty little portfolio site to tinker with. Go ahead, take a peek under the hood. Heck, open an issue and tell me what I did wrong — or better yet, just make a PR and fix it!
+                So this site is a bit of an experiment. It&apos;s the product of AI-assisted software development (distinctly different from &quot;vibe coding&quot;). I&apos;ve open-sourced the whole thing too, for anyone who wants a nifty little portfolio site to tinker with. Go ahead, take a peek under the hood. Heck, open an issue and tell me what I did wrong — or better yet, just make a PR and fix it!
               </p>
               <p className="mb-4">
                 <a 

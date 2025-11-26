@@ -58,6 +58,7 @@ function HomeContent() {
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
   const [isHowdyOpen, setIsHowdyOpen] = useState(false); // Howdy window state
   const [isSelectedWorksWindowOpen, setIsSelectedWorksWindowOpen] = useState(false); // Next95 Selected Works window
