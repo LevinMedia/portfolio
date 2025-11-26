@@ -92,6 +92,29 @@ export default function Navigation() {
 
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
+  const startMenuRef = useRef<HTMLDivElement>(null);
+  const startButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close start menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isStartMenuOpen) {
+        if (
+          startMenuRef.current &&
+          !startMenuRef.current.contains(event.target as Node) &&
+          startButtonRef.current &&
+          !startButtonRef.current.contains(event.target as Node)
+        ) {
+          setIsStartMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isStartMenuOpen]);
 
   // Update time every second
   useEffect(() => {
@@ -124,6 +147,7 @@ export default function Navigation() {
       >
         {/* Start Button */}
         <Next95Button
+          ref={startButtonRef}
           onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
           isActive={isStartMenuOpen}
           className="flex items-center gap-2 px-3 py-1 text-base font-bold h-[44px] min-w-[80px]"
@@ -201,7 +225,7 @@ export default function Navigation() {
         </div>
         {/* Start Menu */}
         {isStartMenuOpen && (
-          <div className="absolute bottom-[56px] left-[4px] z-50 flex">
+          <div ref={startMenuRef} className="absolute bottom-[56px] left-[4px] z-50 flex">
             <div 
               className="flex"
               style={{

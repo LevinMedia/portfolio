@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { Button } from '@headlessui/react';
 
 interface Next95ButtonProps {
@@ -10,16 +10,18 @@ interface Next95ButtonProps {
   isActive?: boolean;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  [key: string]: any;
 }
 
-export default function Next95Button({
+const Next95Button = forwardRef<HTMLButtonElement, Next95ButtonProps>(({
   children,
   onClick,
   className = '',
   isActive = false,
   disabled = false,
-  type = 'button'
-}: Next95ButtonProps) {
+  type = 'button',
+  ...props
+}, ref) => {
   const [isPressed, setIsPressed] = useState(false);
 
   const highlight = 'var(--win95-bevel-light, rgba(255, 255, 255, 0.35))';
@@ -28,6 +30,7 @@ export default function Next95Button({
 
   return (
     <Button
+      ref={ref}
       type={type}
       disabled={disabled}
       onClick={onClick}
@@ -55,9 +58,14 @@ export default function Next95Button({
         borderRadius: '0',
         boxShadow: 'none'
       }}
+      {...props}
     >
       {children}
     </Button>
   );
-}
+});
+
+Next95Button.displayName = 'Next95Button';
+
+export default Next95Button;
 
