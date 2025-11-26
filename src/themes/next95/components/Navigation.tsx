@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useWindowManager } from '../context/WindowManagerContext';
 import Next95Button from './Next95Button';
@@ -73,9 +73,9 @@ export default function Navigation() {
     },
     {
       label: 'Find',
-      icon: '/file.svg',
+      icon: '/find.png',
       children: [
-        { label: 'Files or Folders...', icon: '/file.svg', action: () => document.dispatchEvent(new CustomEvent('next95-open-window', { detail: 'selected-works' })) }
+        { label: 'Files or Folders...', icon: '/find.png', action: () => document.dispatchEvent(new CustomEvent('next95-open-window', { detail: 'selected-works' })) }
       ]
     },
     {
@@ -85,7 +85,7 @@ export default function Navigation() {
     },
     {
       label: 'Run...',
-      icon: '/next.svg',
+      icon: '/run.png',
       action: () => alert('Not implemented')
     }
   ], []);
@@ -112,7 +112,7 @@ export default function Navigation() {
   }, []);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999]">
       {/* Windows 95 Taskbar */}
       <div 
         className="border-t-2 h-[56px] flex items-center justify-between px-[4px]"
@@ -146,9 +146,16 @@ export default function Navigation() {
         </Next95Button>
 
         {/* Task Area */}
-        <div className="flex-1 mx-2 h-full flex items-center gap-1">
+        <div className="flex-1 mx-2 h-full flex items-center gap-1 min-w-0">
           {/* Running applications */}
-          <div className="flex-1 flex items-center gap-[4px] overflow-x-auto">
+          <div 
+            className="flex-1 flex items-center gap-[4px] overflow-x-auto"
+            style={{
+              // Custom scrollbar styling
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'var(--win95-border-mid, #808080) var(--win95-button-face, #c0c0c0)'
+            }}
+          >
             {windows.map((window) => (
               <Next95Button
                 key={window.id}
@@ -160,7 +167,7 @@ export default function Navigation() {
                   }
                 }}
                 isActive={window.isActive && !window.isMinimized}
-                className="px-4 py-2 text-sm h-[44px] max-w-[180px] truncate"
+                className="px-4 py-2 text-sm h-[44px] min-w-[160px] max-w-[180px] truncate flex-shrink-0 text-left"
               >
                 {window.title}
               </Next95Button>
@@ -292,6 +299,23 @@ function StartMenuItemRow({
   closeMenu
 }: StartMenuItemRowProps) {
   const isHovered = hoveredPath.join('-').startsWith(menuPath.join('-'));
+  const [shouldFlip, setShouldFlip] = useState(false);
+  const itemRef = useRef<HTMLDivElement>(null);
+
+  // Check for viewport overflow when opening submenu
+  useEffect(() => {
+    if (isHovered && item.children && itemRef.current) {
+      const rect = itemRef.current.getBoundingClientRect();
+      const submenuWidth = 224; // w-56 is 14rem = 224px
+      const screenWidth = window.innerWidth;
+      
+      // Check if there's enough space on the right
+      // We add a small buffer (20px)
+      const overflowRight = rect.right + submenuWidth > screenWidth;
+      
+      setShouldFlip(overflowRight);
+    }
+  }, [isHovered, item.children]);
 
   const handleClick = () => {
     if (item.children && item.children.length > 0) {
@@ -305,7 +329,7 @@ function StartMenuItemRow({
   const iconSize = level === 0 ? 32 : 16;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={itemRef}>
       <button
         type="button"
         disabled={item.disabled}
@@ -337,7 +361,16 @@ function StartMenuItemRow({
         {item.children && <span className="ml-2">▶</span>}
       </button>
       {item.children && isHovered && (
-        <div className="absolute top-0 left-full w-56 bg-[var(--win95-button-face,#c0c0c0)] border border-[var(--win95-border-mid,#808080)] border-r-[var(--win95-border-dark)] border-b-[var(--win95-border-dark)] border-t-[var(--win95-border-light)] border-l-[var(--win95-border-light)] shadow-lg p-[2px]">
+        <div 
+          className={`absolute top-0 w-56 bg-[var(--win95-button-face,#c0c0c0)] border border-[var(--win95-border-mid,#808080)] border-r-[var(--win95-border-dark)] border-b-[var(--win95-border-dark)] border-t-[var(--win95-border-light)] border-l-[var(--win95-border-light)] shadow-lg p-[2px] z-[100]`}
+          style={{
+            left: shouldFlip ? 'auto' : '100%',
+            right: shouldFlip ? '100%' : 'auto',
+            // Adjust negative margin to overlap borders nicely if needed, or keep flush
+            marginLeft: shouldFlip ? 0 : '-2px',
+            marginRight: shouldFlip ? '-2px' : 0
+          }}
+        >
           {item.children.map((child, childIndex) => (
             <StartMenuItemRow
               key={child.label}

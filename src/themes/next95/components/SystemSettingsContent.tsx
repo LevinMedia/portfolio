@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 import Next95Button from './Next95Button'
 
 type WallpaperId = 'teal' | 'sunset' | 'grid'
-type ScreensaverId = 'none' | 'pipes' | 'stars'
+type ScreensaverId = 'none' | 'pipes' | 'stars' | 'mystify'
 
 interface Next95Settings {
   primaryColor: string
@@ -27,7 +27,7 @@ const defaultSettings: Next95Settings = {
   windowHeaderGradient: 'linear-gradient(90deg, #000080 0%, #1084d0 100%)',
   colorMode: 'light',
   desktopWallpaper: 'teal',
-  screensaverMode: 'none',
+  screensaverMode: 'pipes',
   screensaverTimeout: 10
 }
 
@@ -90,7 +90,8 @@ const wallpaperOptions: Array<{
 const screensaverOptions: Array<{ id: ScreensaverId; label: string; description: string }> = [
   { id: 'none', label: 'None', description: 'Disable screen saver' },
   { id: 'pipes', label: '3D Pipes', description: 'Classic maze of pipes' },
-  { id: 'stars', label: 'Starfield', description: 'Fly through space forever' }
+  { id: 'stars', label: 'Starfield', description: 'Fly through space forever' },
+  { id: 'mystify', label: 'Mystify', description: 'Geometric trails' }
 ]
 
 interface SystemSettingsContentProps {
@@ -148,6 +149,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
     if (!isLoading) {
       applySettings(settings)
       localStorage.setItem('next95-settings', JSON.stringify(settings))
+      document.dispatchEvent(new CustomEvent('next95-settings-changed', { detail: settings }))
     }
   }, [settings, isLoading])
 
@@ -365,7 +367,7 @@ export default function SystemSettingsContent({ activeTab }: SystemSettingsConte
 
       <div className="border-2 p-3 space-y-3" style={{ backgroundColor: 'var(--win95-content-bg, #ffffff)', borderColor: 'var(--win95-border-mid, #808080)' }}>
         <div className="text-sm font-bold" style={{ color: 'var(--win95-content-text, #000000)' }}>Screen Saver</div>
-        <div className="grid grid-cols-1 @[500px]:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 @[500px]:grid-cols-2 gap-2">
           {screensaverOptions.map((option) => {
             const isActive = settings.screensaverMode === option.id
             return (
