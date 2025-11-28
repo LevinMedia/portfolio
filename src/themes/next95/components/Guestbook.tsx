@@ -294,7 +294,6 @@ export default function Guestbook() {
                 onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
                 className="min-h-[160px] @[600px]:min-h-[200px]"
                 allowVideo={false}
-                placeholder="Holla atcha boi"
               />
             </div>
           </div>

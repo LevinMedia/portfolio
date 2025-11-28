@@ -72,7 +72,7 @@ export default function Howdy({
   }
 
   const content = remoteData;
-  const listItems = [content.li_1, content.li_2].filter(Boolean);
+  const listItems = [content.li_1, content.li_2].filter((item): item is string => Boolean(item));
 
   // Center the window on screen
   const windowWidth = 520;

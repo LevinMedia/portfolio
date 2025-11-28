@@ -1,19 +1,27 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '@/lib/themes/ThemeProvider';
 import type { ThemeComponentKey, ThemeComponentLoader } from '@/lib/themes/types';
-import type NavigationDefault from '@/themes/my-first-theme/components/Navigation';
-import type HowdyDefault from '@/themes/my-first-theme/components/Howdy';
 
-type ExtractProps<T> = T extends (props: infer P) => unknown ? P : Record<string, never>;
+// Define explicit prop types for theme components
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface NavigationProps {}
 
-type NavigationProps = ExtractProps<typeof NavigationDefault>;
-type HowdyPropsBase = ExtractProps<typeof HowdyDefault>;
+interface HowdyData {
+  image_src: string;
+  image_alt: string;
+  greeting: string;
+  li_1: string | null;
+  li_2: string | null;
+}
 
-// Extended props to support both themes
-interface HowdyProps extends HowdyPropsBase {
+interface HowdyProps {
+  data?: HowdyData;
+  onSelectedWorksClick?: () => void;
+  onSiteSettingsClick?: () => void;
+  // Extended props to support next95 theme
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -74,12 +82,12 @@ function useThemedComponent<Props>(
 export function ThemeNavigation(props: NavigationProps) {
   const Component = useThemedComponent<NavigationProps>('navigation', defaultNavigationLoader);
   if (!Component) return null;
-  return <Component {...props} />;
+  return React.createElement(Component as ComponentType<NavigationProps>, props as NavigationProps);
 }
 
 export function ThemeHowdy(props: HowdyProps) {
   const Component = useThemedComponent<HowdyProps>('howdy', defaultHowdyLoader);
   if (!Component) return null;
-  return <Component {...props} />;
+  return React.createElement(Component as ComponentType<HowdyProps>, props as HowdyProps);
 }
 
