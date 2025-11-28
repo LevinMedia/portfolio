@@ -5,6 +5,10 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import { ThemeProvider } from "@/lib/themes/ThemeProvider";
+import { createClient } from "@supabase/supabase-js";
+import { defaultThemeId } from "@/lib/themes/registry";
+import { getActiveThemeId, syncThemesTable } from "@/lib/themes/theme-store";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,16 +28,33 @@ export const metadata: Metadata = {
   description: "David Levin's portfolio and work history",
 };
 
-export default function RootLayout({
+async function resolveActiveThemeId() {
+  try {
+    const client = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    await syncThemesTable(client);
+    return await getActiveThemeId(client);
+  } catch (error) {
+    console.error("Unable to resolve active theme. Falling back to default.", error);
+    return defaultThemeId;
+  }
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const activeThemeId = await resolveActiveThemeId();
+
   return (
-    <html lang="en" className="hydrated">
+    <html lang="en" className="hydrated light">
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased fonts-loaded`}
       >
+        <ThemeProvider initialThemeId={activeThemeId}>
         <Suspense fallback={null}>
           <AnalyticsTracker />
         </Suspense>
@@ -44,11 +65,37 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              document.documentElement.classList.add('hydrated');
-              document.body.classList.add('fonts-loaded');
+              (function() {
+                var root = document.documentElement;
+                try {
+                  root.classList.add('hydrated');
+                  var saved = localStorage.getItem('next95-settings');
+                  if (saved) {
+                    var parsed = JSON.parse(saved);
+                    if (parsed && parsed.colorMode === 'dark') {
+                      root.classList.add('dark');
+                      root.classList.remove('light');
+                    } else if (parsed && parsed.colorMode === 'light') {
+                      root.classList.add('light');
+                      root.classList.remove('dark');
+                    } else {
+                      root.classList.add('light');
+                      root.classList.remove('dark');
+                    }
+                  } else {
+                    root.classList.add('light');
+                    root.classList.remove('dark');
+                  }
+                } catch (error) {
+                  root.classList.add('light');
+                  root.classList.remove('dark');
+                }
+                document.body.classList.add('fonts-loaded');
+              })();
             `,
           }}
         />
+        </ThemeProvider>
       </body>
     </html>
   );

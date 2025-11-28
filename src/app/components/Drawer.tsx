@@ -13,6 +13,7 @@ interface DrawerProps {
   linkedInUrl?: string
   contentPadding?: string
   maxWidth?: string
+  lazyMount?: boolean
   children: React.ReactNode
 }
 
@@ -25,9 +26,11 @@ const Drawer: React.FC<DrawerProps> = ({
   linkedInUrl,
   contentPadding = "p-4",
   maxWidth = "max-w-2xl",
+  lazyMount = false,
   children 
 }) => {
   const [mounted, setMounted] = useState(false)
+  const [hasOpened, setHasOpened] = useState(isOpen)
 
   useEffect(() => {
     setMounted(true)
@@ -45,7 +48,15 @@ const Drawer: React.FC<DrawerProps> = ({
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (lazyMount && isOpen) {
+      setHasOpened(true)
+    }
+  }, [lazyMount, isOpen])
+
   if (!mounted) return null
+
+  const shouldRenderChildren = !lazyMount || isOpen || hasOpened
 
   return (
     <>
@@ -118,7 +129,7 @@ const Drawer: React.FC<DrawerProps> = ({
         {/* Content */}
         <div className={`${contentPadding} flex justify-center`}>
           <div className={`w-full ${maxWidth} pb-24`}>
-            {children}
+            {shouldRenderChildren ? children : null}
           </div>
         </div>
       </div>

@@ -163,7 +163,7 @@ const Tooltip: React.FC<TooltipProps> = ({
         // Continue animation loop until we've typed all characters
         if (currentLength < code.length) {
           animationFrameRef.current = requestAnimationFrame(animate);
-        }
+          }
       };
       
       animationFrameRef.current = requestAnimationFrame(animate);
