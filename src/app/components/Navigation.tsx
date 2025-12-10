@@ -14,7 +14,8 @@ import {
   QuestionMarkCircleIcon, 
   ChartBarSquareIcon, 
   PencilSquareIcon, 
-  CogIcon 
+  CogIcon,
+  DocumentTextIcon
 } from "@heroicons/react/24/outline"
 
 interface NavigationItemProps {
@@ -71,6 +72,10 @@ export default function Navigation() {
     router.push('/?site-settings=true')
   }
 
+  const handleFieldNotesOpen = () => {
+    router.push('/?field-notes=true')
+  }
+
   const handleMobileMenuOpen = () => {
     setIsMobileMenuOpen(true)
   }
@@ -81,6 +86,11 @@ export default function Navigation() {
 
   // Navigation items array
   const navigationItems = [
+    {
+      icon: <DocumentTextIcon className="w-5 h-5" />,
+      label: "Field notes",
+      onClick: handleFieldNotesOpen
+    },
     {
       icon: <CommandLineIcon className="w-5 h-5" />,
       label: "Selected works",
@@ -128,6 +138,7 @@ export default function Navigation() {
         codeGenerator={() => {
           return `<Navigation>
   <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
+  <NavigationItem icon={<DocumentTextIcon />} label="Field notes" onClick={handleFieldNotesOpen} />
   <NavigationItem icon={<CommandLineIcon />} label="Selected works" onClick={handleSelectedWorksOpen} />
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />
   <NavigationItem icon={<QuestionMarkCircleIcon />} label="About" onClick={handleAboutOpen} />

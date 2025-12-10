@@ -23,6 +23,12 @@ DROP FUNCTION IF EXISTS prod_get_all_selected_works();
 DROP FUNCTION IF EXISTS prod_get_selected_works();
 DROP FUNCTION IF EXISTS prod_get_selected_work_by_slug(TEXT);
 DROP FUNCTION IF EXISTS prod_upsert_selected_work(TEXT, TEXT, TEXT, TEXT, JSONB, BOOLEAN, BOOLEAN, INTEGER, UUID);
+DROP FUNCTION IF EXISTS prod_get_all_field_notes();
+DROP FUNCTION IF EXISTS prod_get_field_notes();
+DROP FUNCTION IF EXISTS prod_get_field_note_by_slug(TEXT);
+DROP FUNCTION IF EXISTS prod_upsert_field_note(TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, BOOLEAN, BOOLEAN, INTEGER, UUID);
+DROP FUNCTION IF EXISTS prod_delete_field_note(UUID);
+DROP FUNCTION IF EXISTS prod_update_field_note_thumbnail_crop(UUID, JSONB);
 
 -- NOTE: We DO NOT drop admin_users, setup_state, or work history tables to preserve data!
 -- Tables use CREATE TABLE IF NOT EXISTS to safely handle existing data
@@ -936,6 +942,318 @@ BEGIN
         thumbnail_crop = p_thumbnail_crop,
         updated_at = NOW()
     WHERE id = p_work_id;
+    
+    RETURN FOUND;
+END;
+$$;
+
+-- =====================================================
+-- FIELD NOTES TABLE AND FUNCTIONS
+-- =====================================================
+
+-- Create field notes table
+CREATE TABLE IF NOT EXISTS field_notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE, -- URL-friendly version of title
+    content TEXT NOT NULL, -- Markdown content (same as selected_works)
+    author TEXT NOT NULL DEFAULT 'David Levin', -- Author name
+    -- Images
+    feature_image_url TEXT NOT NULL, -- 16:9 feature image URL from Supabase Storage
+    thumbnail_crop JSONB DEFAULT '{"x": 0, "y": 0, "width": 100, "height": 100, "unit": "%"}', -- Crop settings for 1:1 thumbnail
+    -- Metadata
+    is_published BOOLEAN DEFAULT false,
+    is_private BOOLEAN DEFAULT false, -- Private notes are only accessible via direct URL
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    published_at TIMESTAMPTZ
+);
+
+-- Add columns if they don't exist (for existing databases)
+DO $$ 
+BEGIN
+    -- Add author column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'field_notes' 
+        AND column_name = 'author'
+    ) THEN
+        ALTER TABLE field_notes ADD COLUMN author TEXT NOT NULL DEFAULT 'David Levin';
+    END IF;
+
+    -- Add is_private column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'field_notes' 
+        AND column_name = 'is_private'
+    ) THEN
+        ALTER TABLE field_notes ADD COLUMN is_private BOOLEAN DEFAULT false;
+    END IF;
+
+    -- Add published_at column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'field_notes' 
+        AND column_name = 'published_at'
+    ) THEN
+        ALTER TABLE field_notes ADD COLUMN published_at TIMESTAMPTZ;
+    END IF;
+END $$;
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_field_notes_slug ON field_notes(slug);
+CREATE INDEX IF NOT EXISTS idx_field_notes_published ON field_notes(is_published, published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_field_notes_display_order ON field_notes(display_order DESC);
+
+-- Enable RLS (idempotent - safe to run multiple times, no-op if already enabled)
+ALTER TABLE field_notes ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public read access - field_notes" ON field_notes;
+DROP POLICY IF EXISTS "Service role full access - field_notes" ON field_notes;
+
+-- Create RLS policies
+CREATE POLICY "Public read access - field_notes" ON field_notes
+    FOR SELECT USING (is_published = true);
+
+CREATE POLICY "Service role full access - field_notes" ON field_notes
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- Function to get published field notes (public) - reverse chronological by published_at
+CREATE OR REPLACE FUNCTION prod_get_field_notes()
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    author TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    display_order INTEGER,
+    published_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Only return published notes that are NOT private
+    -- Private notes are only accessible via direct URL (prod_get_field_note_by_slug)
+    RETURN QUERY
+    SELECT 
+        fn.id,
+        fn.title,
+        fn.slug,
+        fn.content,
+        fn.author,
+        fn.feature_image_url,
+        fn.thumbnail_crop,
+        fn.display_order,
+        fn.published_at
+    FROM field_notes fn
+    WHERE fn.is_published = true AND fn.is_private = false
+    ORDER BY fn.published_at DESC NULLS LAST, fn.created_at DESC;
+END;
+$$;
+
+-- Function to get single field note by slug (public)
+-- This allows access to private notes via direct URL
+CREATE OR REPLACE FUNCTION prod_get_field_note_by_slug(p_slug TEXT)
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    author TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    display_order INTEGER,
+    published_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Returns note if published, regardless of is_private status
+    -- This enables direct URL access to private notes
+    RETURN QUERY
+    SELECT 
+        fn.id,
+        fn.title,
+        fn.slug,
+        fn.content,
+        fn.author,
+        fn.feature_image_url,
+        fn.thumbnail_crop,
+        fn.display_order,
+        fn.published_at
+    FROM field_notes fn
+    WHERE fn.slug = p_slug AND fn.is_published = true
+    LIMIT 1;
+END;
+$$;
+
+-- Function to get all field notes (admin)
+CREATE OR REPLACE FUNCTION prod_get_all_field_notes()
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    author TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    is_published BOOLEAN,
+    is_private BOOLEAN,
+    display_order INTEGER,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
+    published_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        fn.id,
+        fn.title,
+        fn.slug,
+        fn.content,
+        fn.author,
+        fn.feature_image_url,
+        fn.thumbnail_crop,
+        fn.is_published,
+        fn.is_private,
+        fn.display_order,
+        fn.created_at,
+        fn.updated_at,
+        fn.published_at
+    FROM field_notes fn
+    ORDER BY fn.published_at DESC NULLS LAST, fn.created_at DESC;
+END;
+$$;
+
+-- Function to create or update field note (admin)
+CREATE OR REPLACE FUNCTION prod_upsert_field_note(
+    p_title TEXT,
+    p_slug TEXT,
+    p_content TEXT,
+    p_feature_image_url TEXT,
+    p_author TEXT DEFAULT 'David Levin',
+    p_thumbnail_crop JSONB DEFAULT '{"x": 0, "y": 0, "width": 100, "height": 100, "unit": "%"}',
+    p_is_published BOOLEAN DEFAULT false,
+    p_is_private BOOLEAN DEFAULT false,
+    p_display_order INTEGER DEFAULT 0,
+    p_note_id UUID DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result_id UUID;
+    v_published_at TIMESTAMPTZ;
+BEGIN
+    -- Set published_at if transitioning to published
+    IF p_is_published THEN
+        IF p_note_id IS NOT NULL THEN
+            -- Check if it was previously unpublished
+            SELECT published_at INTO v_published_at
+            FROM field_notes
+            WHERE id = p_note_id;
+            
+            IF v_published_at IS NULL THEN
+                v_published_at := NOW();
+            END IF;
+        ELSE
+            v_published_at := NOW();
+        END IF;
+    ELSE
+        v_published_at := NULL;
+    END IF;
+
+    IF p_note_id IS NOT NULL THEN
+        -- Update existing note
+        UPDATE field_notes 
+        SET 
+            title = p_title,
+            slug = p_slug,
+            content = p_content,
+            author = p_author,
+            feature_image_url = p_feature_image_url,
+            thumbnail_crop = p_thumbnail_crop,
+            is_published = p_is_published,
+            is_private = p_is_private,
+            display_order = p_display_order,
+            published_at = v_published_at,
+            updated_at = NOW()
+        WHERE id = p_note_id
+        RETURNING id INTO result_id;
+        
+        IF result_id IS NULL THEN
+            RAISE EXCEPTION 'Field note with ID % not found', p_note_id;
+        END IF;
+    ELSE
+        -- Insert new note
+        INSERT INTO field_notes (
+            title, 
+            slug, 
+            content,
+            author, 
+            feature_image_url, 
+            thumbnail_crop, 
+            is_published,
+            is_private, 
+            display_order,
+            published_at
+        )
+        VALUES (
+            p_title, 
+            p_slug, 
+            p_content,
+            p_author, 
+            p_feature_image_url, 
+            p_thumbnail_crop, 
+            p_is_published,
+            p_is_private, 
+            p_display_order,
+            v_published_at
+        )
+        RETURNING id INTO result_id;
+    END IF;
+    
+    RETURN result_id;
+END;
+$$;
+
+-- Function to delete field note (admin)
+CREATE OR REPLACE FUNCTION prod_delete_field_note(p_note_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM field_notes WHERE id = p_note_id;
+    RETURN FOUND;
+END;
+$$;
+
+-- Function to update thumbnail crop only (admin)
+CREATE OR REPLACE FUNCTION prod_update_field_note_thumbnail_crop(
+    p_note_id UUID,
+    p_thumbnail_crop JSONB
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE field_notes 
+    SET 
+        thumbnail_crop = p_thumbnail_crop,
+        updated_at = NOW()
+    WHERE id = p_note_id;
     
     RETURN FOUND;
 END;
