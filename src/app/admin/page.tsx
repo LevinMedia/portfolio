@@ -69,6 +69,13 @@ export default function AdminDashboard() {
       color: 'bg-green-500'
     },
     {
+      name: 'Field Notes',
+      href: '/admin/field-notes',
+      icon: DocumentTextIcon,
+      description: 'Manage blog-style field notes',
+      color: 'bg-teal-500'
+    },
+    {
       name: 'Work History',
       href: '/admin/work-history',
       icon: BriefcaseIcon,

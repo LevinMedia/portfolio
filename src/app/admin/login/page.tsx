@@ -18,6 +18,14 @@ export default function AdminLogin() {
       try {
         console.log('Checking admin setup status...')
         const response = await fetch('/api/admin/secure-setup')
+        
+        // Check if response is JSON before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('Non-JSON response from secure-setup endpoint')
+          return
+        }
+        
         const data = await response.json()
         
         console.log('Setup status response:', data)
@@ -51,6 +59,15 @@ export default function AdminLogin() {
         body: JSON.stringify({ email, password }),
       })
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('Non-JSON response:', text.substring(0, 200))
+        setError('Server error: Received invalid response. Please check your environment variables.')
+        return
+      }
+
       const data = await response.json()
 
       if (!response.ok) {
@@ -63,7 +80,8 @@ export default function AdminLogin() {
       
       // Redirect to admin dashboard
       router.push('/admin')
-    } catch {
+    } catch (err) {
+      console.error('Login error:', err)
       setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)

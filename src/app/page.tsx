@@ -6,6 +6,7 @@ import Drawer from "./components/Drawer";
 import WorkHistoryContent from "./components/WorkHistoryContent";
 import AboutContent from "./components/AboutContent";
 import SelectedWorksContent from "./components/SelectedWorksContent";
+import FieldNotesContent from "./components/FieldNotesContent";
 import SiteSettingsContent from "./components/SiteSettingsContent";
 import StatsContent from "./components/StatsContent";
 import Guestbook from "./components/Guestbook";
@@ -14,7 +15,7 @@ import Navigation from "./components/Navigation";
 import { ParticleBackground } from "./components/ParticleBackground";
 import { usePageTitle } from "./hooks/usePageTitle";
 
-import { CommandLineIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
+import { CommandLineIcon, DocumentTextIcon, PencilSquareIcon, ChartBarSquareIcon, BriefcaseIcon, QuestionMarkCircleIcon, CogIcon } from "@heroicons/react/24/outline";
 
 function HomeContent() {
   const router = useRouter();
@@ -22,6 +23,7 @@ function HomeContent() {
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false);
+  const [isFieldNotesOpen, setIsFieldNotesOpen] = useState(false);
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -30,6 +32,7 @@ function HomeContent() {
   const pageTitle = isWorkHistoryOpen ? 'Work History'
     : isAboutOpen ? 'About'
     : isSelectedWorksOpen ? 'Selected Works'
+    : isFieldNotesOpen ? 'Field Notes'
     : isSiteSettingsOpen ? 'Site Settings'
     : isGuestbookOpen ? 'Guestbook'
     : isStatsOpen ? 'Stats'
@@ -42,12 +45,14 @@ function HomeContent() {
     const showWorkHistory = searchParams.get('work-history') === 'true';
     const showAbout = searchParams.get('about') === 'true';
     const showSelectedWorks = searchParams.get('selected-works') === 'true';
+    const showFieldNotes = searchParams.get('field-notes') === 'true';
     const showGuestbook = searchParams.get('guestbook') === 'true';
     const showStats = searchParams.get('stats') === 'true';
     const showSiteSettings = searchParams.get('site-settings') === 'true';
     setIsWorkHistoryOpen(showWorkHistory);
     setIsAboutOpen(showAbout);
     setIsSelectedWorksOpen(showSelectedWorks);
+    setIsFieldNotesOpen(showFieldNotes);
     setIsGuestbookOpen(showGuestbook);
     setIsStatsOpen(showStats);
     setIsSiteSettingsOpen(showSiteSettings);
@@ -89,6 +94,15 @@ function HomeContent() {
     setIsSelectedWorksOpen(false);
     const params = new URLSearchParams(searchParams.toString());
     params.delete('selected-works');
+    const newUrl = params.toString() ? `?${params.toString()}` : '/';
+    router.push(newUrl, { scroll: false });
+  };
+
+  // Handle closing field notes drawer
+  const handleFieldNotesClose = () => {
+    setIsFieldNotesOpen(false);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('field-notes');
     const newUrl = params.toString() ? `?${params.toString()}` : '/';
     router.push(newUrl, { scroll: false });
   };
@@ -180,6 +194,18 @@ function HomeContent() {
           maxWidth=""
         >
           <SelectedWorksContent />
+        </Drawer>
+
+        {/* Field Notes Drawer */}
+        <Drawer
+          isOpen={isFieldNotesOpen}
+          onClose={handleFieldNotesClose}
+          title="Field notes"
+          icon={<DocumentTextIcon className="w-6 h-6" />}
+          contentPadding="p-0"
+          maxWidth=""
+        >
+          <FieldNotesContent />
         </Drawer>
 
         {/* Site Settings Drawer */}
