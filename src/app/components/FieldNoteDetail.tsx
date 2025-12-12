@@ -19,6 +19,7 @@ interface FieldNote {
   feature_image_url: string
   published_at: string
   author: string
+  og_vertical_align?: 'top' | 'center' | 'bottom'
 }
 
 // Helper function to parse content and extract video embeds

@@ -24,6 +24,7 @@ interface FieldNote {
   is_published: boolean
   is_private: boolean
   display_order: number
+  og_vertical_align?: 'top' | 'center' | 'bottom'
 }
 
 export default function EditFieldNote({ params }: { params: Promise<{ id: string }> }) {
@@ -42,7 +43,8 @@ export default function EditFieldNote({ params }: { params: Promise<{ id: string
     thumbnail_crop: { x: 50, y: 50, width: 100, height: 100, unit: '%' }, // Center crop
     is_published: false,
     is_private: false,
-    display_order: 0
+    display_order: 0,
+    og_vertical_align: 'center' as 'top' | 'center' | 'bottom'
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -77,7 +79,8 @@ export default function EditFieldNote({ params }: { params: Promise<{ id: string
             thumbnail_crop: note.thumbnail_crop,
             is_published: note.is_published,
             is_private: note.is_private,
-            display_order: note.display_order
+            display_order: note.display_order,
+            og_vertical_align: (note.og_vertical_align as 'top' | 'center' | 'bottom') || 'center'
           })
         }
       }
@@ -308,6 +311,18 @@ export default function EditFieldNote({ params }: { params: Promise<{ id: string
                   placeholder="0"
                   className="mt-1 text-sm w-20"
                 />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">OG Vertical Align</label>
+                <select
+                  value={formData.og_vertical_align}
+                  onChange={(e) => setFormData(prev => ({ ...prev, og_vertical_align: e.target.value as 'top' | 'center' | 'bottom' }))}
+                  className="mt-1 text-sm rounded-md border border-border bg-background px-2 py-1 text-foreground"
+                >
+                  <option value="top">Top</option>
+                  <option value="center">Middle</option>
+                  <option value="bottom">Bottom</option>
+                </select>
               </div>
             </div>
             <div className="flex items-center space-x-6">
