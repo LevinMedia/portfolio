@@ -21,21 +21,29 @@ export default async function Image({
     return new Response('Not found', { status: 404 })
   }
 
-  const backgroundImage = note.feature_image_url
   return new ImageResponse(
     (
       <div
         style={{
           width: '100%',
           height: '100%',
-          backgroundImage: `url(${backgroundImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: '50% 50%', // lock to center to avoid tiling/splitting
-          backgroundPositionX: '50%',
-          backgroundPositionY: '50%', // temporarily ignore vertical alignment setting
-          backgroundRepeat: 'no-repeat'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0f172a',
         }}
-      />
+      >
+        <img
+          src={note.feature_image_url}
+          alt={note.title}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center center',
+          }}
+        />
+      </div>
     ),
     {
       width: size.width,
