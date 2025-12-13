@@ -44,7 +44,8 @@ export async function POST(request: Request) {
       thumbnail_crop,
       is_published,
       is_private,
-      display_order
+      display_order,
+      og_vertical_align
     } = body
 
     // Validate required fields
@@ -61,6 +62,9 @@ export async function POST(request: Request) {
     const sanitizedContent = sanitizeMarkdown(content)
     const sanitizedImageUrl = sanitizeText(feature_image_url)
     const sanitizedAuthor = sanitizeText(author || 'David Levin')
+    const sanitizedOgAlign = ['top', 'center', 'bottom'].includes((og_vertical_align || '').toLowerCase())
+      ? (og_vertical_align || '').toLowerCase()
+      : 'center'
 
     const { data, error } = await supabase.rpc('prod_upsert_field_note', {
       p_title: sanitizedTitle,
@@ -72,6 +76,7 @@ export async function POST(request: Request) {
       p_is_published: is_published || false,
       p_is_private: is_private || false,
       p_display_order: display_order || 0,
+      p_og_vertical_align: sanitizedOgAlign,
       p_note_id: id || null
     })
 

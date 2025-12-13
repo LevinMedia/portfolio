@@ -961,6 +961,7 @@ CREATE TABLE IF NOT EXISTS field_notes (
     -- Images
     feature_image_url TEXT NOT NULL, -- 16:9 feature image URL from Supabase Storage
     thumbnail_crop JSONB DEFAULT '{"x": 0, "y": 0, "width": 100, "height": 100, "unit": "%"}', -- Crop settings for 1:1 thumbnail
+    og_vertical_align TEXT NOT NULL DEFAULT 'center', -- Controls OG image vertical alignment: top|center|bottom
     -- Metadata
     is_published BOOLEAN DEFAULT false,
     is_private BOOLEAN DEFAULT false, -- Private notes are only accessible via direct URL
@@ -999,6 +1000,15 @@ BEGIN
     ) THEN
         ALTER TABLE field_notes ADD COLUMN published_at TIMESTAMPTZ;
     END IF;
+
+    -- Add og_vertical_align column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'field_notes' 
+        AND column_name = 'og_vertical_align'
+    ) THEN
+        ALTER TABLE field_notes ADD COLUMN og_vertical_align TEXT NOT NULL DEFAULT 'center';
+    END IF;
 END $$;
 
 -- Create indexes
@@ -1030,6 +1040,7 @@ RETURNS TABLE (
     author TEXT,
     feature_image_url TEXT,
     thumbnail_crop JSONB,
+    og_vertical_align TEXT,
     display_order INTEGER,
     published_at TIMESTAMPTZ
 )
@@ -1048,6 +1059,7 @@ BEGIN
         fn.author,
         fn.feature_image_url,
         fn.thumbnail_crop,
+        fn.og_vertical_align,
         fn.display_order,
         fn.published_at
     FROM field_notes fn
@@ -1067,6 +1079,7 @@ RETURNS TABLE (
     author TEXT,
     feature_image_url TEXT,
     thumbnail_crop JSONB,
+    og_vertical_align TEXT,
     display_order INTEGER,
     published_at TIMESTAMPTZ
 )
@@ -1085,6 +1098,7 @@ BEGIN
         fn.author,
         fn.feature_image_url,
         fn.thumbnail_crop,
+        fn.og_vertical_align,
         fn.display_order,
         fn.published_at
     FROM field_notes fn
@@ -1108,6 +1122,7 @@ RETURNS TABLE (
     display_order INTEGER,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
+    og_vertical_align TEXT,
     published_at TIMESTAMPTZ
 )
 LANGUAGE plpgsql
@@ -1128,6 +1143,7 @@ BEGIN
         fn.display_order,
         fn.created_at,
         fn.updated_at,
+        fn.og_vertical_align,
         fn.published_at
     FROM field_notes fn
     ORDER BY fn.published_at DESC NULLS LAST, fn.created_at DESC;
@@ -1145,6 +1161,7 @@ CREATE OR REPLACE FUNCTION prod_upsert_field_note(
     p_is_published BOOLEAN DEFAULT false,
     p_is_private BOOLEAN DEFAULT false,
     p_display_order INTEGER DEFAULT 0,
+    p_og_vertical_align TEXT DEFAULT 'center',
     p_note_id UUID DEFAULT NULL
 )
 RETURNS UUID
@@ -1183,6 +1200,7 @@ BEGIN
             author = p_author,
             feature_image_url = p_feature_image_url,
             thumbnail_crop = p_thumbnail_crop,
+            og_vertical_align = COALESCE(NULLIF(p_og_vertical_align, ''), 'center'),
             is_published = p_is_published,
             is_private = p_is_private,
             display_order = p_display_order,
@@ -1203,6 +1221,7 @@ BEGIN
             author, 
             feature_image_url, 
             thumbnail_crop, 
+            og_vertical_align,
             is_published,
             is_private, 
             display_order,
@@ -1215,6 +1234,7 @@ BEGIN
             p_author, 
             p_feature_image_url, 
             p_thumbnail_crop, 
+            COALESCE(NULLIF(p_og_vertical_align, ''), 'center'),
             p_is_published,
             p_is_private, 
             p_display_order,

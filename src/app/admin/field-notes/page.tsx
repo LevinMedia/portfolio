@@ -25,6 +25,7 @@ interface FieldNote {
   created_at: string
   updated_at: string
   published_at: string | null
+  og_vertical_align?: 'top' | 'center' | 'bottom'
 }
 
 export default function FieldNotesAdmin() {
