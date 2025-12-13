@@ -37,3 +37,4 @@ export async function getFieldNoteBySlug(slug: string): Promise<FieldNote | null
   return data[0] as FieldNote
 }
 
+
