@@ -22,13 +22,6 @@ export default async function Image({
   }
 
   const backgroundImage = note.feature_image_url
-  // Map admin vertical alignment to explicit Y percentages; X stays centered.
-  const verticalAlign = (() => {
-    const align = (note.og_vertical_align || 'center').toLowerCase()
-    if (align === 'top') return '20%'    // bias upward
-    if (align === 'bottom') return '80%' // bias downward
-    return '50%' // center
-  })()
   return new ImageResponse(
     (
       <div
@@ -37,9 +30,9 @@ export default async function Image({
           height: '100%',
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: 'cover',
-          backgroundPosition: '50% 50%', // lock X to center
+          backgroundPosition: '50% 50%', // lock to center to avoid tiling/splitting
           backgroundPositionX: '50%',
-          backgroundPositionY: verticalAlign, // only Y moves based on setting
+          backgroundPositionY: '50%', // temporarily ignore vertical alignment setting
           backgroundRepeat: 'no-repeat'
         }}
       />
