@@ -5,6 +5,7 @@ import Tooltip from './Tooltip'
 import { CommandLineIcon, CogIcon } from '@heroicons/react/24/outline'
 import Button from './Button'
 import ButtonTooltip from './ButtonTooltip'
+import { NAV_HEIGHT } from './layoutConstants'
 
 interface HowdyData {
   image_src: string
@@ -49,7 +50,13 @@ export default function Howdy({ data = DEFAULT_DATA, onSelectedWorksClick, onSit
   }
 
   return (
-    <div className="row-start-2 col-span-6 flex flex-col items-center justify-center" style={{ gap: 'calc(var(--grid-major) * 2)' }}>
+    <div
+      className="row-start-2 col-span-6 flex flex-col items-center justify-center"
+      style={{
+        gap: 'calc(var(--grid-major) * 2)',
+        minHeight: `calc(100svh - ${NAV_HEIGHT}px)`
+      }}
+    >
       
       {/* Horizontal Split Layout */}
       <div className="w-full sm:w-fit border border-blue-200/15 rounded-none backdrop-blur-sm bg-background p-8 sm:p-12 lg:p-16 xl:p-20">
