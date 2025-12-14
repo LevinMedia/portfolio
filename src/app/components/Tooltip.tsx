@@ -83,7 +83,7 @@ function getDefaultCode(props: Record<string, unknown>, children: React.ReactNod
   return `<${componentName}${propString ? ' ' + propString : ''}>`;
 }
 
-const TYPING_SPEED = 8; // ms per character (increased from 4ms for better performance with particle background)
+const TYPING_SPEED = 1; // ms per character for a much snappier typing effect
 
 const Tooltip: React.FC<TooltipProps> = ({
   children, 
@@ -155,7 +155,8 @@ const Tooltip: React.FC<TooltipProps> = ({
         const elapsed = currentTime - lastUpdateTimeRef.current;
         
         if (elapsed >= TYPING_SPEED && currentLength < code.length) {
-          currentLength += 1;
+          const charactersToAdd = Math.max(1, Math.floor(elapsed / TYPING_SPEED));
+          currentLength = Math.min(code.length, currentLength + charactersToAdd);
           lastUpdateTimeRef.current = currentTime;
           setTypedLength(currentLength);
         }
@@ -231,7 +232,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       
       {/* Tooltip */}
       {show && (
-        <div className="absolute bottom-full left-1/2 sm:left-0 transform -translate-x-1/2 sm:translate-x-0 py-1 rounded bg-background border border-border shadow z-40 whitespace-pre animate-fade-in font-mono mb-2 max-w-[calc(100vw-2rem)] overflow-x-auto" style={{ fontSize: '10px', minWidth: 0, paddingLeft: 'var(--grid-major)', paddingRight: 'var(--grid-major)', whiteSpace: 'pre' }}>
+        <div className="absolute bottom-full left-1/2 sm:left-0 transform -translate-x-1/2 sm:translate-x-0 py-1 rounded bg-background border border-border shadow z-40 whitespace-pre animate-fade-in font-mono mb-2 max-w-[calc(100vw-2rem)] overflow-x-auto pointer-events-none" style={{ fontSize: '10px', minWidth: 0, paddingLeft: 'var(--grid-major)', paddingRight: 'var(--grid-major)', whiteSpace: 'pre' }}>
           {tooltipType === 'code' ? (
             <div style={{ display: 'inline' }}>
               <SyntaxHighlighter
