@@ -7,6 +7,7 @@ import Drawer from './Drawer'
 import ViewportDebug from './ViewportDebug'
 import LevinMediaLogo from './LevinMediaLogo'
 import Tooltip from './Tooltip'
+import { NAV_HEIGHT } from './layoutConstants'
 import { 
   Bars3Icon,
   CommandLineIcon, 
@@ -153,10 +154,10 @@ export default function Navigation() {
         fullWidth={true}
       >
         <>
-          <nav className="flex items-center justify-between bg-background border border-blue-200/15 rounded-none w-full" style={{ 
-            gap: 'var(--grid-major)', 
-            padding: 'var(--grid-major)', 
-            height: '64px'
+          <nav className="flex items-center justify-between bg-background border border-blue-200/15 rounded-none w-full" style={{
+            gap: 'var(--grid-major)',
+            padding: 'var(--grid-major)',
+            height: `${NAV_HEIGHT}px`
           }}>
             {/* Logo - always visible */}
             <LevinMediaLogo size={32} onClick={handleLogoClick} />
