@@ -105,9 +105,9 @@ export default function FieldNotesAdmin() {
   }
 
   const handleCopyLink = async (id: string, slug: string) => {
-    const url = `/field-notes/${slug}`
+    const fullUrl = `${window.location.origin}/field-notes/${slug}`
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(fullUrl)
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (error) {

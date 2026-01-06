@@ -98,9 +98,9 @@ export default function SelectedWorkAdmin() {
   }
 
   const handleCopyLink = async (id: string, slug: string) => {
-    const url = `/selected-works/${slug}`
+    const fullUrl = `${window.location.origin}/selected-works/${slug}`
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(fullUrl)
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (error) {
