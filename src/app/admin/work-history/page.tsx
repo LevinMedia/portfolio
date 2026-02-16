@@ -57,6 +57,8 @@ export default function WorkHistoryAdmin() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
   const [showLogoUploader, setShowLogoUploader] = useState(false)
   const [imageLoadError, setImageLoadError] = useState<string | null>(null)
+  const [positionSaveError, setPositionSaveError] = useState<string | null>(null)
+  const [savingPosition, setSavingPosition] = useState(false)
 
   const [companyForm, setCompanyForm] = useState<CompanyFormData>({
     company_name: '',
@@ -131,26 +133,22 @@ export default function WorkHistoryAdmin() {
 
   const handleSaveCompany = async () => {
     try {
+      const payload = editingCompany
+        ? { type: 'company' as const, id: editingCompany.id, data: { ...companyForm, display_order: editingCompany.display_order ?? 0 } }
+        : { type: 'company' as const, data: { ...companyForm, display_order: 0 } }
       const response = await fetch('/api/admin/work-history', {
         method: editingCompany ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'company',
-          data: {
-            ...companyForm,
-            id: editingCompany?.id
-          }
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
         setShowCompanyForm(false)
         setEditingCompany(null)
-        fetchWorkHistory() // Refresh data
+        fetchWorkHistory()
       } else {
-        console.error('Failed to save company')
+        const err = await response.json().catch(() => ({}))
+        console.error('Failed to save company', err)
       }
     } catch (error) {
       console.error('Error saving company:', error)
@@ -158,14 +156,17 @@ export default function WorkHistoryAdmin() {
   }
 
   const handleDeleteCompany = async (companyId: string) => {
-    if (confirm('Are you sure you want to delete this company and all its positions?')) {
-      try {
-        // This would be replaced with actual API call
-        console.log('Deleting company:', companyId)
-        fetchWorkHistory() // Refresh data
-      } catch (error) {
-        console.error('Error deleting company:', error)
+    if (!confirm('Are you sure you want to delete this company and all its positions?')) return
+    try {
+      const response = await fetch(`/api/admin/work-history?type=company&id=${encodeURIComponent(companyId)}`, { method: 'DELETE' })
+      if (response.ok) {
+        fetchWorkHistory()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        console.error('Failed to delete company', err)
       }
+    } catch (error) {
+      console.error('Error deleting company:', error)
     }
   }
 
@@ -178,6 +179,7 @@ export default function WorkHistoryAdmin() {
       start_date: '',
       end_date: ''
     })
+    setPositionSaveError(null)
     setShowPositionForm(true)
   }
 
@@ -187,50 +189,65 @@ export default function WorkHistoryAdmin() {
     setPositionForm({
       position_title: position.position_title,
       position_description: position.position_description || '',
-      start_date: position.start_date,
-      end_date: position.end_date || ''
+      start_date: position.start_date?.toString().slice(0, 10) ?? '',
+      end_date: position.end_date?.toString().slice(0, 10) ?? ''
     })
+    setPositionSaveError(null)
     setShowPositionForm(true)
   }
 
   const handleSavePosition = async () => {
+    if (!selectedCompanyId) {
+      setPositionSaveError('No company selected.')
+      return
+    }
+    if (!positionForm.position_title?.trim()) {
+      setPositionSaveError('Position title is required.')
+      return
+    }
+    if (!positionForm.start_date) {
+      setPositionSaveError('Start date is required.')
+      return
+    }
+    setPositionSaveError(null)
+    setSavingPosition(true)
     try {
+      const payload = editingPosition
+        ? { type: 'position' as const, id: editingPosition.position.id, data: { ...positionForm, company_id: selectedCompanyId, position_order: editingPosition.position.position_order ?? 0 } }
+        : { type: 'position' as const, data: { ...positionForm, company_id: selectedCompanyId, position_order: 0 } }
       const response = await fetch('/api/admin/work-history', {
         method: editingPosition ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'position',
-          data: {
-            ...positionForm,
-            company_id: selectedCompanyId,
-            id: editingPosition?.position.id
-          }
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
 
+      const errBody = await response.json().catch(() => ({}))
       if (response.ok) {
         setShowPositionForm(false)
         setEditingPosition(null)
-        fetchWorkHistory() // Refresh data
+        fetchWorkHistory()
       } else {
-        console.error('Failed to save position')
+        setPositionSaveError(errBody.error || response.statusText || 'Failed to save position')
       }
     } catch (error) {
-      console.error('Error saving position:', error)
+      setPositionSaveError(error instanceof Error ? error.message : 'Failed to save position')
+    } finally {
+      setSavingPosition(false)
     }
   }
 
   const handleDeletePosition = async (positionId: string) => {
-    if (confirm('Are you sure you want to delete this position?')) {
-      try {
-        // This would be replaced with actual API call
-        console.log('Deleting position:', positionId)
-        fetchWorkHistory() // Refresh data
-      } catch (error) {
-        console.error('Error deleting position:', error)
+    if (!confirm('Are you sure you want to delete this position?')) return
+    try {
+      const response = await fetch(`/api/admin/work-history?type=position&id=${encodeURIComponent(positionId)}`, { method: 'DELETE' })
+      if (response.ok) {
+        fetchWorkHistory()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        console.error('Failed to delete position', err)
       }
+    } catch (error) {
+      console.error('Error deleting position:', error)
     }
   }
 
@@ -530,7 +547,18 @@ export default function WorkHistoryAdmin() {
               <h3 className="text-lg font-medium text-foreground mb-4">
                 {editingPosition ? 'Edit Position' : 'Add Position'}
               </h3>
-              <form className="space-y-4">
+              {positionSaveError && (
+                <p className="mb-4 text-sm text-destructive" role="alert">
+                  {positionSaveError}
+                </p>
+              )}
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleSavePosition()
+                }}
+              >
                 <Input
                   label="Position Title"
                   type="text"
@@ -563,16 +591,17 @@ export default function WorkHistoryAdmin() {
                   <button
                     type="button"
                     onClick={() => setShowPositionForm(false)}
-                    className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                    disabled={savingPosition}
+                    className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
-                    type="button"
-                    onClick={handleSavePosition}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                    type="submit"
+                    disabled={savingPosition}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50"
                   >
-                    Save
+                    {savingPosition ? 'Saving…' : 'Save'}
                   </button>
                 </div>
               </form>
