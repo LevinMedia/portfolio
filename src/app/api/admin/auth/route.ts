@@ -11,6 +11,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
+    // Normalize email to match private-users creation (trim + lowercase); Postgres text comparison is case-sensitive.
+    const emailNormalized = String(email).trim().toLowerCase()
+    if (!emailNormalized) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -21,7 +27,7 @@ export async function POST(request: NextRequest) {
     const { data: user, error } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('email', email)
+      .eq('email', emailNormalized)
       .eq('is_active', true)
       .single()
 
@@ -66,6 +72,10 @@ export async function POST(request: NextRequest) {
       return res
     } catch (e) {
       console.warn('Auth cookie not set (AUTH_SECRET?):', e)
+      const cookieErrorMessage =
+        process.env.NODE_ENV === 'development'
+          ? 'Add AUTH_SECRET to .env.local (min 16 chars), restart dev server, then sign in again to see private featured works.'
+          : 'Sign-in could not be completed. Please try again later or contact the site administrator.'
       return NextResponse.json(
         {
           id: user.id,
@@ -73,10 +83,8 @@ export async function POST(request: NextRequest) {
           email: user.email,
           last_login: user.last_login,
           access_role: accessRole,
-          ...(process.env.NODE_ENV === 'development' && {
-            cookie_set: false,
-            cookie_error: 'Add AUTH_SECRET to .env.local (min 16 chars), restart dev server, then sign in again to see private featured works.'
-          })
+          cookie_set: false,
+          cookie_error: cookieErrorMessage
         },
         { status: 200 }
       )
