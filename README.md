@@ -43,6 +43,9 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Auth cookie for private featured works (min 16 chars). Required for private-access users to see private selected works.
+AUTH_SECRET=your_secret_at_least_16_characters
 ```
 
 **⚠️ Important**: Never commit `.env.local` to git! It's already in `.gitignore`.

@@ -81,9 +81,7 @@ export default function HowdyAdmin() {
         try {
           const revalidateResponse = await fetch('/api/revalidate/howdy', {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_REVALIDATION_SECRET || 'your-secret-key'}`,
-            },
+            credentials: 'same-origin',
           })
           
           if (revalidateResponse.ok) {

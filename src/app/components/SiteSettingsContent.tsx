@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SunIcon, MoonIcon, SwatchIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+import { SunIcon, MoonIcon, SwatchIcon, CheckCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import Button from './Button'
 import chroma from 'chroma-js'
 
@@ -28,10 +29,25 @@ const colorPresets = [
 ]
 
 export default function SiteSettingsContent() {
+  const router = useRouter()
   const [theme, setTheme] = useState<ThemeSettings>(defaultTheme)
   const [isLoading, setIsLoading] = useState(true)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string>('Party')
+  const [showSignOut, setShowSignOut] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = sessionStorage.getItem('admin_user')
+      if (!raw) return
+      const user = JSON.parse(raw) as { access_role?: string }
+      const role = user?.access_role
+      setShowSignOut(role === 'admin' || role === 'private')
+    } catch {
+      setShowSignOut(false)
+    }
+  }, [])
 
   useEffect(() => {
     // Load theme from localStorage
@@ -116,6 +132,16 @@ export default function SiteSettingsContent() {
 
   const handleModeChange = (mode: 'light' | 'dark' | 'system') => {
     setTheme(prev => ({ ...prev, mode }))
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/auth/sign-out', { method: 'POST', credentials: 'same-origin' })
+    } catch {
+      // ignore
+    }
+    sessionStorage.removeItem('admin_user')
+    router.push('/')
   }
 
   const handleColorChange = (colorType: 'primary' | 'secondary' | 'accent', color: string) => {
@@ -610,6 +636,19 @@ export default function SiteSettingsContent() {
               </div>
         </div>
       </div>
+
+      {showSignOut && (
+        <div className="flex justify-center pt-6 pb-2">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowRightOnRectangleIcon className="h-4 w-4" />
+            Sign out
+          </button>
+        </div>
+      )}
     </div>
   )
 }

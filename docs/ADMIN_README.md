@@ -15,7 +15,7 @@ This guide will help you set up and use the admin interface for your LevinMedia 
 3. Note the login credentials displayed
 
 ### 3. Login to Admin Panel
-1. Go to `/admin/login`
+1. Go to `/sign-in`
 2. Use the credentials:
    - **Username:** `Admin`
    - **Password:** `[Set in environment variables]`
@@ -181,7 +181,7 @@ work_positions (
 
 #### "Admin user already exists"
 - This is normal if you've already run the setup
-- You can proceed directly to `/admin/login`
+- You can proceed directly to `/sign-in`
 
 #### "Invalid credentials" error
 - Double-check username is exactly "Admin" (case-sensitive)

@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="hydrated">
+    <html lang="en" className="hydrated" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased fonts-loaded`}
       >
@@ -39,6 +39,33 @@ export default function RootLayout({
         </Suspense>
         {children}
         <Analytics />
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var root = document.documentElement;
+                var theme = null;
+                try {
+                  var raw = localStorage.getItem('site-theme');
+                  if (raw) {
+                    var parsed = JSON.parse(raw);
+                    theme = parsed.mode;
+                  }
+                } catch (e) {}
+                var isDark = false;
+                if (theme === 'dark') isDark = true;
+                else if (theme === 'light') isDark = false;
+                else {
+                  isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                }
+                root.classList.toggle('dark', isDark);
+                root.classList.toggle('light', !isDark);
+              })();
+            `,
+          }}
+        />
         <Script
           id="prevent-fouc"
           strategy="beforeInteractive"

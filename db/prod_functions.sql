@@ -39,13 +39,14 @@ DROP FUNCTION IF EXISTS prod_update_field_note_thumbnail_crop(UUID, JSONB);
 -- ADMIN AUTHENTICATION SCHEMA
 -- =====================================================
 
--- Admin users table for authentication
+-- Admin users table for authentication (also holds private-access users for featured works)
 CREATE TABLE IF NOT EXISTS admin_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     email TEXT,
     is_active BOOLEAN DEFAULT true,
+    access_role TEXT NOT NULL DEFAULT 'admin' CHECK (access_role IN ('admin', 'private')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     last_login TIMESTAMPTZ
@@ -565,7 +566,7 @@ $$;
 --
 -- 1. Deploy this schema to your Supabase database
 -- 2. Visit /admin/setup to initialize the admin user
--- 3. Login at /admin/login with credentials:
+-- 3. Sign in at /sign-in with credentials:
 --    - Username: Admin
 --    - Password: TheLetterA!
 -- 4. Start managing your site content!

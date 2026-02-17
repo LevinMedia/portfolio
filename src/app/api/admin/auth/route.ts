@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
+import { createAuthCookie } from '@/lib/auth-cookie'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +16,8 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Get user from database
+    // Get user from database (admin and private-access users). Select * so we get password_hash
+    // and access_role when present (migration may not be run yet).
     const { data: user, error } = await supabase
       .from('admin_users')
       .select('*')
@@ -27,8 +29,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
+    const passwordHash = (user as { password_hash?: string }).password_hash
+    if (!passwordHash) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
+
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash)
+    const isValidPassword = await bcrypt.compare(password, passwordHash)
     
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
@@ -40,13 +47,40 @@ export async function POST(request: NextRequest) {
       .update({ last_login: new Date().toISOString() })
       .eq('id', user.id)
 
-    // Return user info (without password hash)
-    return NextResponse.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      last_login: user.last_login
-    })
+    // Return user info (no password_hash); access_role drives redirect (admin vs private)
+    const accessRole = (user as { access_role?: string }).access_role ?? 'admin'
+    try {
+      const cookie = createAuthCookie({
+        sub: user.id,
+        email: user.email,
+        access_role: accessRole
+      })
+      const res = NextResponse.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        last_login: user.last_login,
+        access_role: accessRole
+      })
+      res.headers.set('Set-Cookie', cookie)
+      return res
+    } catch (e) {
+      console.warn('Auth cookie not set (AUTH_SECRET?):', e)
+      return NextResponse.json(
+        {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          last_login: user.last_login,
+          access_role: accessRole,
+          ...(process.env.NODE_ENV === 'development' && {
+            cookie_set: false,
+            cookie_error: 'Add AUTH_SECRET to .env.local (min 16 chars), restart dev server, then sign in again to see private featured works.'
+          })
+        },
+        { status: 200 }
+      )
+    }
 
   } catch (err) {
     console.error('Error in admin auth:', err)

@@ -70,7 +70,7 @@ export default function SecureSetup() {
       
       // Redirect to login after 3 seconds
       setTimeout(() => {
-        router.push('/admin/login')
+        router.push('/sign-in')
       }, 3000)
 
     } catch {
@@ -147,7 +147,7 @@ export default function SecureSetup() {
                 The admin setup has already been completed. You can now log in with your admin credentials.
               </p>
               <Link 
-                href="/admin/login" 
+                href="/sign-in" 
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
               >
                 Go to Login
@@ -199,7 +199,7 @@ export default function SecureSetup() {
               <CheckCircleIcon className="mx-auto h-12 w-12 text-green-500 mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">Setup Complete!</h3>
               <p className="text-muted-foreground mb-4">
-                Your admin account has been created successfully. Redirecting to login...
+                Your admin account has been created successfully. Redirecting to sign-in…
               </p>
             </div>
           ) : (
