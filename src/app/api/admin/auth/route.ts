@@ -55,6 +55,12 @@ export async function POST(request: NextRequest) {
 
     // Return user info (no password_hash); access_role drives redirect (admin vs private)
     const accessRole = (user as { access_role?: string }).access_role ?? 'admin'
+
+    // Record private user sign-in for analytics (fire-and-forget)
+    if (accessRole === 'private') {
+      void supabase.from('analytics_private_sign_ins').insert({ private_user_id: user.id }).then(() => {})
+    }
+
     try {
       const cookie = createAuthCookie({
         sub: user.id,

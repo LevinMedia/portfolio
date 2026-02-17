@@ -1,9 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { UserPlusIcon, KeyIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { UserPlusIcon, KeyIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import Button from '@/app/components/Button'
 import Input from '@/app/components/ui/Input'
+
+/** Shape returned by /api/admin/stats/private-users for merging */
+interface PrivateUserStats {
+  id: string
+  email: string
+  signInCount: number
+  pageViewCount: number
+  lastSignInAt: string | null
+  lastPageViewAt: string | null
+  lastPageViewPath: string | null
+  pageViews: { path: string; occurred_at: string }[]
+}
 
 interface PrivateUser {
   id: string
@@ -12,6 +24,12 @@ interface PrivateUser {
   is_active: boolean
   created_at: string
   last_login: string | null
+  signInCount?: number
+  pageViewCount?: number
+  lastSignInAt?: string | null
+  lastPageViewAt?: string | null
+  lastPageViewPath?: string | null
+  pageViews?: { path: string; occurred_at: string }[]
 }
 
 export default function PrivateUsersAdmin() {
@@ -26,13 +44,32 @@ export default function PrivateUsersAdmin() {
   const [revealedPassword, setRevealedPassword] = useState<{ userId: string; password: string } | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingPasswordId, setUpdatingPasswordId] = useState<string | null>(null)
+  const [expandedPagesId, setExpandedPagesId] = useState<string | null>(null)
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/admin/private-users')
-      if (res.ok) {
-        const data = await res.json()
-        setUsers(Array.isArray(data) ? data : [])
+      const [usersRes, statsRes] = await Promise.all([
+        fetch('/api/admin/private-users', { credentials: 'same-origin' }),
+        fetch('/api/admin/stats/private-users', { credentials: 'same-origin' }),
+      ])
+      if (usersRes.ok) {
+        const list = await usersRes.json()
+        const usersList = Array.isArray(list) ? list : []
+        const stats: PrivateUserStats[] = statsRes.ok ? (await statsRes.json()).users ?? [] : []
+        const byId = new Map(stats.map((s) => [s.id, s]))
+        const merged: PrivateUser[] = usersList.map((u: PrivateUser) => {
+          const s = byId.get(u.id)
+          return {
+            ...u,
+            signInCount: s?.signInCount ?? 0,
+            pageViewCount: s?.pageViewCount ?? 0,
+            lastSignInAt: s?.lastSignInAt ?? null,
+            lastPageViewAt: s?.lastPageViewAt ?? null,
+            lastPageViewPath: s?.lastPageViewPath ?? null,
+            pageViews: s?.pageViews ?? [],
+          }
+        })
+        setUsers(merged)
       } else {
         setError('Failed to load private users')
       }
@@ -208,6 +245,9 @@ export default function PrivateUsersAdmin() {
                     <p className="text-xs text-muted-foreground">
                       Added {formatDate(user.created_at)}
                       {user.last_login ? ` · Last sign-in ${formatDate(user.last_login)}` : ''}
+                      {(user.signInCount ?? 0) > 0 && (
+                        <> · {user.signInCount} sign-in{(user.signInCount ?? 0) !== 1 ? 's' : ''} · {user.pageViewCount ?? 0} page view{(user.pageViewCount ?? 0) !== 1 ? 's' : ''}</>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -236,6 +276,34 @@ export default function PrivateUsersAdmin() {
                       {deletingId === user.id ? 'Deleting…' : 'Delete'}
                     </Button>
                   </div>
+                </div>
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setExpandedPagesId(expandedPagesId === user.id ? null : user.id)}
+                  >
+                    {expandedPagesId === user.id ? (
+                      <ChevronDownIcon className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRightIcon className="h-3.5 w-3.5" />
+                    )}
+                    Pages viewed ({user.pageViewCount ?? 0})
+                  </button>
+                  {expandedPagesId === user.id && (
+                    (user.pageViews?.length ?? 0) > 0 ? (
+                      <ul className="mt-2 ml-4 space-y-1 max-h-40 overflow-y-auto text-xs">
+                        {(user.pageViews ?? []).map((pv, i) => (
+                          <li key={i} className="flex justify-between gap-4 font-mono">
+                            <span className="truncate text-foreground">{pv.path}</span>
+                            <span className="text-muted-foreground shrink-0">{new Date(pv.occurred_at).toLocaleString()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 ml-4 text-xs text-muted-foreground">No page views recorded yet.</p>
+                    )
+                  )}
                 </div>
                 {passwordUserId === user.id && (
                   <div className="mt-3 pt-3 border-t border-border/20">
