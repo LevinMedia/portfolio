@@ -37,7 +37,13 @@ function verify(token: string): AuthPayload | null {
     const combined = Buffer.from(token, 'base64url').toString('utf8')
     const { p: payloadStr, s: sig } = JSON.parse(combined)
     const expected = crypto.createHmac('sha256', secret).update(payloadStr).digest('hex')
-    if (sig !== expected) return null
+    const expectedBuf = Buffer.from(expected, 'hex')
+    const sigBuf = Buffer.from(sig, 'hex')
+    if (expectedBuf.length !== sigBuf.length) {
+      crypto.timingSafeEqual(expectedBuf, expectedBuf) // dummy: constant-time to avoid leaking length
+      return null
+    }
+    if (!crypto.timingSafeEqual(expectedBuf, sigBuf)) return null
     return JSON.parse(payloadStr) as AuthPayload
   } catch {
     return null

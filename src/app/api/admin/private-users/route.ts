@@ -1,9 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
+import { getAuthCookiePayload } from '@/lib/auth-cookie'
+
+/** Returns auth payload if the request is from an admin; otherwise null. */
+async function requireAdmin() {
+  const payload = await getAuthCookiePayload()
+  return payload?.access_role === 'admin' ? payload : null
+}
 
 export async function GET() {
   try {
+    const admin = await requireAdmin()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -32,6 +44,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const admin = await requireAdmin()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { email, password } = await request.json()
 
     if (!email || !password) {
@@ -103,6 +120,11 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const admin = await requireAdmin()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id, newPassword } = await request.json()
     if (!id || !newPassword) {
       return NextResponse.json(
@@ -155,6 +177,11 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const admin = await requireAdmin()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) {
