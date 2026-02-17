@@ -1,13 +1,15 @@
 import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthCookiePayload } from '@/lib/auth-cookie'
 
 export async function POST(request: NextRequest) {
   try {
-    // Optional: Add authentication check here
     const authHeader = request.headers.get('authorization')
-    const secret = process.env.REVALIDATION_SECRET || 'your-secret-key'
-    
-    if (authHeader !== `Bearer ${secret}`) {
+    const payload = await getAuthCookiePayload()
+    const isAdmin = payload?.access_role === 'admin'
+    const bearerOk = process.env.REVALIDATION_SECRET && authHeader === `Bearer ${process.env.REVALIDATION_SECRET}`
+
+    if (!isAdmin && !bearerOk) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

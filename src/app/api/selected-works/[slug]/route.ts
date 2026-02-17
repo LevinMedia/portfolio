@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getAuthCookiePayload, hasPrivateAccess } from '@/lib/auth-cookie'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +32,20 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ work: data[0] })
+    const work = data[0] as typeof data[0] & { is_private?: boolean }
+    if (work.is_private) {
+      const payload = await getAuthCookiePayload()
+      if (!payload || !hasPrivateAccess(payload.access_role)) {
+        return NextResponse.json(
+          { error: 'Work not found' },
+          { status: 404 }
+        )
+      }
+    }
+
+    // Omit is_private from response so client doesn't need to handle it
+    const { is_private: _isPrivate, ...workForClient } = work
+    return NextResponse.json({ work: workForClient })
   } catch (error) {
     console.error('Error in selected work API:', error)
     return NextResponse.json(

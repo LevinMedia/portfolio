@@ -12,7 +12,9 @@ import {
   DocumentTextIcon,
   ChartBarIcon,
   BookOpenIcon,
-  HomeIcon
+  HomeIcon,
+  KeyIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminLayoutProps {
@@ -25,32 +27,49 @@ const navigation = [
   { name: 'Selected Work', href: '/admin/selected-work', icon: DocumentTextIcon },
   { name: 'Work History', href: '/admin/work-history', icon: BriefcaseIcon },
   { name: 'About', href: '/admin/about', icon: BookOpenIcon },
+  { name: 'Private Users', href: '/admin/private-users', icon: KeyIcon },
   { name: 'Manage Stats', href: '/admin/stats', icon: ChartBarIcon },
   { name: 'Manage Guestbook', href: '/admin/guestbook', icon: HomeIcon },
 ]
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [adminUser, setAdminUser] = useState<{ username: string; email: string } | null>(null)
+  const [footerExpanded, setFooterExpanded] = useState(false)
+  const [adminUser, setAdminUser] = useState<{ username: string; email: string; access_role?: string } | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/auth/sign-out', { method: 'POST', credentials: 'same-origin' })
+    } catch {
+      // ignore
+    }
+    sessionStorage.removeItem('admin_user')
+    router.push('/sign-in')
+  }
+
   useEffect(() => {
-    // Skip authentication check for login and secure setup pages
-    if (pathname === '/admin/login' || pathname === '/admin/secure-setup') {
+    // Skip authentication check for secure setup and login redirect pages
+    if (pathname === '/admin/secure-setup' || pathname === '/admin/login') {
       return
     }
 
-    // Check if user is authenticated
-    const user = sessionStorage.getItem('admin_user')
-    if (!user) {
-      router.push('/admin/login')
+    // Check if user is authenticated and has admin access
+    const userJson = sessionStorage.getItem('admin_user')
+    if (!userJson) {
+      router.push('/sign-in')
       return
     }
-    setAdminUser(JSON.parse(user))
+    const user = JSON.parse(userJson)
+    if (user.access_role !== 'admin') {
+      router.push('/')
+      return
+    }
+    setAdminUser(user)
   }, [router, pathname])
 
-  // For setup and login pages, render without admin layout
+  // For setup, secure-setup, and login redirect pages, render without admin layout
   if (pathname === '/admin/setup' || pathname === '/admin/login' || pathname === '/admin/secure-setup') {
     return <>{children}</>
   }
@@ -122,13 +141,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 })}
               </nav>
             </div>
-            <div className="flex-shrink-0 flex border-t border-border/20 p-4">
-              <div className="flex items-center">
+            <div className="flex-shrink-0 border-t border-border/20 p-4">
+              <button
+                type="button"
+                className="w-full flex items-center text-left rounded-md hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+                onClick={() => setFooterExpanded(prev => !prev)}
+              >
                 <div>
                   <div className="text-base font-medium text-foreground">{adminUser.username}</div>
                   <div className="text-sm font-medium text-muted-foreground">{adminUser.email}</div>
                 </div>
-              </div>
+              </button>
+              {footerExpanded && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 w-full px-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                    onClick={() => { setSidebarOpen(false); handleSignOut() }}
+                  >
+                    <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -169,8 +204,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 })}
               </nav>
             </div>
-            <div className="flex-shrink-0 flex border-t border-border/20 p-4">
-              <div className="flex items-center w-full">
+            <div className="flex-shrink-0 border-t border-border/20 p-4">
+              <button
+                type="button"
+                className="w-full flex items-center rounded-md hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+                onClick={() => setFooterExpanded(prev => !prev)}
+              >
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-primary-foreground font-medium text-sm">
@@ -178,11 +217,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </span>
                   </div>
                 </div>
-                <div className="ml-3 flex-1">
+                <div className="ml-3 flex-1 text-left">
                   <div className="text-sm font-medium text-foreground">{adminUser.username}</div>
                   <div className="text-xs text-muted-foreground">{adminUser.email}</div>
                 </div>
-              </div>
+              </button>
+              {footerExpanded && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 w-full px-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                    onClick={handleSignOut}
+                  >
+                    <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

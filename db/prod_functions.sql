@@ -39,13 +39,14 @@ DROP FUNCTION IF EXISTS prod_update_field_note_thumbnail_crop(UUID, JSONB);
 -- ADMIN AUTHENTICATION SCHEMA
 -- =====================================================
 
--- Admin users table for authentication
+-- Admin users table for authentication (also holds private-access users for featured works)
 CREATE TABLE IF NOT EXISTS admin_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     email TEXT,
     is_active BOOLEAN DEFAULT true,
+    access_role TEXT NOT NULL DEFAULT 'admin' CHECK (access_role IN ('admin', 'private')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     last_login TIMESTAMPTZ
@@ -565,7 +566,7 @@ $$;
 --
 -- 1. Deploy this schema to your Supabase database
 -- 2. Visit /admin/setup to initialize the admin user
--- 3. Login at /admin/login with credentials:
+-- 3. Sign in at /sign-in with credentials:
 --    - Username: Admin
 --    - Password: TheLetterA!
 -- 4. Start managing your site content!
@@ -752,9 +753,8 @@ BEGIN
 END;
 $$;
 
--- Function to get single selected work by slug (public)
--- This allows access to private works via direct URL
-CREATE OR REPLACE FUNCTION prod_get_selected_work_by_slug(p_slug TEXT)
+-- Function to get published selected works including private (for authenticated private-access users)
+CREATE OR REPLACE FUNCTION prod_get_selected_works_include_private()
 RETURNS TABLE (
     id UUID,
     title TEXT,
@@ -769,8 +769,6 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-    -- Returns work if published, regardless of is_private status
-    -- This enables direct URL access to private works
     RETURN QUERY
     SELECT 
         sw.id,
@@ -781,6 +779,40 @@ BEGIN
         sw.thumbnail_crop,
         sw.display_order,
         sw.published_at
+    FROM selected_works sw
+    WHERE sw.is_published = true
+    ORDER BY sw.display_order DESC, sw.published_at DESC;
+END;
+$$;
+
+-- Function to get single selected work by slug (public); returns is_private so API can enforce access
+CREATE OR REPLACE FUNCTION prod_get_selected_work_by_slug(p_slug TEXT)
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    display_order INTEGER,
+    published_at TIMESTAMPTZ,
+    is_private BOOLEAN
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sw.id,
+        sw.title,
+        sw.slug,
+        sw.content,
+        sw.feature_image_url,
+        sw.thumbnail_crop,
+        sw.display_order,
+        sw.published_at,
+        COALESCE(sw.is_private, false)
     FROM selected_works sw
     WHERE sw.slug = p_slug AND sw.is_published = true
     LIMIT 1;

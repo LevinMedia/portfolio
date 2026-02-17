@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import type { SelectedWorkServer } from '@/lib/selected-works-server'
 
 interface SelectedWork {
   id: string
@@ -18,15 +19,25 @@ interface SelectedWork {
   display_order: number
 }
 
-const SelectedWorksContent: React.FC = () => {
+interface SelectedWorksContentProps {
+  /** When provided (e.g. from server), no client fetch — list was resolved server-side */
+  initialWorks?: SelectedWorkServer[] | null
+}
+
+const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ initialWorks = null }) => {
   const router = useRouter()
-  const [works, setWorks] = useState<SelectedWork[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [works, setWorks] = useState<SelectedWork[]>(initialWorks ?? [])
+  const [isLoading, setIsLoading] = useState(initialWorks === null)
 
   useEffect(() => {
+    if (initialWorks !== null) {
+      setWorks(initialWorks)
+      setIsLoading(false)
+      return
+    }
     const fetchWorks = async () => {
       try {
-        const response = await fetch('/api/selected-works')
+        const response = await fetch('/api/selected-works', { credentials: 'same-origin' })
         if (response.ok) {
           const data = await response.json()
           const orderedWorks = (data.works || []).sort((a: SelectedWork, b: SelectedWork) => b.display_order - a.display_order)
@@ -38,9 +49,8 @@ const SelectedWorksContent: React.FC = () => {
         setIsLoading(false)
       }
     }
-
     fetchWorks()
-  }, [])
+  }, [initialWorks])
 
   if (isLoading) {
     return (
