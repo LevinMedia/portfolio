@@ -22,20 +22,33 @@ interface WorkCompany {
   positions: WorkPosition[]
 }
 
+/** Parse YYYY-MM-DD (or ISO with time) as local date to avoid UTC shift in display. */
+function parseDateOnly(isoDate: string): Date {
+  const parts = isoDate.split('-')
+  if (parts.length < 3) return new Date(isoDate)
+  const y = parseInt(parts[0], 10)
+  const m = parseInt(parts[1], 10) - 1
+  const d = parseInt(parts[2], 10)
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return new Date(isoDate)
+  return new Date(y, m, d)
+}
+
 function formatDateRange(start: string, end?: string | null): string {
-  const startDate = new Date(start)
-  const startStr = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  const startStr = parseDateOnly(start).toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  })
   const endStr = end
-    ? new Date(end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    ? parseDateOnly(end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : 'Present'
   return `${startStr} - ${endStr}`
 }
 
 function formatCompanyYears(positions: WorkPosition[]): string {
   if (!positions.length) return ''
-  const starts = positions.map(p => new Date(p.start_date).getFullYear())
+  const starts = positions.map(p => parseDateOnly(p.start_date).getFullYear())
   const ends = positions
-    .map(p => (p.end_date ? new Date(p.end_date).getFullYear() : new Date().getFullYear()))
+    .map(p => (p.end_date ? parseDateOnly(p.end_date).getFullYear() : new Date().getFullYear()))
   const min = Math.min(...starts)
   const max = Math.max(...ends)
   return min === max ? `${min}` : `${min} - ${max}`
