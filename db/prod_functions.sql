@@ -753,9 +753,8 @@ BEGIN
 END;
 $$;
 
--- Function to get single selected work by slug (public)
--- This allows access to private works via direct URL
-CREATE OR REPLACE FUNCTION prod_get_selected_work_by_slug(p_slug TEXT)
+-- Function to get published selected works including private (for authenticated private-access users)
+CREATE OR REPLACE FUNCTION prod_get_selected_works_include_private()
 RETURNS TABLE (
     id UUID,
     title TEXT,
@@ -770,8 +769,6 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-    -- Returns work if published, regardless of is_private status
-    -- This enables direct URL access to private works
     RETURN QUERY
     SELECT 
         sw.id,
@@ -782,6 +779,40 @@ BEGIN
         sw.thumbnail_crop,
         sw.display_order,
         sw.published_at
+    FROM selected_works sw
+    WHERE sw.is_published = true
+    ORDER BY sw.display_order DESC, sw.published_at DESC;
+END;
+$$;
+
+-- Function to get single selected work by slug (public); returns is_private so API can enforce access
+CREATE OR REPLACE FUNCTION prod_get_selected_work_by_slug(p_slug TEXT)
+RETURNS TABLE (
+    id UUID,
+    title TEXT,
+    slug TEXT,
+    content TEXT,
+    feature_image_url TEXT,
+    thumbnail_crop JSONB,
+    display_order INTEGER,
+    published_at TIMESTAMPTZ,
+    is_private BOOLEAN
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sw.id,
+        sw.title,
+        sw.slug,
+        sw.content,
+        sw.feature_image_url,
+        sw.thumbnail_crop,
+        sw.display_order,
+        sw.published_at,
+        COALESCE(sw.is_private, false)
     FROM selected_works sw
     WHERE sw.slug = p_slug AND sw.is_published = true
     LIMIT 1;
