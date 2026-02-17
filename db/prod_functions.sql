@@ -214,6 +214,24 @@ CREATE TABLE IF NOT EXISTS analytics_pageviews (
     is_private BOOLEAN DEFAULT false
 );
 
+-- Optional: link pageview to private-access user (admin_users.id) when viewer is signed in as private
+ALTER TABLE analytics_pageviews ADD COLUMN IF NOT EXISTS private_user_id UUID REFERENCES admin_users(id) ON DELETE SET NULL;
+
+-- Sign-in events for private-access users (for analytics)
+CREATE TABLE IF NOT EXISTS analytics_private_sign_ins (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    private_user_id UUID NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_analytics_private_sign_ins_user ON analytics_private_sign_ins(private_user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_private_sign_ins_time ON analytics_private_sign_ins(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_private_user ON analytics_pageviews(private_user_id) WHERE private_user_id IS NOT NULL;
+
+ALTER TABLE analytics_private_sign_ins ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role only - analytics_private_sign_ins" ON analytics_private_sign_ins;
+CREATE POLICY "Service role only - analytics_private_sign_ins" ON analytics_private_sign_ins
+    FOR ALL USING (auth.role() = 'service_role');
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_time ON analytics_pageviews(occurred_at DESC);
 CREATE INDEX IF NOT EXISTS idx_analytics_pageviews_path ON analytics_pageviews(path);

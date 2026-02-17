@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isbot } from 'isbot'
+import { getAuthCookiePayload } from '@/lib/auth-cookie'
 
 type Geo = {
   country?: string | null
@@ -140,13 +141,20 @@ export async function POST(request: NextRequest) {
   const { path, isAdmin = false, isPrivate = false, currentUrl } = await request.json().catch(() => ({}))
   if (!path || typeof path !== 'string') return NextResponse.json({ error: 'path required' }, { status: 400 })
 
-  // Filter out localhost traffic
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+  // Resolve private-user context from auth cookie (for recording their page views)
+  const authPayload = await getAuthCookiePayload()
+  const isPrivateUser = authPayload?.access_role === 'private'
+  const privateUserId = isPrivateUser ? authPayload.sub : null
+
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+  // Filter out localhost for general analytics; still record private-user page views so dev testing works
+  if (isLocalhost && !privateUserId) {
     return NextResponse.json({ skipped: true, reason: 'localhost' }, { status: 200 })
   }
 
   if (path.startsWith('/admin')) return NextResponse.json({ skipped: true, reason: 'admin' }, { status: 200 })
-  if (isPrivate) return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
+  // Skip only when client asked to skip and we're not recording as a private user
+  if (isPrivate && !privateUserId) return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -242,8 +250,8 @@ export async function POST(request: NextRequest) {
     latitude: geo?.latitude ?? null,
     longitude: geo?.longitude ?? null,
     is_admin: Boolean(isAdmin),
-    // We never log private views; this field reflects the client hint only
-    is_private: Boolean(isPrivate)
+    is_private: Boolean(isPrivateUser),
+    private_user_id: privateUserId ?? null
   })
 
   if (error) {
