@@ -40,10 +40,10 @@ const AboutContent: React.FC = () => {
         </div>
         <div className="space-y-4 text-foreground/80 leading-relaxed">
           <p>
-            Building and maintaining a portfolio site has always been at the absolute bottom of my list of things I&apos;m excited to spend time on. But... there's this new thing — I dunno if you've heard of it — it's called AI, and it's kind of revolutionizing software development. 😏
+            Building and maintaining a portfolio site has always been at the absolute bottom of my list of things I&apos;m excited to spend time on. But... there&apos;s this new thing — I dunno if you&apos;ve heard of it — it&apos;s called AI, and it&apos;s kind of revolutionizing software development. 😏
           </p>
           <p>
-            So this site is a bit of an experiment. It&apos;s the product of AI-assisted software development (distinctly different from "vibe coding"). I&apos;ve open-sourced the whole thing too, for anyone who wants a nifty little portfolio site to tinker with. Go ahead, take a peek under the hood. Heck, open an issue and tell me what I did wrong — or better yet, just make a PR and fix it!
+            So this site is a bit of an experiment. It&apos;s the product of AI-assisted software development (distinctly different from &quot;vibe coding&quot;). I&apos;ve open-sourced the whole thing too, for anyone who wants a nifty little portfolio site to tinker with. Go ahead, take a peek under the hood. Heck, open an issue and tell me what I did wrong — or better yet, just make a PR and fix it!
           </p>
           <p>
             <a href="https://github.com/levinmedia/portfolio" target="_blank" rel="noopener noreferrer" className="underline text-accent hover:text-accent/80">https://github.com/levinmedia/portfolio</a>
