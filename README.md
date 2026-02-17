@@ -1,6 +1,6 @@
 # 🎨 Levin Media Portfolio
 
-> Bbuilt with Next.js, Supabase, and a whole lot of coffee. Deployed on Vercel. This is my personal portfolio site, but I've open sourced it so anyone can check it out or tinker! 🎉 PRs welcome :D 
+> Built with Next.js, Supabase, and a whole lot of coffee. Deployed on Vercel. This is my personal portfolio site, but I've open sourced it so anyone can check it out or tinker! 🎉 PRs welcome :D 
 
 ## ✨ Features
 
