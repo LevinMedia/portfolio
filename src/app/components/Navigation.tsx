@@ -88,14 +88,9 @@ export default function Navigation() {
   // Navigation items array
   const navigationItems = [
     {
-      icon: <DocumentTextIcon className="w-5 h-5" />,
-      label: "Field notes",
-      onClick: handleFieldNotesOpen
-    },
-    {
-      icon: <CommandLineIcon className="w-5 h-5" />,
-      label: "Selected works",
-      onClick: handleSelectedWorksOpen
+      icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
+      label: "About David",
+      onClick: handleAboutOpen
     },
     {
       icon: <BriefcaseIcon className="w-5 h-5" />,
@@ -103,9 +98,14 @@ export default function Navigation() {
       onClick: handleWorkHistoryOpen
     },
     {
-      icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
-      label: "About",
-      onClick: handleAboutOpen
+      icon: <CommandLineIcon className="w-5 h-5" />,
+      label: "Selected works",
+      onClick: handleSelectedWorksOpen
+    },
+    {
+      icon: <DocumentTextIcon className="w-5 h-5" />,
+      label: "Field notes",
+      onClick: handleFieldNotesOpen
     },
     {
       icon: <ChartBarSquareIcon className="w-5 h-5" />,
