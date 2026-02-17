@@ -5,6 +5,18 @@ import { UserPlusIcon, KeyIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } f
 import Button from '@/app/components/Button'
 import Input from '@/app/components/ui/Input'
 
+/** Shape returned by /api/admin/stats/private-users for merging */
+interface PrivateUserStats {
+  id: string
+  email: string
+  signInCount: number
+  pageViewCount: number
+  lastSignInAt: string | null
+  lastPageViewAt: string | null
+  lastPageViewPath: string | null
+  pageViews: { path: string; occurred_at: string }[]
+}
+
 interface PrivateUser {
   id: string
   email: string
@@ -43,8 +55,8 @@ export default function PrivateUsersAdmin() {
       if (usersRes.ok) {
         const list = await usersRes.json()
         const usersList = Array.isArray(list) ? list : []
-        const stats = statsRes.ok ? (await statsRes.json()).users ?? [] : []
-        const byId = new Map(stats.map((s: { id: string }) => [s.id, s]))
+        const stats: PrivateUserStats[] = statsRes.ok ? (await statsRes.json()).users ?? [] : []
+        const byId = new Map(stats.map((s) => [s.id, s]))
         const merged: PrivateUser[] = usersList.map((u: PrivateUser) => {
           const s = byId.get(u.id)
           return {
