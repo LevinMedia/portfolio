@@ -82,15 +82,15 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden font-[family-name:var(--font-geist-sans)] bg-background text-foreground">
+    <div className="relative h-dvh min-h-screen overflow-hidden font-[family-name:var(--font-geist-sans)] bg-background text-foreground">
       {/* Particle background - same as home page */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="fixed inset-0 z-0 overflow-hidden">
         <ParticleBackground />
       </div>
 
       {/* Grid pattern overlay */}
       <div
-        className="absolute inset-0 z-[1] pointer-events-none"
+        className="fixed inset-0 z-[1] pointer-events-none"
         style={{
           backgroundImage: `
             linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
@@ -110,7 +110,7 @@ export default function SignInPage() {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 flex h-full items-center justify-center px-4 py-4 sm:px-6 sm:py-12 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="mt-6 flex items-center justify-center gap-3">
           <div className="sm:hidden">
