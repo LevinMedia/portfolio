@@ -41,7 +41,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       
       try {
         // Get the computed CSS variable value
-        const bgColor = getComputedStyle(document.documentElement)
+        const themeRoot =
+          document.getElementById('c64-site-root') ?? document.documentElement
+        const bgColor = getComputedStyle(themeRoot)
           .getPropertyValue(`--${colorName}`)
           .trim()
         

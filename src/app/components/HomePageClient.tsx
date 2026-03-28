@@ -10,10 +10,7 @@ import FieldNotesContent from './FieldNotesContent'
 import SiteSettingsContent from './SiteSettingsContent'
 import StatsContent from './StatsContent'
 import Guestbook from './Guestbook'
-import Howdy from './Howdy'
-import Navigation from './Navigation'
-import { NAV_HEIGHT } from './layoutConstants'
-import { ParticleBackground } from './ParticleBackground'
+import C64AuthenticHomeScreen from './C64AuthenticHomeScreen'
 import { usePageTitle } from '../hooks/usePageTitle'
 import type { SelectedWorkServer } from '@/lib/selected-works-server'
 
@@ -119,45 +116,27 @@ export default function HomePageClient({ initialSelectedWorks }: HomePageClientP
     router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
   }
 
-  return (
-    <div
-      className="relative grid grid-cols-6 items-center min-h-svh overflow-hidden font-[family-name:var(--font-geist-sans)] border border-blue-200/20 mx-auto px-4 sm:px-0 max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]"
-      style={{
-        gridTemplateRows: 'var(--grid-major) 1fr 0',
-        gap: 'var(--grid-major)',
-        paddingBottom: `${NAV_HEIGHT}px`,
-      }}
-    >
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <ParticleBackground />
-      </div>
+  const openSection = (key: string) => {
+    router.push(`?${key}=true`, { scroll: false })
+  }
 
+  return (
+    <div className="relative flex w-full min-w-0 min-h-0 flex-col c64-authentic-shell">
       <div
-        className="absolute inset-0 z-[1] pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-            repeating-linear-gradient(90deg, 
-              rgba(0, 100, 255, 0.015) 0, 
-              rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6), 
-              transparent calc((100% - 5 * var(--grid-major)) / 6), 
-              transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
-            )
-          `,
-          backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
-          backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0',
-        }}
+        className="absolute inset-0 z-[1] pointer-events-none c64-screen-grid opacity-25"
+        aria-hidden
       />
 
-      <div className="relative z-10 col-span-6 contents">
-        <Howdy
-          onSelectedWorksClick={() => router.push('/?selected-works=true')}
-          onSiteSettingsClick={() => setIsSiteSettingsOpen(true)}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <C64AuthenticHomeScreen
+          onOpenAbout={() => openSection('about')}
+          onOpenWorkHistory={() => openSection('work-history')}
+          onOpenSelectedWorks={() => openSection('selected-works')}
+          onOpenFieldNotes={() => openSection('field-notes')}
+          onOpenStats={() => openSection('stats')}
+          onOpenGuestbook={() => openSection('guestbook')}
+          onOpenSiteSettings={() => openSection('site-settings')}
         />
-        <Navigation />
 
         <Drawer
           isOpen={isWorkHistoryOpen}

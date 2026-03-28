@@ -51,43 +51,25 @@ const Drawer: React.FC<DrawerProps> = ({
     <>
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-background border border-blue-200/15 rounded-none transition-transform duration-300 ease-out w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] drawer-container ${
+        className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-[var(--c64-screen-bg)] border-t-4 border-x-4 border-[var(--c64-accent)] transition-transform duration-300 ease-out w-full max-w-sm sm:max-w-[640px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] drawer-container motion-reduce:transition-none ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{
           overflowY: 'auto',
           zIndex: 10,
-          backgroundColor: 'var(--background)', // Fallback inline style
-          backgroundImage: `
-            linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-            repeating-linear-gradient(90deg,
-              rgba(0, 100, 255, 0.015) 0,
-              rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6),
-              transparent calc((100% - 5 * var(--grid-major)) / 6),
-              transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
-            )
-          `,
-          backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
-          backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0',
-          backgroundAttachment: 'local, local, local, local, local',
-          backgroundRepeat: 'repeat, repeat, repeat, repeat, repeat'
         }}
       >
-        {/* Header */}
-        <div 
-          className="flex items-center justify-between bg-background border-b border-blue-200/15 sticky top-0 z-30"
-          style={{ 
+        {/* Header — inverse status bar */}
+        <div
+          className="flex items-center justify-between sticky top-0 z-30 border-b-4 border-[var(--c64-accent)] bg-[var(--c64-border-bg)] text-[var(--c64-accent)]"
+          style={{
             padding: 'var(--grid-major)',
-            height: '64px',
-            backgroundColor: 'var(--background)' // Fallback inline style
+            minHeight: '64px',
           }}
         >
-          <div className="flex items-center gap-3 overflow-hidden">
-            {icon && <div className="flex items-center flex-shrink-0">{icon}</div>}
-            <h2 className="text-xl font-semibold text-foreground font-[family-name:var(--font-geist-mono)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</h2>
+          <div className="flex items-center gap-3 overflow-hidden min-w-0">
+            {icon && <div className="flex items-center flex-shrink-0 [&_svg]:text-[var(--c64-accent)]">{icon}</div>}
+            <h2 className="text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">{title}</h2>
             {showLinkedInButton && linkedInUrl && (
               <div className="hidden sm:block">
                 <Button
@@ -104,10 +86,11 @@ const Drawer: React.FC<DrawerProps> = ({
           
           <div className="flex items-center gap-3">
             <Button
-              style="ghost"
+              style="outline"
               color="primary"
-              size="small"
-              iconLeft={<XMarkIcon className="w-5 h-5" />}
+              size="large"
+              className="min-h-12 min-w-[5.5rem] border-2 !border-[var(--c64-accent)] text-[var(--c64-accent)] bg-transparent hover:!bg-[var(--c64-accent)] hover:!text-[var(--c64-border-bg)] hover:[&_svg]:!text-[var(--c64-border-bg)] focus-visible:!bg-[var(--c64-accent)] focus-visible:!text-[var(--c64-border-bg)] focus-visible:[&_svg]:!text-[var(--c64-border-bg)]"
+              iconLeft={<XMarkIcon className="w-6 h-6" />}
               onClick={onClose}
             >
               Close

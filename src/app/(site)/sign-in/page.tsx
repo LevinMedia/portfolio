@@ -6,8 +6,6 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import LevinMediaLogo from '@/app/components/LevinMediaLogo'
 import Button from '@/app/components/Button'
 import Input from '@/app/components/ui/Input'
-import { ParticleBackground } from '@/app/components/ParticleBackground'
-
 export default function SignInPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -82,34 +80,9 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden font-[family-name:var(--font-geist-sans)] bg-background text-foreground">
-      {/* Particle background - same as home page */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <ParticleBackground />
-      </div>
+    <div className="relative min-h-screen overflow-hidden bg-[var(--c64-screen-bg)] text-foreground">
+      <div className="absolute inset-0 z-0 pointer-events-none c64-screen-grid opacity-60" aria-hidden />
 
-      {/* Grid pattern overlay */}
-      <div
-        className="absolute inset-0 z-[1] pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.06) 1px, transparent 1px),
-            repeating-linear-gradient(90deg, 
-              rgba(0, 100, 255, 0.015) 0, 
-              rgba(0, 100, 255, 0.015) calc((100% - 5 * var(--grid-major)) / 6), 
-              transparent calc((100% - 5 * var(--grid-major)) / 6), 
-              transparent calc((100% - 5 * var(--grid-major)) / 6 + var(--grid-major))
-            )
-          `,
-          backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 100% 100%',
-          backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major), 0 0'
-        }}
-      />
-
-      {/* Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="mt-6 flex items-center justify-center gap-3">
@@ -119,19 +92,12 @@ export default function SignInPage() {
           <div className="hidden sm:block">
             <LevinMediaLogo size={52} fillBackground />
           </div>
-          <h2 className="text-2xl sm:text-5xl font-extrabold tracking-wide text-foreground font-[family-name:var(--font-geist-mono)]">
+          <h2 className="text-2xl sm:text-5xl font-bold tracking-wide text-foreground">
             LevinMedia
           </h2>
         </div>
 
-        <div className="bg-background border border-border/20 rounded-none p-8 shadow-lg" style={{
-          backgroundImage: `
-            linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-          backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-        }}>
+        <div className="bg-[var(--c64-border-bg)] border-4 border-[var(--c64-accent)] c64-petscii-frame p-8 c64-screen-grid">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <Input

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
-import SiteSettingsContent from '../components/SiteSettingsContent'
+import SiteSettingsContent from '@/app/components/SiteSettingsContent'
 
 export default function SiteSettingsPage() {
   return (

@@ -127,7 +127,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
   }
 
   return (
-    <>
+    <div className="c64-prose c64-media">
       {/* Feature Image with Title Overlay - Full Width Edge to Edge */}
       <div 
         className="relative overflow-hidden -mx-4" 
@@ -152,9 +152,8 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
         </div>
       </div>
 
-      <div className="space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
-        {/* Content */}
-        <div className="prose prose-lg text-foreground md:px-32">
+        <div className="space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
+        <div className="prose prose-lg max-w-none text-foreground md:px-32">
           {parseContentWithVideos(work.content).map((part, index) => {
             if (part.type === 'video') {
               return (
@@ -196,7 +195,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
                           <img 
                             src={src} 
                             alt={alt || ''} 
-                            className="w-full h-auto rounded-lg"
+                            className="w-full h-auto"
                             loading="lazy"
                           />
                         </div>
@@ -228,6 +227,6 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
           })}
         </div>
       </div>
-    </>
+    </div>
   )
 }

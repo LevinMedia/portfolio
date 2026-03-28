@@ -129,7 +129,7 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
   }
 
   return (
-    <>
+    <div className="c64-prose c64-media">
       {/* Feature Image with Title Overlay - Full Width Edge to Edge */}
       <div 
         className="relative overflow-hidden -mx-4" 
@@ -158,8 +158,7 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
       </div>
 
       <div className="space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
-        {/* Content */}
-        <div className="prose prose-lg text-foreground md:px-32">
+        <div className="prose prose-lg max-w-none text-foreground md:px-32">
           {parseContentWithVideos(note.content).map((part, index) => {
             if (part.type === 'video') {
               return (
@@ -233,7 +232,7 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
           })}
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

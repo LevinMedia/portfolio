@@ -46,6 +46,13 @@ export default function RootLayout({
             __html: `
               (function() {
                 var root = document.documentElement;
+                var path = typeof location !== 'undefined' ? location.pathname : '';
+                var isAdmin = path.indexOf('/admin') === 0;
+                if (!isAdmin) {
+                  root.classList.add('dark');
+                  root.classList.remove('light');
+                  return;
+                }
                 var theme = null;
                 try {
                   var raw = localStorage.getItem('site-theme');
