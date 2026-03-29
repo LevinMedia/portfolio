@@ -13,6 +13,9 @@ const ranges: { key: RangeKey, label: string }[] = [
   { key: '1y', label: 'Last 365d' },
 ]
 
+const boxClass =
+  'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
+
 export default function StatsContent() {
   const [range, setRange] = useState<RangeKey>('30d')
   const [summary, setSummary] = useState<{
@@ -48,28 +51,31 @@ export default function StatsContent() {
   }, [range])
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-start items-center">
-        <div className="flex gap-2">
+    <div className="c64-stats-content space-y-6 sm:space-y-8">
+      <section className={`${boxClass} p-4 sm:p-5`} aria-label="Date range">
+        <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-[var(--c64-accent)] mb-3 border-b-4 border-[var(--c64-accent)] pb-2">
+          Range
+        </h2>
+        <div className="flex flex-wrap gap-2">
           {ranges.map(r => (
             <button
               key={r.key}
+              type="button"
               onClick={() => setRange(r.key)}
-              className={`px-3 py-1 text-sm rounded-none border transition-colors ${range === r.key ? 'bg-primary text-white border-primary' : 'bg-background text-foreground border-border/20 hover:border-border/40'}`}
-              style={range === r.key ? { 
-                backgroundColor: 'var(--primary)', 
-                color: 'white', 
-                borderColor: 'var(--primary)',
-                // Force override any Tailwind defaults
-                backgroundImage: 'none'
-              } : {}}
-            >{r.label}</button>
+              className={`px-3 py-2 text-sm rounded-none border-2 transition-colors min-h-10 ${
+                range === r.key
+                  ? 'bg-[var(--c64-accent)] text-[var(--c64-border-bg)] border-[var(--c64-accent)]'
+                  : 'bg-[var(--c64-border-bg)]/30 text-foreground border-[var(--c64-accent)]/50 hover:border-[var(--c64-accent)]'
+              }`}
+            >
+              {r.label}
+            </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {loading && (
-        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        <div className={`${boxClass} p-8 text-center text-foreground/70`}>Loading…</div>
       )}
 
       {!loading && (
@@ -86,30 +92,20 @@ export default function StatsContent() {
           <TimeSeriesChart range={range} />
 
           {/* Visitor Map */}
-          <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
-            backgroundImage: `
-              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-          }}>
-            <h3 className="text-lg font-medium text-foreground mb-4">Visitor Locations</h3>
+          <section className={`${boxClass} p-5 sm:p-7`}>
+            <h3 className="text-lg sm:text-xl font-bold uppercase tracking-[0.1em] text-[var(--c64-accent)] mb-5 border-b-4 border-[var(--c64-accent)] pb-3">
+              Visitor locations
+            </h3>
             <VisitorMap points={geo} />
-          </div>
+          </section>
 
           {/* Top Pages */}
-          <div className="bg-background border border-border/20 rounded-none p-4" style={{ 
-            backgroundImage: `
-              linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-            backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-          }}>
-            <h3 className="text-lg font-medium text-foreground mb-4">Top Pages</h3>
-            <div className="space-y-2">
-              {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
+          <section className={`${boxClass} p-5 sm:p-7`}>
+            <h3 className="text-lg sm:text-xl font-bold uppercase tracking-[0.1em] text-[var(--c64-accent)] mb-5 border-b-4 border-[var(--c64-accent)] pb-3">
+              Top pages
+            </h3>
+            <div className="space-y-2 c64-prose">
+              {pages.length === 0 && <div className="text-foreground/65">No data</div>}
               {pages.slice(0, 10).map((p, i) => {
                 const maxViews = Math.max(...pages.map(page => page.views))
                 const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
@@ -130,9 +126,11 @@ export default function StatsContent() {
                       }}
                     />
                     {/* Content */}
-                    <div className="relative flex items-center justify-between">
-                      <div className="truncate max-w-[70%] text-sm text-foreground font-medium pl-3">{p.path}</div>
-                      <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
+                    <div className="relative flex min-w-0 items-center gap-2 pl-3">
+                      <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                        {p.path}
+                      </div>
+                      <div className="shrink-0 whitespace-nowrap text-sm text-foreground/75 bg-[var(--c64-border-bg)]/50 border border-[var(--c64-accent)]/25 px-2 py-1 rounded-none">
                         {formatCount(p.uniques, 'visitor')} • {formatCount(p.views, 'view')}
                       </div>
                     </div>
@@ -140,7 +138,7 @@ export default function StatsContent() {
                 )
               })}
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>
@@ -149,18 +147,19 @@ export default function StatsContent() {
 
 function Card({ title, value, sub, delta }: { title: string, value: string | number, sub?: string, delta?: string }) {
   return (
-    <div className="bg-background border border-border/20 rounded-none p-4" style={{
-      backgroundImage: `
-        linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-      `,
-      backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-      backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-    }}>
-      <div className="text-xs text-muted-foreground mb-1">{title}</div>
+    <div
+      className={`${boxClass} p-4 sm:p-5 flex flex-col min-h-[5.5rem]`}
+    >
+      <div className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--c64-accent)]/90 mb-2 border-b-2 border-[var(--c64-accent)]/40 pb-1">
+        {title}
+      </div>
       <div className="text-lg font-semibold text-foreground">{value}</div>
-      {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
-      {delta && <div className={`text-xs ${delta.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{delta} vs previous period</div>}
+      {sub && <div className="text-xs text-foreground/65 mt-1">{sub}</div>}
+      {delta && (
+        <div className={`text-xs mt-1 ${delta.startsWith('+') ? 'text-green-500' : 'text-red-400'}`}>
+          {delta} vs previous period
+        </div>
+      )}
     </div>
   )
 }

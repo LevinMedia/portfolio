@@ -180,7 +180,6 @@
   --radius: 0.5rem;
 }
 
-/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -928,7 +927,8 @@ body > div[style*="position: fixed"] * {
   -webkit-appearance: none;
   box-shadow: none;
   font-family: "C64 Pro Mono", ui-monospace, monospace !important;
-  font-size: inherit;
+  /* ≥16px avoids iOS zoom when the field is focused (e.g. user taps the prompt to type). */
+  font-size: 16px !important;
 }
 
 #c64-site-root .c64-authentic-screen .c64-terminal-input:focus,
@@ -949,6 +949,20 @@ body > div[style*="position: fixed"] * {
   font-size: calc(1rem * var(--c64-text-scale, 1.05));
   background-color: var(--c64-border-bg, #1d1d6e);
   color: var(--foreground);
+}
+
+/* Drawer chrome: VT323 even if nested controls reset font (e.g. Headless UI). */
+#c64-site-root .c64-drawer-header,
+#c64-site-root .c64-drawer-close {
+  font-family: var(--font-vt323), ui-monospace, monospace !important;
+}
+
+/*
+ * Drawer / overlay pages (About, work history, markdown, etc.): Tailwind text-* uses rem from
+ * the html root, so they ignore #c64-site-root font-size. Scale this subtree so loaded pages read larger.
+ */
+#c64-site-root .c64-drawer-page {
+  zoom: 1.08;
 }
 
 #c64-site-root.c64-site[data-c64-scanlines="on"]::after {
@@ -993,6 +1007,12 @@ body > div[style*="position: fixed"] * {
   line-height: 1.55;
 }
 
+/* Drawer body copy: one size (~20px) across About, work history, works, notes, guestbook. */
+#c64-site-root .c64-drawer-copy {
+  font-size: 20px;
+  line-height: 1.55;
+}
+
 .c64-prose h1,
 .c64-prose h2,
 .c64-prose h3,
@@ -1023,8 +1043,14 @@ body > div[style*="position: fixed"] * {
 
 /* Leaflet inside portfolio: hex vars, not hsl() */
 #c64-site-root .leaflet-container {
-  background: var(--background) !important;
+  background: var(--c64-border-bg, var(--background)) !important;
   font-family: var(--font-vt323), ui-monospace, monospace !important;
+}
+
+#c64-site-root .custom-cluster-icon.leaflet-div-icon,
+#c64-site-root .custom-single-marker-icon.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
 }
 
 #c64-site-root .leaflet-popup-content-wrapper,

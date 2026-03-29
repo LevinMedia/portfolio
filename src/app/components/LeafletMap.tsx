@@ -1,36 +1,11 @@
 'use client'
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import Supercluster from 'supercluster'
-
-// Hook to detect dark mode
-const useDarkMode = () => {
-  const [isDark, setIsDark] = useState(false)
-
-  useEffect(() => {
-    const checkDarkMode = () => {
-      const isDarkMode = document.documentElement.classList.contains('dark')
-      setIsDark(isDarkMode)
-    }
-
-    // Check initial state
-    checkDarkMode()
-
-    // Watch for changes
-    const observer = new MutationObserver(checkDarkMode)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
-  return isDark
-}
+import { createC64BasemapLayer, createC64LabelLayer } from '@/lib/leaflet-c64-tiles'
 
 // Fix for default Leaflet icon issue with Webpack
 const fixLeafletIcons = () => {
@@ -44,22 +19,24 @@ const fixLeafletIcons = () => {
   }
 }
 
-// Get CSS variable value
-const getCSSVariable = (varName: string): string => {
-  if (typeof window === 'undefined') return '#0891b2' // fallback
-  return getComputedStyle(document.documentElement).getPropertyValue(`--${varName}`).trim() || '#0891b2'
+/** C64 theme vars live on #c64-site-root (accent, screen, border). */
+const getC64CssVar = (varName: string, fallback: string): string => {
+  if (typeof window === 'undefined') return fallback
+  const el = document.getElementById('c64-site-root')
+  const scope = el ?? document.documentElement
+  return getComputedStyle(scope).getPropertyValue(`--${varName}`).trim() || fallback
 }
 
 // Create cluster icon using site accent color
 const createClusterIcon = (count: number) => {
   const size = count < 10 ? 32 : count < 100 ? 40 : 48
-  const accentColor = getCSSVariable('accent')
+  const accentColor = getC64CssVar('c64-accent', getC64CssVar('accent', '#a8a8ff'))
   
   return L.divIcon({
     html: `<div style="
       background: ${accentColor};
       color: white;
-      border-radius: 50%;
+      border-radius: 0;
       width: ${size}px;
       height: ${size}px;
       display: flex;
@@ -80,13 +57,13 @@ const createClusterIcon = (count: number) => {
 // Create single marker icon that looks like a cluster
 const createSingleMarkerIcon = (count: number) => {
   const size = 32
-  const accentColor = getCSSVariable('accent')
+  const accentColor = getC64CssVar('c64-accent', getC64CssVar('accent', '#a8a8ff'))
   
   return L.divIcon({
     html: `<div style="
       background: ${accentColor};
       color: white;
-      border-radius: 50%;
+      border-radius: 0;
       width: ${size}px;
       height: ${size}px;
       display: flex;
@@ -165,14 +142,7 @@ function ClusterLayer({ points }: { points: LeafletMapProps['points'] }) {
       }))
 
     cluster.load(geoJsonPoints)
-    
-    // Debug logging
-    console.log('Supercluster Setup:', {
-      inputPoints: points.length,
-      geoJsonPoints: geoJsonPoints.length,
-      samplePoints: geoJsonPoints.slice(0, 3)
-    })
-    
+
     return cluster
   }, [points])
 
@@ -187,27 +157,7 @@ function ClusterLayer({ points }: { points: LeafletMapProps['points'] }) {
       bounds.getNorth(),
     ] as [number, number, number, number]
 
-    const clustersResult = supercluster.getClusters(bbox, Math.floor(zoom))
-    
-    // Debug logging
-    console.log('🗺️ Supercluster Debug:', {
-      zoom: Math.floor(zoom),
-      bbox,
-      totalPoints: points.length,
-      clustersFound: clustersResult.length,
-      clusters: clustersResult.map(c => ({
-        isCluster: c.properties.cluster,
-        pointCount: c.properties.point_count,
-        coordinates: c.geometry.coordinates,
-        id: c.id
-      })),
-      clusterBreakdown: {
-        actualClusters: clustersResult.filter(c => c.properties.cluster).length,
-        individualPoints: clustersResult.filter(c => !c.properties.cluster).length
-      }
-    })
-
-    return clustersResult
+    return supercluster.getClusters(bbox, Math.floor(zoom))
   }, [supercluster, bounds, zoom, points.length])
 
   // Update zoom and bounds when map changes
@@ -288,9 +238,41 @@ function ClusterLayer({ points }: { points: LeafletMapProps['points'] }) {
   )
 }
 
-export default function LeafletMap({ points }: LeafletMapProps) {
-  const isDarkMode = useDarkMode()
+function C64ThemedTileLayers() {
+  const map = useMap()
+  const [themeEpoch, setThemeEpoch] = useState(0)
 
+  useEffect(() => {
+    const onC64 = () => setThemeEpoch((n) => n + 1)
+    window.addEventListener('c64-settings-changed', onC64)
+    return () => window.removeEventListener('c64-settings-changed', onC64)
+  }, [])
+
+  useEffect(() => {
+    const root = document.getElementById('c64-site-root')
+    if (!root) return
+
+    const cs = getComputedStyle(root)
+    const ocean = cs.getPropertyValue('--c64-border-bg').trim()
+    const land = cs.getPropertyValue('--c64-screen-bg').trim()
+    const textInk = cs.getPropertyValue('--c64-border-bg').trim()
+
+    const base = createC64BasemapLayer(ocean || '#1d1d6e', land || '#352879')
+    const labels = createC64LabelLayer(textInk || '#1d1d6e')
+
+    base.addTo(map)
+    labels.addTo(map)
+
+    return () => {
+      map.removeLayer(base)
+      map.removeLayer(labels)
+    }
+  }, [map, themeEpoch])
+
+  return null
+}
+
+export default function LeafletMap({ points }: LeafletMapProps) {
   useEffect(() => {
     fixLeafletIcons()
   }, [])
@@ -299,19 +281,6 @@ export default function LeafletMap({ points }: LeafletMapProps) {
     p.latitude !== null && p.longitude !== null && 
     typeof p.latitude === 'number' && typeof p.longitude === 'number'
   )
-
-  // Different tile layer configurations for light and dark themes
-  const tileLayerConfig = isDarkMode ? {
-    // Dark theme - CartoDB Dark Matter
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd'
-  } : {
-    // Light theme - CartoDB Positron (clean, minimal light theme)
-    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd'
-  }
 
   if (validPoints.length === 0) {
     return (
@@ -337,12 +306,7 @@ export default function LeafletMap({ points }: LeafletMapProps) {
           zoomControl={true}
           scrollWheelZoom={true}
         >
-          <TileLayer
-            url={tileLayerConfig.url}
-            attribution={tileLayerConfig.attribution}
-            subdomains={tileLayerConfig.subdomains}
-            maxZoom={18}
-          />
+          <C64ThemedTileLayers />
           <ClusterLayer points={validPoints} />
         </MapContainer>
       </div>

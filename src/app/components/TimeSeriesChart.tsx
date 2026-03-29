@@ -8,6 +8,9 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline'
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 type AggKey = 'hour' | 'day' | 'week' | 'month' | 'quarter'
 
+const c64BoxClass =
+  'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
+
 interface Point {
   t: string
   views: number
@@ -428,35 +431,29 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   }, [points, agg, containerWidth, chartHeight])
 
   return (
-    <div className="bg-background border border-border/20 rounded-none" style={{
-      backgroundImage: `
-        linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-      `,
-      backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-      backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-    }}>
-      <div className="px-4 py-3 sm:p-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <h3 className="text-lg font-medium text-foreground">Traffic over time</h3>
+    <div className={`${c64BoxClass} rounded-none`}>
+      <div className="px-4 py-3 sm:p-5 md:p-7">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 pb-3 border-b-4 border-[var(--c64-accent)]">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+            <h3 className="text-lg sm:text-xl font-bold uppercase tracking-[0.1em] text-[var(--c64-accent)]">
+              Traffic over time
+            </h3>
             {/* Legend inline with title */}
-            <div className="hidden md:flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--primary)' }} /> <span className="text-muted-foreground">Views</span></div>
-              <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--accent)' }} /> <span className="text-muted-foreground">Visitors</span></div>
+            <div className="hidden md:flex items-center gap-4 text-sm text-foreground/75">
+              <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--primary)' }} /> <span>Views</span></div>
+              <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--accent)' }} /> <span>Visitors</span></div>
             </div>
           </div>
-          <div className="w-48">
+          <div className="w-full sm:w-48 shrink-0">
             <Listbox value={agg} onChange={setAgg} disabled={allowedAggs.length === 1}>
               <div className="relative">
-                <Listbox.Button className={`w-full text-left border rounded-none px-3 pr-8 py-1 text-sm relative ${allowedAggs.length === 1 ? 'opacity-60 cursor-not-allowed' : ''}`}
-                  style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)', borderColor: 'var(--border)' }}>
+                <Listbox.Button className={`w-full text-left border-2 border-[var(--c64-accent)]/60 rounded-none px-3 pr-8 py-2 text-sm relative bg-[var(--c64-border-bg)]/30 text-foreground ${allowedAggs.length === 1 ? 'opacity-60 cursor-not-allowed' : ''}`}>
                   {agg}
-                  <ChevronDownIcon className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <ChevronDownIcon className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-[var(--c64-accent)]" />
                 </Listbox.Button>
-                <Listbox.Options className="absolute left-0 right-0 mt-1 max-h-60 overflow-auto bg-background border border-border/20 rounded-none z-10 w-full">
+                <Listbox.Options className="absolute left-0 right-0 mt-1 max-h-60 overflow-auto bg-[var(--c64-screen-bg)] border-2 border-[var(--c64-accent)] rounded-none z-20 w-full">
                   {allowedAggs.map(option => (
-                    <Listbox.Option key={option} value={option} className="px-3 py-1 text-sm hover:bg-muted cursor-pointer">
+                    <Listbox.Option key={option} value={option} className="px-3 py-2 text-sm hover:bg-[var(--c64-border-bg)]/50 cursor-pointer text-foreground">
                       {option}
                     </Listbox.Option>
                   ))}

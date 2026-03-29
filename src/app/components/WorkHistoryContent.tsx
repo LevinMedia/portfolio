@@ -106,27 +106,20 @@ export default function WorkHistoryContent() {
     )
   }
 
-  const accentClasses = [
-    'text-accent',
-    'text-secondary',
-    'text-primary',
-    'text-destructive',
-    'text-accent',
-    'text-primary',
-    'text-secondary',
-  ]
+  const boxClass =
+    'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
 
   return (
-    <div>
-      <div className="space-y-8">
-        {companies.map((company, index) => (
+    <div className="c64-work-history-content c64-drawer-copy">
+      <div className="space-y-6 sm:space-y-8">
+        {companies.map((company) => (
           <section
             key={company.id}
-            className="bg-background border border-neutral-100/6 p-6"
+            className={`${boxClass} p-5 sm:p-7`}
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 relative flex-shrink-0 border border-neutral-200/20">
+                <div className="w-12 h-12 relative flex-shrink-0 border-2 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/40 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.2)]">
                   {company.company_name === 'Levin Media' ? (
                     <LevinMediaLogo size={48} />
                   ) : company.company_logo_url ? (
@@ -146,38 +139,36 @@ export default function WorkHistoryContent() {
                   )}
                 </div>
                 <div>
-                  <h2
-                    className={`text-xl font-semibold font-[family-name:var(--font-geist-mono)] mb-2 ${accentClasses[index % accentClasses.length]}`}
-                  >
+                  <h2 className="text-xl font-bold uppercase tracking-[0.08em] text-[var(--c64-accent)] mb-2 border-b-4 border-[var(--c64-accent)] pb-2">
                     {company.company_name}
                   </h2>
-                  <p className="text-sm text-foreground/50 mt-1">
+                  <p className="text-sm text-foreground/65 mt-1">
                     {formatCompanyYears(company.positions)}
                   </p>
                 </div>
               </div>
               <div className="text-right hidden sm:block">
-                <p className="text-sm text-foreground/60">
+                <p className="text-foreground/70 uppercase tracking-wide">
                   {company.employment_type || '—'}
                 </p>
               </div>
             </div>
             {company.employment_type && (
-              <div className="sm:hidden pl-4 text-sm text-foreground/60 mb-4">
+              <div className="sm:hidden pl-1 text-foreground/70 mb-4 uppercase tracking-wide">
                 {company.employment_type}
               </div>
             )}
-            <div className="space-y-6">
+            <div className="space-y-6 c64-prose">
               {(company.positions ?? []).map((position) => (
-                <div key={position.id} className="pl-4">
-                  <h3 className="text-lg font-medium text-foreground">
+                <div key={position.id} className="pl-1 sm:pl-2 border-l-4 border-[var(--c64-accent)]/35">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {position.position_title}
                   </h3>
-                  <p className="text-sm text-foreground/60 mb-2">
+                  <p className="text-foreground/65 mb-2">
                     {formatDateRange(position.start_date, position.end_date)}
                   </p>
                   {position.position_description && (
-                    <p className="text-foreground/80 leading-relaxed">
+                    <p className="text-foreground/85 leading-snug">
                       {position.position_description}
                     </p>
                   )}
@@ -186,11 +177,11 @@ export default function WorkHistoryContent() {
             </div>
           </section>
         ))}
-        <section className="pt-4 border-t border-neutral-100/6">
-          <p className="text-sm text-foreground/60">
+        <footer className="border-t-4 border-[var(--c64-accent)]/35 pt-4 uppercase tracking-wider text-[var(--c64-accent)]/85">
+          <p className="m-0 text-[var(--foreground)]/70">
             Last updated: {new Date().toLocaleDateString()}
           </p>
-        </section>
+        </footer>
       </div>
     </div>
   )

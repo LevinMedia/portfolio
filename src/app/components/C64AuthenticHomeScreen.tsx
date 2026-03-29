@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode, RefObject } from 'react'
 import {
   C64_HOME_BOOT_LINES_SESSION_KEY,
   loadC64Settings,
@@ -12,6 +12,22 @@ import {
  * Home-only layout: classic C64 CRT (no site nav, no howdy).
  * Style64 C64 Pro Mono — https://style64.org/c64-truetype
  */
+
+/** Phones / touch tablets: skip programmatic focus on the ghost input (avoids keyboard + iOS zoom). */
+function c64TouchPrimary(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches
+  )
+}
+
+function focusC64TerminalInput(
+  ref: RefObject<HTMLInputElement | null>,
+  opts?: { force?: boolean },
+): void {
+  if (!opts?.force && c64TouchPrimary()) return
+  ref.current?.focus({ preventScroll: true })
+}
 
 /** ROM splash (3) + spoofed disk directory sequence (7). */
 const CENTER_STAGE_COUNT = 3
@@ -247,7 +263,7 @@ export default function C64AuthenticHomeScreen({
       return
     }
     const id = window.setTimeout(() => {
-      terminalInputRef.current?.focus()
+      focusC64TerminalInput(terminalInputRef)
     }, 80)
     return () => window.clearTimeout(id)
   }, [bootComplete])
@@ -264,7 +280,7 @@ export default function C64AuthenticHomeScreen({
         if (terminalAutoTypingRef.current || terminalSequenceBusyRef.current) {
           return
         }
-        terminalInputRef.current?.focus({ preventScroll: true })
+        focusC64TerminalInput(terminalInputRef)
       }, 200)
       return () => window.clearTimeout(id)
     }
@@ -507,7 +523,7 @@ export default function C64AuthenticHomeScreen({
         'click',
         searchLabelFromLoadCommand(full),
       )
-      window.requestAnimationFrame(() => terminalInputRef.current?.focus())
+      window.requestAnimationFrame(() => focusC64TerminalInput(terminalInputRef))
       return
     }
 
@@ -519,7 +535,7 @@ export default function C64AuthenticHomeScreen({
 
     setTerminalAutoTyping(true)
     setTerminalLine('')
-    terminalInputRef.current?.focus()
+    focusC64TerminalInput(terminalInputRef)
 
     const schedule = (fn: () => void, ms: number) => {
       terminalTypewriterTimeoutRef.current = window.setTimeout(fn, ms) as unknown as number
@@ -549,7 +565,7 @@ export default function C64AuthenticHomeScreen({
             'click',
             searchLabelFromLoadCommand(full),
           )
-          window.requestAnimationFrame(() => terminalInputRef.current?.focus())
+          window.requestAnimationFrame(() => focusC64TerminalInput(terminalInputRef))
         }, LOAD_AFTER_TYPED_PAUSE_MS)
       }
     }
@@ -711,7 +727,7 @@ export default function C64AuthenticHomeScreen({
           <div className="flex w-full flex-col items-start">
           <div className="text-center shrink-0 w-fit max-w-full mx-auto">
             <pre
-              className="c64-authentic-boot whitespace-pre-wrap break-words m-0 text-sm sm:text-base md:text-lg leading-tight tracking-wide"
+              className="c64-authentic-boot whitespace-pre-wrap break-words m-0 text-xs sm:text-base md:text-lg leading-tight tracking-wide"
               aria-label="Startup messages"
             >
               {renderCenterBoot(linesShown)}
@@ -719,7 +735,7 @@ export default function C64AuthenticHomeScreen({
           </div>
 
           {showDiskBlock && (
-            <pre className="c64-authentic-boot c64-authentic-text-fit whitespace-pre-wrap break-words m-0 mt-3 text-left text-sm sm:text-base md:text-lg leading-tight tracking-wide shrink-0 max-w-full">
+            <pre className="c64-authentic-boot c64-authentic-text-fit whitespace-pre-wrap break-words m-0 mt-3 text-left text-xs sm:text-base md:text-lg leading-tight tracking-wide shrink-0 max-w-full">
               {diskCompletedLines.join('\n')}
               {diskTyping && (
                 <>
@@ -752,12 +768,12 @@ export default function C64AuthenticHomeScreen({
               </p>
 
               <div className="c64-dir-listing-sticky">
-                <div className="c64-dir-header text-sm sm:text-base md:text-lg leading-tight tracking-wide px-2 py-1.5 rounded-sm">
+                <div className="c64-dir-header text-xs sm:text-base md:text-lg leading-tight tracking-wide px-2 py-1.5 rounded-sm">
                   {DISK_VOLUME_LINE}
                 </div>
 
                 <nav
-                  className="c64-dir-table text-sm sm:text-base md:text-lg leading-tight tracking-wide mt-1"
+                  className="c64-dir-table text-xs sm:text-base md:text-lg leading-tight tracking-wide mt-1"
                   aria-label="Disk programs"
                   aria-describedby="c64-disk-directory-hint"
                 >
@@ -790,16 +806,16 @@ export default function C64AuthenticHomeScreen({
                   )}
                 </nav>
 
-                <div className="c64-dir-footer text-sm sm:text-base md:text-lg leading-tight tracking-wide mt-3 text-[var(--c64-crt-ink)]">
+                <div className="c64-dir-footer text-xs sm:text-base md:text-lg leading-tight tracking-wide mt-3 text-[var(--c64-crt-ink)]">
                   <p className="m-0">{DIRECTORY_BLOCKS_FREE} BLOCKS FREE.</p>
                   <p className="m-0">READY.</p>
                 </div>
               </div>
 
               <div
-                className="c64-terminal c64-authentic-boot w-full max-w-full text-sm sm:text-base md:text-lg leading-tight tracking-wide text-[var(--c64-crt-ink)] mt-2"
+                className="c64-terminal c64-authentic-boot w-full max-w-full text-xs sm:text-base md:text-lg leading-tight tracking-wide text-[var(--c64-crt-ink)] mt-2"
                 onPointerDown={() => {
-                  terminalInputRef.current?.focus()
+                  focusC64TerminalInput(terminalInputRef, { force: true })
                 }}
               >
                 <div className="sr-only" aria-live="polite">
@@ -864,7 +880,7 @@ export default function C64AuthenticHomeScreen({
                         if (next.length === 0) {
                           setTerminalLine('')
                           window.requestAnimationFrame(() => {
-                            terminalInputRef.current?.focus()
+                            focusC64TerminalInput(terminalInputRef)
                           })
                           return
                         }
@@ -899,7 +915,7 @@ export default function C64AuthenticHomeScreen({
                                 ),
                               )
                               window.requestAnimationFrame(() => {
-                                terminalInputRef.current?.focus()
+                                focusC64TerminalInput(terminalInputRef)
                               })
                               return
                             }
@@ -915,7 +931,7 @@ export default function C64AuthenticHomeScreen({
                           }
                           setTerminalLine('')
                           window.requestAnimationFrame(() => {
-                            terminalInputRef.current?.focus()
+                            focusC64TerminalInput(terminalInputRef)
                           })
                           return
                         }
@@ -951,7 +967,7 @@ export default function C64AuthenticHomeScreen({
                         }
                         setTerminalLine('')
                         window.requestAnimationFrame(() => {
-                          terminalInputRef.current?.focus()
+                          focusC64TerminalInput(terminalInputRef)
                         })
                       }
                     }}

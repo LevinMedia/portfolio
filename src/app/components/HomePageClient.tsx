@@ -28,7 +28,9 @@ interface HomePageClientProps {
   initialSelectedWorks: SelectedWorkServer[]
 }
 
-export default function HomePageClient({ initialSelectedWorks }: HomePageClientProps) {
+export default function HomePageClient({
+  initialSelectedWorks,
+}: HomePageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false)
@@ -149,7 +151,12 @@ export default function HomePageClient({ initialSelectedWorks }: HomePageClientP
           <WorkHistoryContent />
         </Drawer>
 
-        <Drawer isOpen={isAboutOpen} onClose={handleAboutClose} title="About" icon={<QuestionMarkCircleIcon className="w-6 h-6" />}>
+        <Drawer
+          isOpen={isAboutOpen}
+          onClose={handleAboutClose}
+          title="About"
+          icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
+        >
           <AboutContent />
         </Drawer>
 
