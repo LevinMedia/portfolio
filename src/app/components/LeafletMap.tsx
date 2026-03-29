@@ -158,7 +158,7 @@ function ClusterLayer({ points }: { points: LeafletMapProps['points'] }) {
     ] as [number, number, number, number]
 
     return supercluster.getClusters(bbox, Math.floor(zoom))
-  }, [supercluster, bounds, zoom, points.length])
+  }, [supercluster, bounds, zoom])
 
   // Update zoom and bounds when map changes
   const handleMoveEnd = useCallback(() => {

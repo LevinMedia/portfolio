@@ -1,5 +1,8 @@
 import L, { type DoneCallback } from 'leaflet'
 
+/** Leaflet’s `.extend()` constructor is not typed with (url, options); cast at instantiation. */
+type TileLayerClass = new (urlTemplate: string, options?: L.TileLayerOptions) => L.TileLayer
+
 /** Parse hex or rgb() from computed styles (C64 theme sets hex on #c64-site-root). */
 export function parseCssColorToRgb(input: string): { r: number; g: number; b: number } {
   const s = input.trim()
@@ -100,7 +103,7 @@ export function createC64BasemapLayer(oceanCss: string, landCss: string): L.Tile
       img.src = this.getTileUrl(coords)
       return tile
     },
-  })
+  }) as unknown as TileLayerClass
 
   return new Themed('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: CARTO_ATTR,
@@ -144,7 +147,7 @@ export function createC64LabelLayer(inkCss: string): L.TileLayer {
       img.src = this.getTileUrl(coords)
       return tile
     },
-  })
+  }) as unknown as TileLayerClass
 
   return new Themed('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
     attribution: '',
