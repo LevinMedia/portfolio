@@ -15,6 +15,8 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
   const videoRef = useRef<HTMLVideoElement>(null)
   const playerRef = useRef<Player | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const srcRef = useRef(src)
+  srcRef.current = src
 
   useEffect(() => {
     // Wait for next tick to ensure DOM is ready
@@ -72,7 +74,7 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
               console.error('Video.js Error:', {
                 code: err.code,
                 message: err.message,
-                url: src
+                url: srcRef.current
               })
               
               setError(errorMessage)

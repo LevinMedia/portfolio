@@ -59,7 +59,7 @@ export default function Howdy({ data = DEFAULT_DATA, onSelectedWorksClick, onSit
     >
       
       {/* Horizontal Split Layout */}
-      <div className="w-full sm:w-fit border border-blue-200/15 rounded-none backdrop-blur-sm bg-background p-8 sm:p-12 lg:p-16 xl:p-20">
+      <div className="w-full sm:w-fit border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame p-8 sm:p-12 lg:p-16 xl:p-20 c64-screen-grid">
         <div className="flex flex-col items-start text-left" style={{ gap: 'calc(var(--grid-major) * 1.5)' }}>
           {/* Heading with inline profile image */}
           <h1 className="text-2xl sm:text-5xl font-extrabold tracking-tight text-foreground font-[family-name:var(--font-geist-mono)] flex items-center gap-6" style={{ wordSpacing: '-0.15em' }}>
@@ -78,7 +78,7 @@ export default function Howdy({ data = DEFAULT_DATA, onSelectedWorksClick, onSit
               showBorder={true}
               borderColor="stroke-accent"
             >
-              <div className="relative w-[3rem] h-[3rem] sm:w-[3.75rem] sm:h-[3.75rem] overflow-hidden border-2 border-accent/30 flex-shrink-0">
+              <div className="relative w-[3rem] h-[3rem] sm:w-[3.75rem] sm:h-[3.75rem] overflow-hidden border-4 border-[var(--c64-accent)] flex-shrink-0">
                 <Image src={data.image_src} alt={data.image_alt} fill className="object-cover" priority />
               </div>
             </Tooltip>
@@ -114,7 +114,7 @@ ${listItemsHtml}
               borderColor="stroke-accent"
               fullWidth={true}
             >
-              <ul className="list-none text-foreground/80 font-[family-name:var(--font-geist-sans)] flex flex-col" style={{ gap: 'calc(var(--grid-major) / 2)' }}>
+              <ul className="list-none text-muted-foreground flex flex-col" style={{ gap: 'calc(var(--grid-major) / 2)' }}>
                 {listItems.map((item, index) => (
                   <li key={index} className="flex items-center gap-2 text-sm sm:text-lg">
                     <span className="text-xl">{item.emoji}</span>

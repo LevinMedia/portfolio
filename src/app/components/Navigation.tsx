@@ -33,7 +33,7 @@ export function NavigationItem({ icon, label, onClick }: NavigationItemProps) {
       size="small"
       iconLeft={icon}
       onClick={onClick}
-      className="flex-shrink-0"
+      className="flex-shrink-0 min-h-11 text-[var(--c64-accent)] [&_svg]:text-[var(--c64-accent)] hover:!bg-[var(--c64-accent)] hover:!text-[var(--c64-border-bg)] hover:[&_svg]:!text-[var(--c64-border-bg)] focus-visible:!bg-[var(--c64-accent)] focus-visible:!text-[var(--c64-border-bg)] focus-visible:[&_svg]:!text-[var(--c64-border-bg)]"
     >
       {label}
     </Button>
@@ -154,11 +154,14 @@ export default function Navigation() {
         fullWidth={true}
       >
         <>
-          <nav className="flex items-center justify-between bg-background border border-blue-200/15 rounded-none w-full" style={{
-            gap: 'var(--grid-major)',
-            padding: 'var(--grid-major)',
-            height: `${NAV_HEIGHT}px`
-          }}>
+          <nav
+            className="flex items-center justify-between w-full border-t-4 border-[var(--c64-accent)] bg-[var(--c64-border-bg)] text-[var(--c64-accent)]"
+            style={{
+              gap: 'var(--grid-major)',
+              padding: 'var(--grid-major)',
+              height: `${NAV_HEIGHT}px`,
+            }}
+          >
             {/* Logo - always visible */}
             <LevinMediaLogo size={32} onClick={handleLogoClick} />
             
@@ -178,7 +181,7 @@ export default function Navigation() {
                 color="primary"
                 size="small"
                 iconLeft={<Bars3Icon className="w-5 h-5" />}
-                className="flex-shrink-0"
+                className="flex-shrink-0 min-h-11 text-[var(--c64-accent)] [&_svg]:text-[var(--c64-accent)] hover:!bg-[var(--c64-accent)] hover:!text-[var(--c64-border-bg)] hover:[&_svg]:!text-[var(--c64-border-bg)] focus-visible:!bg-[var(--c64-accent)] focus-visible:!text-[var(--c64-border-bg)] focus-visible:[&_svg]:!text-[var(--c64-border-bg)]"
                 onClick={handleMobileMenuOpen}
               >
                 Menu

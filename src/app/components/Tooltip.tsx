@@ -101,7 +101,6 @@ const Tooltip: React.FC<TooltipProps> = ({
   const [isDark, setIsDark] = useState(true);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const timeout = useRef<NodeJS.Timeout | null>(null);
-  const typingInterval = useRef<NodeJS.Timeout | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
 
@@ -175,7 +174,6 @@ const Tooltip: React.FC<TooltipProps> = ({
           cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = null;
         }
-        if (typingInterval.current) clearInterval(typingInterval.current);
       };
     } else {
       setTypedLength(0);
@@ -183,7 +181,6 @@ const Tooltip: React.FC<TooltipProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      if (typingInterval.current) clearInterval(typingInterval.current);
     }
   }, [show, code]);
 
@@ -197,7 +194,6 @@ const Tooltip: React.FC<TooltipProps> = ({
     setAnim(false);
     setShow(false);
     if (timeout.current) clearTimeout(timeout.current);
-    if (typingInterval.current) clearInterval(typingInterval.current);
   };
 
   return (

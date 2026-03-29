@@ -44,7 +44,8 @@ export async function GET(
     }
 
     // Omit is_private from response so client doesn't need to handle it
-    const { is_private: _isPrivate, ...workForClient } = work
+    const { is_private, ...workForClient } = work
+    void is_private
     return NextResponse.json({ work: workForClient })
   } catch (error) {
     console.error('Error in selected work API:', error)

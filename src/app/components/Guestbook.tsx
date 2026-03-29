@@ -29,6 +29,12 @@ interface GuestbookFormData {
   socialLinks: SocialLinks
 }
 
+const boxClass =
+  'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
+
+const fieldClass =
+  'block w-full px-3 py-2 border-2 border-[var(--c64-accent)]/45 bg-[var(--c64-border-bg)]/25 text-foreground placeholder:text-foreground/45 shadow-none focus:outline-none focus:ring-2 focus:ring-[var(--c64-accent)] focus:border-[var(--c64-accent)] sm:text-sm transition-colors rounded-none'
+
 export default function Guestbook() {
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -150,31 +156,27 @@ export default function Guestbook() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="c64-guestbook-content c64-drawer-copy w-full space-y-6 sm:space-y-8">
       {/* Big Button to Show Form */}
       {!isFormVisible && (
-        <Button
-          onClick={() => setIsFormVisible(true)}
-          style="outline"
-          color="primary"
-          size="large"
-          fullWidth
-          iconLeft={<PencilSquareIcon className="w-5 h-5" />}
-        >
-          Leave a message on my wall
-        </Button>
+        <section className={`${boxClass} p-5 sm:p-6`} aria-label="Leave a message">
+          <Button
+            onClick={() => setIsFormVisible(true)}
+            style="outline"
+            color="primary"
+            size="large"
+            fullWidth
+            iconLeft={<PencilSquareIcon className="w-5 h-5" />}
+            className="!border-2 !border-[var(--c64-accent)] rounded-none"
+          >
+            Leave a message on my wall
+          </Button>
+        </section>
       )}
 
       {/* Add New Entry Form */}
       {isFormVisible && (
-        <div className="bg-background border border-border/20 rounded-lg p-6 shadow-lg" style={{ 
-        backgroundImage: `
-          linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-        backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-      }}>
+        <section className={`${boxClass} p-5 sm:p-7`} aria-label="New guestbook entry">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Field */}
           <div>
@@ -185,7 +187,7 @@ export default function Guestbook() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="block w-full px-3 py-2 border border-border shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+              className={fieldClass}
               placeholder="Enter your name"
               required
               maxLength={100}
@@ -229,7 +231,7 @@ export default function Guestbook() {
                         [platform]: e.target.value
                       }
                     }))}
-                    className="block w-full px-3 py-2 border border-border shadow-sm placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+                    className={fieldClass}
                     placeholder={`https://${platform}.com/yourusername`}
                   />
                 </div>
@@ -239,14 +241,14 @@ export default function Guestbook() {
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4">
+            <div className="border-4 border-destructive/60 bg-destructive/10 p-4 rounded-none">
               <div className="text-sm text-destructive">{error}</div>
             </div>
           )}
 
           {success && (
-            <div className="rounded-md bg-green-50 border border-green-200 p-4">
-              <div className="text-sm text-green-800">{success}</div>
+            <div className="border-4 border-[var(--c64-accent)]/50 bg-[var(--c64-border-bg)]/40 p-4 rounded-none">
+              <div className="text-sm text-[var(--c64-accent)]">{success}</div>
             </div>
           )}
 
@@ -277,51 +279,45 @@ export default function Guestbook() {
             </Button>
           </div>
         </form>
-      </div>
+        </section>
       )}
 
       {/* Guestbook Entries */}
-      <div className="space-y-6">
+      <div className="space-y-6 sm:space-y-8">
         {entries.length === 0 ? (
-          <div className="text-center py-12">
-            <UserIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No messages yet. Be the first to leave one! 🎉</p>
-          </div>
+          <section className={`${boxClass} p-8 text-center`} aria-label="No entries">
+            <UserIcon className="h-12 w-12 text-[var(--c64-accent)]/70 mx-auto mb-4" />
+            <p className="text-foreground/75">No messages yet. Be the first to leave one! 🎉</p>
+          </section>
         ) : (
           entries.map((entry) => {
             const activeSocialLinks = Object.entries(entry.social_links).filter(([, url]) => url)
             const shouldStackSocialLinks = activeSocialLinks.length >= 3
 
             return (
-              <div
+              <article
                 key={entry.id}
-                className="bg-background border border-border/20 p-6"
-                style={{
-                backgroundImage: `
-                  linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
-                `,
-                backgroundSize: 'var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)',
-                backgroundPosition: 'var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major)'
-              }}
+                className={`${boxClass} p-5 sm:p-7`}
               >
               {/* Entry Header */}
-              <div className="flex items-start mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold">
+              <div className="flex items-start mb-5 pb-3 border-b-4 border-[var(--c64-accent)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 flex-shrink-0 border-2 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/40 flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(0,0,0,0.2)]">
+                    <span className="text-[var(--c64-accent)] font-bold">
                       {entry.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{entry.name}</h3>
-                    <p className="text-xs text-muted-foreground">{formatDate(entry.created_at)}</p>
+                    <h3 className="text-lg font-bold uppercase tracking-[0.06em] text-[var(--c64-accent)]">
+                      {entry.name}
+                    </h3>
+                    <p className="text-foreground/65 uppercase tracking-wide mt-1">{formatDate(entry.created_at)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Message Content */}
-              <div className="prose prose-sm max-w-none mb-4 text-foreground">
+              <div className="c64-prose max-w-none mb-4 text-foreground leading-snug">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -372,10 +368,10 @@ export default function Guestbook() {
 
               {/* Social Links */}
               {activeSocialLinks.length > 0 && (
-                <div className="pt-4 border-t border-border/20">
+                <div className="pt-4 border-t-4 border-[var(--c64-accent)]/35">
                   {shouldStackSocialLinks ? (
                     <div className="flex flex-col items-start space-y-2">
-                      <span className="text-xs text-muted-foreground">Connect:</span>
+                      <span className="text-xs text-[var(--c64-accent)]/85 uppercase tracking-wider">Connect:</span>
                       <div className="flex flex-wrap gap-4">
                         {activeSocialLinks.map(([platform, url]) => (
                           <a
@@ -383,7 +379,7 @@ export default function Guestbook() {
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center space-x-1 text-foreground/70 hover:text-[var(--c64-accent)] transition-colors"
                           >
                             <span>{getSocialIcon(platform)}</span>
                             <span className="text-xs capitalize">{platform}</span>
@@ -393,14 +389,14 @@ export default function Guestbook() {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-4">
-                      <span className="text-xs text-muted-foreground">Connect:</span>
+                      <span className="text-xs text-[var(--c64-accent)]/85 uppercase tracking-wider">Connect:</span>
                       {activeSocialLinks.map(([platform, url]) => (
                         <a
                           key={platform}
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors"
+                          className="flex items-center space-x-1 text-foreground/70 hover:text-[var(--c64-accent)] transition-colors"
                         >
                           <span>{getSocialIcon(platform)}</span>
                           <span className="text-xs capitalize">{platform}</span>
@@ -410,7 +406,7 @@ export default function Guestbook() {
                   )}
                 </div>
               )}
-              </div>
+              </article>
             )
           })
         )}

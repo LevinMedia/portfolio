@@ -69,13 +69,12 @@ const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ initialWork
   }
 
   return (
-    <div>
-      {/* Grid of work samples - each item spans 2 grid columns, gaps between columns */}
+    <div className="c64-media">
       <div className="grid grid-cols-4 sm:grid-cols-6" style={{ gap: 'var(--grid-major)' }}>
         {works.map((work) => (
           <div
             key={work.id}
-            className="relative border border-blue-200/15 rounded-none col-span-2"
+            className="relative border-4 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/30 col-span-2"
             style={{ padding: 'var(--grid-major)' }}
           >
             <div

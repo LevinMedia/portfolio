@@ -180,7 +180,6 @@
   --radius: 0.5rem;
 }
 
-/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -734,4 +733,462 @@ body > div[style*="position: fixed"] * {
 .milkdown-editor .ProseMirror a {
   color: var(--primary);
   text-decoration: underline;
+}
+
+/* --- Public portfolio: Commodore 64 shell (#c64-site-root only; admin unchanged) --- */
+
+/* Style64 C64 Pro Mono — https://style64.org/c64-truetype (see /fonts/license.txt) */
+@font-face {
+  font-family: "C64 Pro Mono";
+  src: url("/fonts/C64_Pro_Mono-STYLE.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  /*
+   * optional can stop using the webfont for the rest of the document if the browser
+   * misses its window — text then stays on ui-monospace even after the file loads.
+   * swap + preload keeps C64 once it’s available. Preload: (site)/layout.tsx
+   */
+  font-display: swap;
+}
+
+/**
+ * Authentic home CRT: border color 14 / screen color 6 (classic VIC-II palette).
+ * Chunky outer bezel; all typography uppercase inside .c64-authentic-screen.
+ */
+/* Home CRT bezel: up to 100px each side, shrinks with vmin so it always fits; no page scroll */
+.c64-authentic-shell {
+  background: var(--c64-bezel-bg, #7068eb);
+  box-sizing: border-box;
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+  padding: min(100px, max(6px, 10vmin));
+}
+
+.c64-authentic-screen {
+  /* --c64-crt-ink set on #c64-site-root; dim row text tracks screen tint */
+  --c64-crt-ink-dim: color-mix(in srgb, var(--c64-crt-ink) 72%, var(--c64-screen-bg));
+  background: var(--c64-screen-bg, #352879);
+  color: var(--c64-crt-ink, #7068eb);
+  /* !important: UA / Tailwind on button & input otherwise inherit body (Inter) or ui-monospace */
+  font-family: "C64 Pro Mono", ui-monospace, monospace !important;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.c64-authentic-screen .c64-authentic-cursor {
+  background: var(--c64-crt-ink);
+}
+
+.c64-authentic-screen-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Boot block: explicit C64 Pro Mono (site root uses VT323 for drawers / rest of shell) */
+#c64-site-root .c64-authentic-screen .c64-authentic-boot {
+  font-family: "C64 Pro Mono", ui-monospace, monospace !important;
+}
+
+/* Text blocks hug content; CRT panel stays full width */
+#c64-site-root .c64-authentic-screen .c64-authentic-text-fit {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Stays on-screen while terminal history scrolls (sticky within .c64-authentic-screen-scroll). */
+#c64-site-root .c64-authentic-screen .c64-dir-listing-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: var(--c64-screen-bg, #352879);
+  padding: 0.55rem 0.85rem 0.85rem;
+  margin-bottom: 0.15rem;
+}
+
+/* $ directory listing (after LIST): volume header, columns, glow */
+#c64-site-root .c64-authentic-screen .c64-dir-listing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  font-family: "C64 Pro Mono", ui-monospace, monospace !important;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 4px color-mix(in srgb, var(--c64-crt-ink) 32%, transparent),
+    0 0 16px color-mix(in srgb, var(--c64-crt-ink) 10%, transparent);
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-header {
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: var(--c64-border-bg, #1d1d6e);
+  color: var(--c64-crt-ink);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--c64-crt-ink) 28%, transparent);
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-table {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  max-width: 100%;
+  align-items: stretch;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-row {
+  display: grid;
+  grid-template-columns: minmax(2.75ch, 3.25ch) minmax(0, 1fr) 2.75ch;
+  column-gap: 0.4em;
+  align-items: baseline;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 0.25rem;
+  margin: 0;
+  box-sizing: border-box;
+  line-height: 1.25;
+  color: var(--c64-crt-ink);
+  background: transparent;
+  cursor: default;
+}
+
+/* ~44px tap target on coarse pointers only; list lines match boot <pre> on desktop */
+@media (pointer: coarse) {
+  #c64-site-root .c64-authentic-screen .c64-dir-row--prg {
+    min-height: 2.75rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    align-items: center;
+  }
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-row--prg {
+  cursor: pointer;
+  font-family: "C64 Pro Mono", ui-monospace, monospace !important;
+  font-size: inherit;
+  font-weight: normal;
+  font-style: normal;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    text-shadow 0.12s ease;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-row--prg:hover,
+#c64-site-root .c64-authentic-screen .c64-dir-row--prg:focus-visible {
+  background: var(--c64-crt-ink);
+  color: var(--c64-screen-bg, #352879);
+  text-shadow: none;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-row--prg:focus {
+  outline: none;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-row--prg:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-blocks {
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-name {
+  text-align: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#c64-site-root .c64-authentic-screen .c64-dir-type {
+  text-align: end;
+}
+
+#c64-site-root .c64-authentic-screen .c64-terminal-prompt .c64-disk-type-cursor {
+  vertical-align: text-bottom;
+}
+
+/* Ghost input: no field chrome, hit target matches typed line only */
+#c64-site-root .c64-authentic-screen .c64-terminal-input {
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+  font-family: "C64 Pro Mono", ui-monospace, monospace !important;
+  /* ≥16px avoids iOS zoom when the field is focused (e.g. user taps the prompt to type). */
+  font-size: 16px !important;
+}
+
+#c64-site-root .c64-authentic-screen .c64-terminal-input:focus,
+#c64-site-root .c64-authentic-screen .c64-terminal-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.c64-home-load-btn {
+  font-family: "C64 Pro Mono", ui-monospace, monospace !important;
+  text-transform: uppercase;
+}
+
+#c64-site-root.c64-site {
+  position: relative;
+  isolation: isolate;
+  font-family: var(--font-vt323), ui-monospace, monospace;
+  font-size: calc(1rem * var(--c64-text-scale, 1.05));
+  background-color: var(--c64-border-bg, #1d1d6e);
+  color: var(--foreground);
+}
+
+/* Drawer chrome: VT323 even if nested controls reset font (e.g. Headless UI). */
+#c64-site-root .c64-drawer-header,
+#c64-site-root .c64-drawer-close {
+  font-family: var(--font-vt323), ui-monospace, monospace !important;
+}
+
+/*
+ * Drawer / overlay pages (About, work history, markdown, etc.): Tailwind text-* uses rem from
+ * the html root, so they ignore #c64-site-root font-size. Scale this subtree so loaded pages read larger.
+ */
+#c64-site-root .c64-drawer-page {
+  zoom: 1.08;
+}
+
+#c64-site-root.c64-site[data-c64-scanlines="on"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root.c64-site[data-c64-scanlines="on"]::after {
+    display: none;
+  }
+}
+
+/* C64 grid: subtle column guides on screen area */
+.c64-screen-grid {
+  background-image:
+    linear-gradient(rgba(168, 168, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 168, 255, 0.06) 1px, transparent 1px);
+  background-size: var(--grid-major) var(--grid-major), var(--grid-major) var(--grid-major);
+  background-position: 0 0, 0 0;
+}
+
+/* PETSCII-style frame (decorative) */
+.c64-petscii-frame {
+  box-shadow:
+    inset 0 0 0 2px var(--c64-accent, var(--primary)),
+    inset 0 0 0 4px var(--c64-screen-bg, var(--background));
+}
+
+.c64-prose {
+  line-height: 1.55;
+}
+
+/* Drawer body copy: one size (~20px) across About, work history, works, notes, guestbook. */
+#c64-site-root .c64-drawer-copy {
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.c64-prose h1,
+.c64-prose h2,
+.c64-prose h3,
+.c64-prose h4 {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.c64-prose a {
+  color: var(--c64-accent, var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.c64-media img,
+.c64-media video,
+.c64-media .video-js {
+  max-width: 100%;
+  object-fit: contain;
+  border: 4px solid var(--c64-accent, var(--primary));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.c64-media .video-js {
+  border-radius: 0 !important;
+}
+
+/* Leaflet inside portfolio: hex vars, not hsl() */
+#c64-site-root .leaflet-container {
+  background: var(--c64-border-bg, var(--background)) !important;
+  font-family: var(--font-vt323), ui-monospace, monospace !important;
+}
+
+#c64-site-root .custom-cluster-icon.leaflet-div-icon,
+#c64-site-root .custom-single-marker-icon.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+#c64-site-root .leaflet-popup-content-wrapper,
+#c64-site-root .leaflet-popup-tip {
+  background: var(--background);
+  color: var(--foreground);
+  border: 2px solid var(--c64-accent, var(--primary));
+}
+
+#c64-site-root .leaflet-control-zoom a {
+  background: var(--background);
+  color: var(--foreground);
+  border: 2px solid var(--c64-accent, var(--primary));
+}
+
+#c64-site-root .leaflet-control-zoom a:hover {
+  background: color-mix(in srgb, var(--background) 80%, var(--c64-accent, var(--primary)));
+}
+
+#c64-site-root .leaflet-control-attribution {
+  background: var(--background);
+  color: var(--muted-foreground);
+  border: 2px solid var(--border);
+}
+
+#c64-site-root .leaflet-control-attribution a {
+  color: var(--c64-accent, var(--primary));
+}
+
+/* Video.js: flat C64 chrome */
+#c64-site-root .video-js {
+  font-family: var(--font-vt323), ui-monospace, monospace !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
+#c64-site-root .video-js .vjs-big-play-button {
+  border: 3px solid var(--c64-accent, var(--primary));
+  background-color: var(--c64-screen-bg, #352879);
+  border-radius: 0 !important;
+  width: 72px;
+  height: 56px;
+  line-height: 50px;
+  font-size: 2.5em;
+  left: 50%;
+  top: 50%;
+  margin-left: -36px;
+  margin-top: -28px;
+}
+
+#c64-site-root .video-js .vjs-big-play-button:hover {
+  background-color: color-mix(in srgb, var(--c64-screen-bg, #352879) 85%, var(--c64-accent, var(--primary)));
+}
+
+#c64-site-root .video-js .vjs-control-bar {
+  background: var(--c64-border-bg, #1d1d6e);
+  backdrop-filter: none;
+  border-top: 3px solid var(--c64-accent, var(--primary));
+}
+
+#c64-site-root .video-js .vjs-progress-control .vjs-play-progress {
+  background-color: var(--c64-accent, var(--primary));
+}
+
+#c64-site-root .video-js .vjs-progress-control .vjs-load-progress {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+#c64-site-root .video-js button {
+  color: var(--foreground);
+}
+
+/* Home boot: blinking block cursor after READY. */
+.c64-boot-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.15em;
+  background: var(--c64-accent, var(--primary));
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: c64-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes c64-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c64-boot-cursor {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Disk boot: blinking block cursor while typing LOAD / SEARCHING / … */
+#c64-site-root .c64-authentic-screen .c64-disk-type-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.15em;
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  background: var(--c64-crt-ink);
+}
+
+#c64-site-root .c64-authentic-screen pre.c64-authentic-boot .c64-disk-type-cursor {
+  animation: c64-cursor-blink 1s steps(1, end) infinite;
+}
+
+/* Terminal prompt: solid block when focus is in the list (or elsewhere); blink only with input focused */
+#c64-site-root .c64-authentic-screen .c64-terminal .c64-disk-type-cursor {
+  animation: none;
+  opacity: 1;
+}
+
+#c64-site-root .c64-authentic-screen .c64-terminal:focus-within .c64-disk-type-cursor {
+  animation: c64-cursor-blink 1s steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root .c64-authentic-screen .c64-disk-type-cursor {
+    animation: none !important;
+    opacity: 1;
+  }
+}
+
+/* LOADING line: | / - \ spinner (same cell as block cursor, C64 Pro Mono from parent .c64-authentic-boot) */
+#c64-site-root .c64-authentic-screen .c64-disk-spin-char {
+  display: inline-block;
+  min-width: 0.55em;
+  text-align: center;
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  color: var(--c64-crt-ink);
 }
