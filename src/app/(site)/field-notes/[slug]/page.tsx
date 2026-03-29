@@ -8,6 +8,9 @@ import Navigation from '@/app/components/Navigation'
 import { DocumentTextIcon } from '@heroicons/react/24/outline'
 import { usePageTitle } from '@/app/hooks/usePageTitle'
 
+/** Legacy bottom bar; off on full-bleed note pages for now. Flip to true to restore. */
+const SHOW_LEGACY_FOOTER_NAV = false
+
 export default function FieldNotePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const router = useRouter()
@@ -65,8 +68,7 @@ export default function FieldNotePage({ params }: { params: Promise<{ slug: stri
         </div>
       </Drawer>
 
-      {/* Footer Navigation */}
-      <Navigation />
+      {SHOW_LEGACY_FOOTER_NAV ? <Navigation /> : null}
     </div>
   )
 }
