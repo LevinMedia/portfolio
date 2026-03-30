@@ -40,7 +40,7 @@ export interface C64Settings {
 export const defaultC64Settings: C64Settings = {
   accent: 'classic',
   screenTint: 'default',
-  scanlines: false,
+  scanlines: true,
   boot: 'session',
   textScale: 'comfortable',
 }

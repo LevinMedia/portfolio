@@ -1,12 +1,52 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type { KeyboardEvent, ReactNode, RefObject } from 'react'
+import type { ClipboardEvent, KeyboardEvent, ReactNode, RefObject } from 'react'
 import {
   C64_HOME_BOOT_LINES_SESSION_KEY,
   loadC64Settings,
 } from '@/lib/c64-settings'
+import type { BasicOutputOp } from '@/lib/c64-basic'
+import {
+  createBasicProgram,
+  formatProgramLineEcho,
+  isDirectList,
+  isDirectNew,
+  isDirectRun,
+  listProgram,
+  normalizeInputLine,
+  resetDirectEvalContext,
+  runBasicProgram,
+  storeProgramLine,
+  tryDirectGoto,
+  tryDirectPrint,
+  tryParseProgramLine,
+} from '@/lib/c64-basic'
+
+function applyBasicOutputOps(
+  ops: BasicOutputOp[],
+  appendRows: (texts: string[]) => void,
+): void {
+  let buf = ''
+  for (const op of ops) {
+    if (op.op === 'append') {
+      buf += op.text
+    } else if (op.op === 'newline') {
+      appendRows([buf])
+      buf = ''
+    } else if (op.op === 'lines') {
+      if (buf.length > 0) {
+        appendRows([buf])
+        buf = ''
+      }
+      appendRows(op.texts)
+    }
+  }
+  if (buf.length > 0) {
+    appendRows([buf])
+  }
+}
 
 /**
  * Home-only layout: classic C64 CRT (no site nav, no howdy).
@@ -150,6 +190,81 @@ const LOAD_LABEL_TO_ACTION: Record<string, keyof C64HomeCommandHandlers> = {
   SETTINGS: 'onOpenSiteSettings',
 }
 
+/** LOAD "$",8 / LOAD"$",8 — read $ directory (no ,1). Case-insensitive. */
+function isLoadDiskCatalogCommand(line: string): boolean {
+  const t = line.replace(/\r/g, '').trim()
+  return /^\s*LOAD\s*"\$"\s*,\s*8\s*$/i.test(t)
+}
+
+/** CRT scrollback line, or an embedded clickable disk catalog (LIST with no BASIC program). */
+export type C64TerminalHistoryRow =
+  | { id: number; kind: 'text'; text: string }
+  | { id: number; kind: 'disk-catalog' }
+
+function c64TextRow(id: number, text: string): C64TerminalHistoryRow {
+  return { id, kind: 'text', text }
+}
+
+/** Same rows as the main directory block, rendered inside the terminal log after LIST. */
+function TerminalDiskCatalogEmbed({
+  blockId,
+  onPlayLoad,
+  onProgramKeyDown,
+}: {
+  blockId: number
+  onPlayLoad: (action: keyof C64HomeCommandHandlers) => void
+  onProgramKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void
+}) {
+  return (
+    <div
+      className="c64-terminal-disk-catalog m-0 my-2 w-full max-w-full"
+      role="region"
+      aria-label="Disk directory from LIST"
+    >
+      <div className="c64-dir-header text-xs sm:text-base md:text-lg leading-tight tracking-wide py-1.5 rounded-sm w-fit max-w-full">
+        {DISK_VOLUME_LINE}
+      </div>
+      <nav
+        className="c64-dir-table text-xs sm:text-base md:text-lg leading-tight tracking-wide mt-1 w-max max-w-full"
+        aria-label="Disk programs from LIST"
+      >
+        {DIRECTORY_ROWS.map((row, i) =>
+          row.kind === 'del' ? (
+            <div
+              key={`tc-${blockId}-del-${i}`}
+              className="c64-dir-row c64-dir-row--static text-[var(--c64-crt-ink-dim)]"
+            >
+              <span className="c64-dir-blocks tabular-nums">0</span>
+              <span className="c64-dir-name min-w-0 truncate">
+                &quot;----------------&quot;
+              </span>
+              <span className="c64-dir-type">DEL</span>
+            </div>
+          ) : (
+            <button
+              key={`tc-${blockId}-${row.action}`}
+              type="button"
+              onClick={() => onPlayLoad(row.action)}
+              onKeyDown={onProgramKeyDown}
+              className="c64-dir-row c64-dir-row--prg w-full text-left border-0 rounded-none"
+              aria-label={`Load ${LOAD_COMMAND_BY_ACTION[row.action]} and open ${row.name}`}
+            >
+              <span className="c64-dir-blocks tabular-nums">{row.blocks}</span>
+              <span className="c64-dir-name min-w-0 truncate">
+                &quot;{row.name}&quot;
+              </span>
+              <span className="c64-dir-type">PRG</span>
+            </button>
+          ),
+        )}
+      </nav>
+      <div className="c64-dir-footer text-xs sm:text-base md:text-lg leading-tight tracking-wide mt-3 text-[var(--c64-crt-ink)]">
+        <p className="m-0">{DIRECTORY_BLOCKS_FREE} BLOCKS FREE.</p>
+      </div>
+    </div>
+  )
+}
+
 const LOAD_TYPEWRITER_MS = 42
 const LOAD_AFTER_TYPED_PAUSE_MS = 140
 
@@ -201,10 +316,10 @@ export default function C64AuthenticHomeScreen({
   const [bootComplete, setBootComplete] = useState(false)
 
   /** Lines committed with Enter below READY. (typed text stays visible). */
-  const [terminalHistory, setTerminalHistory] = useState<{ id: number; text: string }[]>(
-    [],
-  )
+  const [terminalHistory, setTerminalHistory] = useState<C64TerminalHistoryRow[]>([])
   const [terminalLine, setTerminalLine] = useState('')
+  /** Caret index in `terminalLine` (0…length); mirrored to ghost input when editable. */
+  const [terminalCaretPos, setTerminalCaretPos] = useState(0)
   const [terminalAutoTyping, setTerminalAutoTyping] = useState(false)
   /** True while blank → SEARCHING → LOADING spinner; input locked. */
   const [terminalSequenceBusy, setTerminalSequenceBusy] = useState(false)
@@ -218,6 +333,19 @@ export default function C64AuthenticHomeScreen({
   const [terminalLoadingGlyph, setTerminalLoadingGlyph] = useState<string | null>(
     null,
   )
+  const [basicRunning, setBasicRunning] = useState(false)
+  const basicRunningRef = useRef(false)
+  /** Show on-screen [STOP] only on phones / coarse-pointer tablets (desktop uses Escape). */
+  const [basicStopTouchUi, setBasicStopTouchUi] = useState(false)
+  const basicProgramRef = useRef(createBasicProgram())
+  /** After manual LOAD "$",8 finishes, LIST prints the disk catalog in the terminal log. */
+  const [diskCatalogReady, setDiskCatalogReady] = useState(false)
+  const basicAbortRef = useRef<AbortController | null>(null)
+  /** One terminal row that grows while PRINT uses `;` (no newline yet). */
+  const basicLivePrintRowIdRef = useRef<number | null>(null)
+  const basicPrintRafRef = useRef<number | null>(null)
+  /** Latest “replay LIST after drawer” impl (ref so drawer timeout always calls current). */
+  const playDiskListReplayRef = useRef<() => void>(() => {})
   const terminalLineIdRef = useRef(0)
   const terminalTypewriterRunIdRef = useRef(0)
   const terminalTypewriterTimeoutRef = useRef<number | undefined>(undefined)
@@ -227,9 +355,13 @@ export default function C64AuthenticHomeScreen({
   const terminalLoadTimeoutsRef = useRef<number[]>([])
 
   const scrollViewportRef = useRef<HTMLDivElement>(null)
+  /** Scroll target when LIST shows the $ catalog (clickable rows live here, not in the log). */
+  const diskListingRef = useRef<HTMLDivElement>(null)
   const terminalInputRef = useRef<HTMLInputElement>(null)
+  /** Same behavior as Enter; used for multi-line paste into the ghost input. */
+  const terminalSubmitRef = useRef<(next: string) => void>(() => {})
   const diskLogKey = diskCompletedLines.join('\n')
-  const terminalScrollKey = `${terminalHistory.map((h) => h.text).join('\n')}\n${terminalLine}\n${terminalLoadingGlyph ?? ''}\n${terminalSequenceBusy}\n${terminalPendingRun ? 'p' : ''}`
+  const terminalScrollKey = `${terminalHistory.map((h) => (h.kind === 'text' ? h.text : '[disk]')).join('\n')}\n${terminalLine}\n${terminalLoadingGlyph ?? ''}\n${terminalSequenceBusy}\n${terminalPendingRun ? 'p' : ''}\n${basicRunning ? 'b' : ''}\n${diskCatalogReady ? 'c' : 'C'}`
 
   useLayoutEffect(() => {
     const el = scrollViewportRef.current
@@ -259,6 +391,63 @@ export default function C64AuthenticHomeScreen({
   }, [terminalSequenceBusy])
 
   useEffect(() => {
+    basicRunningRef.current = basicRunning
+  }, [basicRunning])
+
+  const terminalInputBusy =
+    terminalAutoTyping || terminalSequenceBusy || basicRunning
+  /** Caret index for drawing the prompt (always end while input is read-only). */
+  const terminalPromptCaretPos = terminalInputBusy
+    ? terminalLine.length
+    : Math.min(terminalCaretPos, terminalLine.length)
+
+  const syncTerminalCaretFromInput = useCallback(
+    (el: HTMLInputElement) => {
+      if (terminalAutoTyping || terminalSequenceBusy || basicRunning) {
+        return
+      }
+      const raw = el.selectionStart ?? 0
+      const clamped = Math.min(Math.max(0, raw), el.value.length)
+      setTerminalCaretPos(clamped)
+    },
+    [terminalAutoTyping, terminalSequenceBusy, basicRunning],
+  )
+
+  /** Keep ghost input selection and caret index aligned with the visible prompt (controlled input). */
+  useLayoutEffect(() => {
+    const el = terminalInputRef.current
+    const len = terminalLine.length
+
+    if (terminalInputBusy) {
+      setTerminalCaretPos(len)
+      if (el && document.activeElement === el) {
+        el.setSelectionRange(len, len)
+      }
+      return
+    }
+
+    const c = Math.min(terminalCaretPos, len)
+    if (c !== terminalCaretPos) {
+      setTerminalCaretPos(c)
+    }
+    if (el && document.activeElement === el) {
+      el.setSelectionRange(c, c)
+    }
+  }, [
+    terminalLine,
+    terminalCaretPos,
+    terminalInputBusy,
+  ])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: none) and (pointer: coarse)')
+    const sync = () => setBasicStopTouchUi(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
     if (!bootComplete) {
       return
     }
@@ -268,7 +457,10 @@ export default function C64AuthenticHomeScreen({
     return () => window.clearTimeout(id)
   }, [bootComplete])
 
-  /** Drawers focus-trap steals the prompt; put it back when a panel closes. */
+  /**
+   * When a site drawer closes, replay loading the disk catalog (LOAD"$",8 → SEARCHING → LOADING →
+   * READY.) then LIST + clickable directory embed + READY. Skip if terminal is busy or BASIC runs.
+   */
   useEffect(() => {
     if (!bootComplete) {
       return
@@ -278,9 +470,18 @@ export default function C64AuthenticHomeScreen({
     if (wasOpen && !drawerOpen) {
       const id = window.setTimeout(() => {
         if (terminalAutoTypingRef.current || terminalSequenceBusyRef.current) {
+          window.requestAnimationFrame(() => {
+            focusC64TerminalInput(terminalInputRef)
+          })
           return
         }
-        focusC64TerminalInput(terminalInputRef)
+        if (basicRunningRef.current) {
+          window.requestAnimationFrame(() => {
+            focusC64TerminalInput(terminalInputRef)
+          })
+          return
+        }
+        playDiskListReplayRef.current()
       }, 200)
       return () => window.clearTimeout(id)
     }
@@ -289,6 +490,12 @@ export default function C64AuthenticHomeScreen({
 
   useEffect(() => {
     return () => {
+      if (basicPrintRafRef.current !== null) {
+        cancelAnimationFrame(basicPrintRafRef.current)
+        basicPrintRafRef.current = null
+      }
+      basicLivePrintRowIdRef.current = null
+      basicAbortRef.current?.abort()
       terminalTypewriterRunIdRef.current += 1
       if (terminalTypewriterTimeoutRef.current !== undefined) {
         window.clearTimeout(terminalTypewriterTimeoutRef.current)
@@ -300,6 +507,32 @@ export default function C64AuthenticHomeScreen({
       terminalLoadTimeoutsRef.current = []
     }
   }, [])
+
+  /**
+   * Escape: abort BASIC when running; otherwise clear disk-catalog LIST readiness so you can retype
+   * LOAD "$",8 then LIST (drawer keeps Escape for closing panels).
+   */
+  useEffect(() => {
+    if (drawerOpen) {
+      return undefined
+    }
+    const onKeyDown = (ev: globalThis.KeyboardEvent) => {
+      if (ev.key !== 'Escape') {
+        return
+      }
+      if (basicRunning) {
+        ev.preventDefault()
+        basicAbortRef.current?.abort()
+        return
+      }
+      if (terminalSequenceBusyRef.current || terminalAutoTypingRef.current) {
+        return
+      }
+      setDiskCatalogReady(false)
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => document.removeEventListener('keydown', onKeyDown, true)
+  }, [basicRunning, drawerOpen])
 
   const handlers: Record<keyof C64HomeCommandHandlers, () => void> = {
     onOpenAbout,
@@ -335,6 +568,143 @@ export default function C64AuthenticHomeScreen({
   const searchLabelFromLoadCommand = (cmd: string) => {
     const m = /LOAD\s+"([^"]+)"/i.exec(cmd)
     return (m?.[1] ?? '').toUpperCase()
+  }
+
+  const appendTerminalTexts = (texts: string[]) => {
+    if (texts.length === 0) {
+      return
+    }
+    setTerminalHistory((prev) => {
+      const out = [...prev.slice(-199)]
+      for (const text of texts) {
+        terminalLineIdRef.current += 1
+        out.push(c64TextRow(terminalLineIdRef.current, text))
+      }
+      return out
+    })
+  }
+
+  /** Blank row after READY. in the log (separates command blocks). */
+  const appendReadyWithGap = () => {
+    appendTerminalTexts(['READY.', ''])
+  }
+
+  const appendTerminalDiskCatalogEmbed = () => {
+    setTerminalHistory((prev) => {
+      const out = [...prev.slice(-199)]
+      terminalLineIdRef.current += 1
+      out.push({ id: terminalLineIdRef.current, kind: 'disk-catalog' })
+      return out
+    })
+  }
+
+  /**
+   * LIST: BASIC program lines in the log if any; else LIST + clickable disk catalog embed + READY.
+   */
+  const handleDirectListCommand = () => {
+    if (basicProgramRef.current.size > 0) {
+      appendTerminalTexts([
+        'LIST',
+        ...listProgram(basicProgramRef.current),
+        'READY.',
+        '',
+      ])
+      return
+    }
+    appendTerminalTexts(['LIST'])
+    appendTerminalDiskCatalogEmbed()
+    appendTerminalTexts(['READY.', ''])
+    if (diskCatalogReady) {
+      setDiskCatalogReady(false)
+    }
+  }
+
+  const startBasicRun = (entryLine?: number) => {
+    const ac = new AbortController()
+    basicAbortRef.current = ac
+    basicLivePrintRowIdRef.current = null
+    setBasicRunning(true)
+    void (async () => {
+      let printBuf = ''
+
+      const pumpPrintToTerminal = () => {
+        basicPrintRafRef.current = null
+        if (printBuf.length === 0) return
+        const text = printBuf
+        const liveId = basicLivePrintRowIdRef.current
+        if (liveId === null) {
+          terminalLineIdRef.current += 1
+          const id = terminalLineIdRef.current
+          basicLivePrintRowIdRef.current = id
+          setTerminalHistory((prev) => [...prev.slice(-199), c64TextRow(id, text)])
+        } else {
+          setTerminalHistory((prev) =>
+            prev.map((row) =>
+              row.id === liveId && row.kind === 'text'
+                ? c64TextRow(row.id, text)
+                : row,
+            ),
+          )
+        }
+      }
+
+      const schedulePump = () => {
+        if (basicPrintRafRef.current !== null) return
+        basicPrintRafRef.current = requestAnimationFrame(() => {
+          pumpPrintToTerminal()
+        })
+      }
+
+      const cancelPumpRaf = () => {
+        if (basicPrintRafRef.current !== null) {
+          cancelAnimationFrame(basicPrintRafRef.current)
+          basicPrintRafRef.current = null
+        }
+      }
+
+      const flushPrintSync = () => {
+        cancelPumpRaf()
+        pumpPrintToTerminal()
+      }
+
+      ac.signal.addEventListener('abort', flushPrintSync)
+
+      const onOutput = (op: BasicOutputOp) => {
+        if (op.op === 'append') {
+          printBuf += op.text
+          schedulePump()
+        } else if (op.op === 'newline') {
+          flushPrintSync()
+          printBuf = ''
+          basicLivePrintRowIdRef.current = null
+        } else if (op.op === 'lines') {
+          flushPrintSync()
+          printBuf = ''
+          basicLivePrintRowIdRef.current = null
+          appendTerminalTexts(op.texts)
+        }
+      }
+      try {
+        await runBasicProgram(basicProgramRef.current, {
+          entryLine,
+          signal: ac.signal,
+          onOutput,
+        })
+      } finally {
+        ac.signal.removeEventListener('abort', flushPrintSync)
+        flushPrintSync()
+        printBuf = ''
+        basicLivePrintRowIdRef.current = null
+        if (basicAbortRef.current === ac) {
+          basicAbortRef.current = null
+        }
+        setBasicRunning(false)
+        appendReadyWithGap()
+        window.requestAnimationFrame(() => {
+          focusC64TerminalInput(terminalInputRef)
+        })
+      }
+    })()
   }
 
   const handleDirectoryProgramKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -388,6 +758,7 @@ export default function C64AuthenticHomeScreen({
     source: 'manual' | 'click',
     searchLabel: string,
   ) => {
+    setDiskCatalogReady(false)
     clearTerminalLoadTimeoutsOnly()
     terminalLoadRunIdRef.current += 1
     const runId = terminalLoadRunIdRef.current
@@ -400,10 +771,10 @@ export default function C64AuthenticHomeScreen({
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const appendRows = (texts: string[]) => {
-      const rows: { id: number; text: string }[] = []
+      const rows: C64TerminalHistoryRow[] = []
       for (const text of texts) {
         terminalLineIdRef.current += 1
-        rows.push({ id: terminalLineIdRef.current, text })
+        rows.push(c64TextRow(terminalLineIdRef.current, text))
       }
       setTerminalHistory((prev) => [...prev.slice(-199), ...rows])
     }
@@ -414,6 +785,7 @@ export default function C64AuthenticHomeScreen({
         `SEARCHING FOR ${searchLabel}`,
         'LOADING',
         'READY.',
+        '',
         ...(source === 'click' ? (['RUN'] as const) : []),
       ]
       appendRows([...texts])
@@ -455,7 +827,7 @@ export default function C64AuthenticHomeScreen({
       const loadingId = terminalLineIdRef.current
       setTerminalHistory((prev) => [
         ...prev.slice(-199),
-        { id: loadingId, text: 'LOADING' },
+        c64TextRow(loadingId, 'LOADING'),
       ])
       setTerminalLoadingLineId(loadingId)
 
@@ -473,9 +845,12 @@ export default function C64AuthenticHomeScreen({
           setTerminalLoadingLineId(null)
           terminalLineIdRef.current += 1
           const readyId = terminalLineIdRef.current
+          terminalLineIdRef.current += 1
+          const readyGapId = terminalLineIdRef.current
           setTerminalHistory((prev) => [
             ...prev.slice(-199),
-            { id: readyId, text: 'READY.' },
+            c64TextRow(readyId, 'READY.'),
+            c64TextRow(readyGapId, ''),
           ])
           setTerminalSequenceBusy(false)
           if (source === 'click') {
@@ -487,7 +862,7 @@ export default function C64AuthenticHomeScreen({
               const runRowId = terminalLineIdRef.current
               setTerminalHistory((prev) => [
                 ...prev.slice(-199),
-                { id: runRowId, text: 'RUN' },
+                c64TextRow(runRowId, 'RUN'),
               ])
               handlersRef.current[action]()
             }, TERMINAL_AUTO_RUN_PAUSE_MS)
@@ -498,6 +873,152 @@ export default function C64AuthenticHomeScreen({
       }
       runSpinFrame(0)
     }, tLoading)
+  }
+
+  type DiskCatalogSequenceOpts = {
+    /** Log LOAD"$",8 before blank (closing a drawer — full disk reload). */
+    logSyntheticLoadLine?: boolean
+    /** After READY.: append LIST + clickable embed + READY. instead of $-catalog readiness only. */
+    endWithListEmbed?: boolean
+    /** Called after sequence fully finishes (reduced or animated). */
+    onComplete?: () => void
+  }
+
+  /** LOAD "$",8: same cadence as a PRG load; optional drawer replay then auto-LIST + embed. */
+  const startTerminalDiskCatalogSequence = (opts?: DiskCatalogSequenceOpts) => {
+    setDiskCatalogReady(false)
+    clearTerminalLoadTimeoutsOnly()
+    terminalLoadRunIdRef.current += 1
+    const runId = terminalLoadRunIdRef.current
+    setTerminalPendingRun(null)
+    setTerminalLoadingLineId(null)
+    setTerminalLoadingGlyph(null)
+
+    if (opts?.logSyntheticLoadLine) {
+      appendTerminalTexts([DISK_SEQUENCE_LINES[1]])
+    }
+
+    const finishListEmbed = () => {
+      appendTerminalTexts(['LIST'])
+      appendTerminalDiskCatalogEmbed()
+      appendTerminalTexts(['READY.', ''])
+      opts?.onComplete?.()
+    }
+
+    const finishCatalogReadyOnly = () => {
+      setDiskCatalogReady(true)
+      opts?.onComplete?.()
+    }
+
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const appendRows = (texts: string[]) => {
+      const rows: C64TerminalHistoryRow[] = []
+      for (const text of texts) {
+        terminalLineIdRef.current += 1
+        rows.push(c64TextRow(terminalLineIdRef.current, text))
+      }
+      setTerminalHistory((prev) => [...prev.slice(-199), ...rows])
+    }
+
+    if (reduced) {
+      appendRows(['', 'SEARCHING FOR $', 'LOADING', 'READY.', ''])
+      setTerminalSequenceBusy(false)
+      if (opts?.endWithListEmbed) {
+        finishListEmbed()
+      } else {
+        finishCatalogReadyOnly()
+      }
+      return
+    }
+
+    setTerminalSequenceBusy(true)
+
+    const schedule = (fn: () => void, ms: number) => {
+      const tid = window.setTimeout(() => {
+        if (terminalLoadRunIdRef.current !== runId) {
+          return
+        }
+        fn()
+      }, ms) as unknown as number
+      terminalLoadTimeoutsRef.current.push(tid)
+    }
+
+    const tBlank = TERMINAL_LOAD_BLANK_PAUSE_MS
+    const tSearch = tBlank + TERMINAL_LOAD_AFTER_BLANK_MS
+    const tLoading = tSearch + TERMINAL_LOAD_AFTER_SEARCHING_MS
+
+    schedule(() => {
+      appendRows([''])
+    }, tBlank)
+
+    schedule(() => {
+      appendRows(['SEARCHING FOR $'])
+    }, tSearch)
+
+    schedule(() => {
+      terminalLineIdRef.current += 1
+      const loadingId = terminalLineIdRef.current
+      setTerminalHistory((prev) => [
+        ...prev.slice(-199),
+        c64TextRow(loadingId, 'LOADING'),
+      ])
+      setTerminalLoadingLineId(loadingId)
+
+      const runSpinFrame = (frame: number) => {
+        if (terminalLoadRunIdRef.current !== runId) {
+          return
+        }
+        setTerminalLoadingGlyph(
+          TERMINAL_LOAD_SPIN_CHARS[frame % TERMINAL_LOAD_SPIN_CHARS.length],
+        )
+        if (frame + 1 < TERMINAL_LOAD_SPIN_FRAME_COUNT) {
+          schedule(() => runSpinFrame(frame + 1), TERMINAL_LOAD_SPIN_FRAME_MS)
+        } else {
+          setTerminalLoadingGlyph(null)
+          setTerminalLoadingLineId(null)
+          terminalLineIdRef.current += 1
+          const readyId = terminalLineIdRef.current
+          terminalLineIdRef.current += 1
+          const readyGapId = terminalLineIdRef.current
+          setTerminalHistory((prev) => [
+            ...prev.slice(-199),
+            c64TextRow(readyId, 'READY.'),
+            c64TextRow(readyGapId, ''),
+          ])
+          setTerminalSequenceBusy(false)
+          if (opts?.endWithListEmbed) {
+            finishListEmbed()
+          } else {
+            finishCatalogReadyOnly()
+          }
+        }
+      }
+      runSpinFrame(0)
+    }, tLoading)
+  }
+
+  playDiskListReplayRef.current = () => {
+    if (!bootComplete) {
+      return
+    }
+    if (terminalTypewriterTimeoutRef.current !== undefined) {
+      window.clearTimeout(terminalTypewriterTimeoutRef.current)
+    }
+    terminalTypewriterRunIdRef.current += 1
+    setTerminalLine('')
+    setTerminalAutoTyping(false)
+    startTerminalDiskCatalogSequence({
+      logSyntheticLoadLine: true,
+      endWithListEmbed: true,
+      onComplete: () => {
+        window.requestAnimationFrame(() => {
+          focusC64TerminalInput(terminalInputRef, { force: true })
+        })
+      },
+    })
   }
 
   const playLoadCommandFromList = (action: keyof C64HomeCommandHandlers) => {
@@ -516,7 +1037,7 @@ export default function C64AuthenticHomeScreen({
     if (reduced) {
       terminalLineIdRef.current += 1
       const id = terminalLineIdRef.current
-      setTerminalHistory((prev) => [...prev.slice(-199), { id, text: full }])
+      setTerminalHistory((prev) => [...prev.slice(-199), c64TextRow(id, full)])
       setTerminalLine('')
       startTerminalLoadSequence(
         action,
@@ -557,7 +1078,7 @@ export default function C64AuthenticHomeScreen({
           }
           terminalLineIdRef.current += 1
           const id = terminalLineIdRef.current
-          setTerminalHistory((prev) => [...prev.slice(-199), { id, text: full }])
+          setTerminalHistory((prev) => [...prev.slice(-199), c64TextRow(id, full)])
           setTerminalLine('')
           setTerminalAutoTyping(false)
           startTerminalLoadSequence(
@@ -712,6 +1233,239 @@ export default function C64AuthenticHomeScreen({
     }
   }, [])
 
+  terminalSubmitRef.current = (nextRaw: string) => {
+    const next = nextRaw.replace(/\r/g, '').trim()
+    if (next.length === 0) {
+      setTerminalLine('')
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    if (terminalPendingRun) {
+      if (/^RUN$/i.test(next)) {
+        terminalLineIdRef.current += 1
+        const runLineId = terminalLineIdRef.current
+        const { action: pendingAction } = terminalPendingRun
+        setTerminalPendingRun(null)
+        setTerminalHistory((prev) => [
+          ...prev.slice(-199),
+          c64TextRow(runLineId, 'RUN'),
+        ])
+        handlers[pendingAction]()
+      } else {
+        const loadAction = getTypedLoadAction(next)
+        if (loadAction !== null) {
+          terminalLineIdRef.current += 1
+          const lineId = terminalLineIdRef.current
+          setTerminalPendingRun(null)
+          setTerminalHistory((prev) => [
+            ...prev.slice(-199),
+            c64TextRow(lineId, next),
+          ])
+          setTerminalLine('')
+          startTerminalLoadSequence(
+            loadAction,
+            'manual',
+            searchLabelFromLoadCommand(
+              LOAD_COMMAND_BY_ACTION[loadAction],
+            ),
+          )
+          window.requestAnimationFrame(() => {
+            focusC64TerminalInput(terminalInputRef)
+          })
+          return
+        }
+        if (isLoadDiskCatalogCommand(next)) {
+          setTerminalPendingRun(null)
+          terminalLineIdRef.current += 1
+          const catLineId = terminalLineIdRef.current
+          setTerminalHistory((prev) => [
+            ...prev.slice(-199),
+            c64TextRow(catLineId, normalizeInputLine(next).toUpperCase()),
+          ])
+          setTerminalLine('')
+          startTerminalDiskCatalogSequence()
+          window.requestAnimationFrame(() => {
+            focusC64TerminalInput(terminalInputRef)
+          })
+          return
+        }
+        const plPending = tryParseProgramLine(next)
+        if (plPending !== null) {
+          setTerminalPendingRun(null)
+          storeProgramLine(
+            basicProgramRef.current,
+            plPending.lineNum,
+            plPending.rest,
+          )
+          setDiskCatalogReady(false)
+          const echo = formatProgramLineEcho(
+            plPending.lineNum,
+            plPending.rest,
+          )
+          appendTerminalTexts([echo])
+        } else if (isDirectList(next)) {
+          setTerminalPendingRun(null)
+          handleDirectListCommand()
+        } else if (isDirectNew(next)) {
+          setTerminalPendingRun(null)
+          basicProgramRef.current = createBasicProgram()
+          resetDirectEvalContext()
+          setDiskCatalogReady(false)
+          appendTerminalTexts(['NEW', 'READY.', ''])
+        } else {
+          const gotoTargetPending = tryDirectGoto(next)
+          const printDirectPending = tryDirectPrint(next)
+          if (gotoTargetPending !== null) {
+            setTerminalPendingRun(null)
+            appendTerminalTexts([
+              normalizeInputLine(next).toUpperCase(),
+            ])
+            setTerminalLine('')
+            startBasicRun(gotoTargetPending)
+            window.requestAnimationFrame(() => {
+              focusC64TerminalInput(terminalInputRef)
+            })
+            return
+          }
+          if (printDirectPending.ok) {
+            setTerminalPendingRun(null)
+            appendTerminalTexts([
+              normalizeInputLine(next).toUpperCase(),
+            ])
+            applyBasicOutputOps(
+              printDirectPending.ops,
+              appendTerminalTexts,
+            )
+            appendReadyWithGap()
+          } else {
+            terminalLineIdRef.current += 1
+            const badLineId = terminalLineIdRef.current
+            terminalLineIdRef.current += 1
+            const errId = terminalLineIdRef.current
+            setTerminalHistory((prev) => [
+              ...prev.slice(-199),
+              c64TextRow(badLineId, next),
+              c64TextRow(errId, '?SYNTAX ERROR'),
+            ])
+          }
+        }
+      }
+      setTerminalLine('')
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    if (isLoadDiskCatalogCommand(next)) {
+      terminalLineIdRef.current += 1
+      const catLineId = terminalLineIdRef.current
+      setTerminalHistory((prev) => [
+        ...prev.slice(-199),
+        c64TextRow(catLineId, normalizeInputLine(next).toUpperCase()),
+      ])
+      setTerminalLine('')
+      startTerminalDiskCatalogSequence()
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    const pl = tryParseProgramLine(next)
+    if (pl !== null) {
+      storeProgramLine(basicProgramRef.current, pl.lineNum, pl.rest)
+      setDiskCatalogReady(false)
+      const echo = formatProgramLineEcho(pl.lineNum, pl.rest)
+      appendTerminalTexts([echo])
+      setTerminalLine('')
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    if (isDirectList(next)) {
+      handleDirectListCommand()
+      setTerminalLine('')
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    if (isDirectNew(next)) {
+      basicProgramRef.current = createBasicProgram()
+      resetDirectEvalContext()
+      setDiskCatalogReady(false)
+      appendTerminalTexts(['NEW', 'READY.', ''])
+      setTerminalLine('')
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    if (isDirectRun(next)) {
+      appendTerminalTexts(['RUN'])
+      setTerminalLine('')
+      startBasicRun()
+      return
+    }
+
+    const gotoTarget = tryDirectGoto(next)
+    if (gotoTarget !== null) {
+      appendTerminalTexts([normalizeInputLine(next).toUpperCase()])
+      setTerminalLine('')
+      startBasicRun(gotoTarget)
+      return
+    }
+
+    const printDirect = tryDirectPrint(next)
+    if (printDirect.ok) {
+      appendTerminalTexts([normalizeInputLine(next).toUpperCase()])
+      applyBasicOutputOps(printDirect.ops, appendTerminalTexts)
+      appendReadyWithGap()
+      setTerminalLine('')
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef)
+      })
+      return
+    }
+
+    const action = getTypedLoadAction(next)
+    terminalLineIdRef.current += 1
+    const id = terminalLineIdRef.current
+    const rows: C64TerminalHistoryRow[] = [c64TextRow(id, next)]
+    if (action === null) {
+      terminalLineIdRef.current += 1
+      rows.push(c64TextRow(terminalLineIdRef.current, '?SYNTAX ERROR'))
+      setTerminalHistory((prev) => [
+        ...prev.slice(-199),
+        ...rows,
+      ])
+    } else {
+      setTerminalHistory((prev) => [
+        ...prev.slice(-199),
+        ...rows,
+      ])
+      startTerminalLoadSequence(
+        action,
+        'manual',
+        searchLabelFromLoadCommand(
+          LOAD_COMMAND_BY_ACTION[action],
+        ),
+      )
+    }
+    setTerminalLine('')
+    window.requestAnimationFrame(() => {
+      focusC64TerminalInput(terminalInputRef)
+    })
+  }
+
   const showDiskBlock =
     diskCompletedLines.length > 0 ||
     diskTyping !== null ||
@@ -762,13 +1516,15 @@ export default function C64AuthenticHomeScreen({
           {bootComplete && (
             <div className="c64-dir-listing mt-6 sm:mt-8 text-left shrink-0 min-w-0 max-w-full">
               <p className="sr-only" id="c64-disk-directory-hint">
-                Disk directory. Each program opens a section; close the panel to return here. The
-                listing stays pinned while the command log scrolls. Use Tab to reach a program, arrow
-                keys or Home and End to move in the list, Enter to run.
+                Disk directory: use the clickable program rows here, or type LOAD &quot;NAME&quot;,8,1
+                and RUN. LIST with no BASIC program inserts the same clickable directory in the command
+                log below. After LOAD &quot;$&quot;,8, LIST does that and clears $-catalog readiness.
+                Close a site panel to replay LIST in the log. Tab into a list; arrow keys or Home and End;
+                Enter to run.
               </p>
 
               <div className="c64-dir-listing-sticky">
-                <div className="c64-dir-header text-xs sm:text-base md:text-lg leading-tight tracking-wide px-2 py-1.5 rounded-sm">
+                <div className="c64-dir-header text-xs sm:text-base md:text-lg leading-tight tracking-wide py-1.5 rounded-sm">
                   {DISK_VOLUME_LINE}
                 </div>
 
@@ -819,32 +1575,78 @@ export default function C64AuthenticHomeScreen({
                 }}
               >
                 <div className="sr-only" aria-live="polite">
-                  {terminalHistory.length > 0
-                    ? `Printed: ${terminalHistory[terminalHistory.length - 1]?.text ?? ''}`
-                    : ''}
+                  {(() => {
+                    const last = terminalHistory[terminalHistory.length - 1]
+                    if (last === undefined) return ''
+                    if (last.kind === 'text') return `Terminal: ${last.text}`
+                    return 'Terminal: disk directory from LIST'
+                  })()}
                 </div>
-                {terminalHistory.map((row) => (
-                  <div key={row.id} className="whitespace-pre-wrap break-words m-0">
-                    {row.text}
-                    {row.id === terminalLoadingLineId &&
-                    terminalLoadingGlyph !== null ? (
-                      <span className="c64-disk-spin-char" aria-hidden>
-                        {terminalLoadingGlyph}
-                      </span>
-                    ) : null}
-                  </div>
-                ))}
+                {terminalHistory.map((row) =>
+                  row.kind === 'disk-catalog' ? (
+                    <div key={row.id} className="m-0 w-full max-w-full">
+                      <TerminalDiskCatalogEmbed
+                        blockId={row.id}
+                        onPlayLoad={playLoadCommandFromList}
+                        onProgramKeyDown={handleDirectoryProgramKeyDown}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      key={row.id}
+                      className={
+                        row.text === ''
+                          ? 'm-0 min-h-[1.2em]'
+                          : 'whitespace-pre-wrap break-words m-0'
+                      }
+                    >
+                      {row.text}
+                      {row.id === terminalLoadingLineId &&
+                      terminalLoadingGlyph !== null ? (
+                        <span className="c64-disk-spin-char" aria-hidden>
+                          {terminalLoadingGlyph}
+                        </span>
+                      ) : null}
+                    </div>
+                  ),
+                )}
                 <div className="c64-terminal-prompt relative mt-0 block w-full max-w-full min-h-[1.35em]">
                   <label htmlFor="c64-terminal-input" className="sr-only">
-                    Type LOAD &quot;NAME&quot;,8,1 then Enter; when the computer prints READY., type RUN and Enter to open. Or choose a program from the disk list — RUN is entered for you.
+                    Disk: use the directory above or type LOAD &quot;NAME&quot;,8,1 then Enter; when the computer prints READY., type RUN and Enter to open, or pick a program from the list (RUN is typed for you). With no BASIC program, LIST inserts a clickable disk catalog into this log. LOAD &quot;$&quot;,8 then LIST does the same and clears $-catalog readiness. Escape clears that readiness. BASIC: numbered lines store without READY after each line; LIST lists the program if any lines exist. PRINT supports CHR$(), RND(), INT, SIN, COS, comparisons (equals and less-than / greater-than), caret for power, one-letter variables A through Z with optional LET, IF condition THEN line number, FOR and NEXT (each on its own line; nested loops allowed), semicolons to stay on the same line, commas for spacing, and colons to put more than one statement on a line. Logical screen rows follow PRINT newlines; the view may wrap long lines on narrow screens. Output wraps in the browser like a modern terminal, not a fixed 40-column C64 screen. NEW, GOTO, RUN; on touch devices a Stop control appears while a program runs; on desktop use Escape when no panel is open.
                   </label>
+                  {basicRunning && basicStopTouchUi ? (
+                    <button
+                      type="button"
+                      className="relative z-[2] mb-2 inline-flex min-h-11 min-w-[5.5rem] touch-manipulation cursor-pointer items-center justify-center rounded-sm border-2 border-[var(--c64-accent)] bg-[var(--c64-border-bg)] px-3 py-2 text-center font-inherit text-sm text-[var(--c64-crt-ink)] shadow-sm active:opacity-90"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        basicAbortRef.current?.abort()
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      aria-label="Stop BASIC program"
+                    >
+                      [STOP]
+                    </button>
+                  ) : null}
                   <span className="whitespace-pre-wrap break-words align-bottom text-[var(--c64-crt-ink)]">
-                    {terminalLine}
+                    {terminalLine.slice(0, terminalPromptCaretPos)}
                   </span>
-                  <span
-                    className="c64-disk-type-cursor c64-authentic-cursor align-bottom"
-                    aria-hidden
-                  />
+                  {terminalPromptCaretPos < terminalLine.length ? (
+                    <span
+                      className="c64-terminal-cursor-inverse align-bottom"
+                      aria-hidden
+                    >
+                      {terminalLine.charAt(terminalPromptCaretPos)}
+                    </span>
+                  ) : (
+                    <span
+                      className="c64-disk-type-cursor c64-authentic-cursor align-bottom"
+                      aria-hidden
+                    />
+                  )}
+                  <span className="whitespace-pre-wrap break-words align-bottom text-[var(--c64-crt-ink)]">
+                    {terminalLine.slice(terminalPromptCaretPos + 1)}
+                  </span>
                   <input
                     id="c64-terminal-input"
                     ref={terminalInputRef}
@@ -855,17 +1657,31 @@ export default function C64AuthenticHomeScreen({
                     autoCapitalize="off"
                     spellCheck={false}
                     value={terminalLine}
-                    readOnly={terminalAutoTyping || terminalSequenceBusy}
-                    aria-busy={terminalAutoTyping || terminalSequenceBusy}
+                    readOnly={terminalAutoTyping || terminalSequenceBusy || basicRunning}
+                    aria-busy={terminalAutoTyping || terminalSequenceBusy || basicRunning}
                     onChange={(e) => {
-                      if (terminalAutoTyping || terminalSequenceBusy) {
+                      if (terminalAutoTyping || terminalSequenceBusy || basicRunning) {
                         return
                       }
-                      setTerminalLine(e.target.value)
+                      const el = e.currentTarget
+                      setTerminalLine(el.value)
+                      syncTerminalCaretFromInput(el)
+                    }}
+                    onSelect={(e) => {
+                      syncTerminalCaretFromInput(e.currentTarget)
+                    }}
+                    onClick={(e) => {
+                      syncTerminalCaretFromInput(e.currentTarget)
                     }}
                     onKeyDown={(e) => {
                       if (terminalAutoTyping) {
                         e.preventDefault()
+                        return
+                      }
+                      if (basicRunning) {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                        }
                         return
                       }
                       if (terminalSequenceBusy) {
@@ -876,100 +1692,43 @@ export default function C64AuthenticHomeScreen({
                       }
                       if (e.key === 'Enter') {
                         e.preventDefault()
-                        const next = terminalLine.replace(/\r/g, '').trim()
-                        if (next.length === 0) {
-                          setTerminalLine('')
-                          window.requestAnimationFrame(() => {
-                            focusC64TerminalInput(terminalInputRef)
-                          })
+                        terminalSubmitRef.current(
+                          terminalLine.replace(/\r/g, '').trim(),
+                        )
+                        return
+                      }
+                    }}
+                    onPaste={(e: ClipboardEvent<HTMLInputElement>) => {
+                      if (
+                        terminalAutoTyping ||
+                        terminalSequenceBusy ||
+                        basicRunning
+                      ) {
+                        return
+                      }
+                      const clip = e.clipboardData?.getData('text/plain') ?? ''
+                      if (!/[\r\n\u2028\u2029]/.test(clip)) {
+                        return
+                      }
+                      e.preventDefault()
+                      const lines = clip
+                        .split(/\r\n|\r|\n|\u2028|\u2029/)
+                        .map((line) => line.replace(/\r/g, '').trim())
+                        .filter(
+                          (line) => line.length > 0 && !/^```/.test(line),
+                        )
+                      setTerminalLine('')
+                      setTerminalCaretPos(0)
+                      const runLine = (i: number) => {
+                        if (i >= lines.length) {
                           return
                         }
-
-                        if (terminalPendingRun) {
-                          if (/^RUN$/i.test(next)) {
-                            terminalLineIdRef.current += 1
-                            const runLineId = terminalLineIdRef.current
-                            const { action: pendingAction } = terminalPendingRun
-                            setTerminalPendingRun(null)
-                            setTerminalHistory((prev) => [
-                              ...prev.slice(-199),
-                              { id: runLineId, text: 'RUN' },
-                            ])
-                            handlers[pendingAction]()
-                          } else {
-                            const loadAction = getTypedLoadAction(next)
-                            if (loadAction !== null) {
-                              terminalLineIdRef.current += 1
-                              const lineId = terminalLineIdRef.current
-                              setTerminalPendingRun(null)
-                              setTerminalHistory((prev) => [
-                                ...prev.slice(-199),
-                                { id: lineId, text: next },
-                              ])
-                              setTerminalLine('')
-                              startTerminalLoadSequence(
-                                loadAction,
-                                'manual',
-                                searchLabelFromLoadCommand(
-                                  LOAD_COMMAND_BY_ACTION[loadAction],
-                                ),
-                              )
-                              window.requestAnimationFrame(() => {
-                                focusC64TerminalInput(terminalInputRef)
-                              })
-                              return
-                            }
-                            terminalLineIdRef.current += 1
-                            const badLineId = terminalLineIdRef.current
-                            terminalLineIdRef.current += 1
-                            const errId = terminalLineIdRef.current
-                            setTerminalHistory((prev) => [
-                              ...prev.slice(-199),
-                              { id: badLineId, text: next },
-                              { id: errId, text: '?SYNTAX ERROR' },
-                            ])
-                          }
-                          setTerminalLine('')
-                          window.requestAnimationFrame(() => {
-                            focusC64TerminalInput(terminalInputRef)
-                          })
-                          return
-                        }
-
-                        const action = getTypedLoadAction(next)
-                        terminalLineIdRef.current += 1
-                        const id = terminalLineIdRef.current
-                        const rows: { id: number; text: string }[] = [
-                          { id, text: next },
-                        ]
-                        if (action === null) {
-                          terminalLineIdRef.current += 1
-                          rows.push({
-                            id: terminalLineIdRef.current,
-                            text: '?SYNTAX ERROR',
-                          })
-                          setTerminalHistory((prev) => [
-                            ...prev.slice(-199),
-                            ...rows,
-                          ])
-                        } else {
-                          setTerminalHistory((prev) => [
-                            ...prev.slice(-199),
-                            ...rows,
-                          ])
-                          startTerminalLoadSequence(
-                            action,
-                            'manual',
-                            searchLabelFromLoadCommand(
-                              LOAD_COMMAND_BY_ACTION[action],
-                            ),
-                          )
-                        }
-                        setTerminalLine('')
                         window.requestAnimationFrame(() => {
-                          focusC64TerminalInput(terminalInputRef)
+                          terminalSubmitRef.current(lines[i]!)
+                          runLine(i + 1)
                         })
                       }
+                      runLine(0)
                     }}
                     className="c64-terminal-input absolute inset-0 z-[1] h-full min-h-0 w-full cursor-text rounded-none border-0 bg-transparent p-0 text-transparent caret-transparent shadow-none ring-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 selection:bg-transparent"
                   />

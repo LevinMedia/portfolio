@@ -14,7 +14,7 @@ const C64_INLINE_INIT = `
   var TABLE=${C64_INLINE_THEME_VARS_JSON};
   var el=document.getElementById('c64-site-root');
   if(!el)return;
-  var def={accent:'classic',screenTint:'default',scanlines:false,boot:'session',textScale:'comfortable'};
+  var def={accent:'classic',screenTint:'default',scanlines:true,boot:'session',textScale:'comfortable'};
   var s=def;
   try{var r=localStorage.getItem('site-c64-settings');if(r)s=Object.assign({},def,JSON.parse(r));}catch(e){}
   if(s.accent==='cyan'||s.accent==='lightblue')s.accent='classic';
