@@ -795,17 +795,16 @@ body > div[style*="position: fixed"] * {
   max-width: 100%;
 }
 
-/* Stays on-screen while terminal history scrolls (sticky within .c64-authentic-screen-scroll). */
+/* Disk chrome scrolls with the CRT log (C64-style: re-LIST after closing a PRG). */
 #c64-site-root .c64-authentic-screen .c64-dir-listing-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  position: static;
   align-self: stretch;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   background: var(--c64-screen-bg, #352879);
-  padding: 0.55rem 0.85rem 0.85rem;
+  /* No horizontal padding — listing aligns with terminal / boot text */
+  padding: 0.55rem 0 0.85rem;
   margin-bottom: 0.15rem;
 }
 
@@ -848,7 +847,7 @@ body > div[style*="position: fixed"] * {
   width: 100%;
   min-width: 0;
   min-height: 0;
-  padding: 0 0.25rem;
+  padding: 0;
   margin: 0;
   box-sizing: border-box;
   line-height: 1.25;
@@ -1176,8 +1175,29 @@ body > div[style*="position: fixed"] * {
   animation: c64-cursor-blink 1s steps(1, end) infinite;
 }
 
+/* Prompt: inverse-video cell on the character under the caret (C64-style). */
+#c64-site-root .c64-authentic-screen .c64-terminal .c64-terminal-cursor-inverse {
+  display: inline-block;
+  vertical-align: text-bottom;
+  min-width: 1ch;
+  text-align: center;
+  background: var(--c64-crt-ink);
+  color: var(--c64-screen-bg);
+  animation: none;
+  opacity: 1;
+}
+
+#c64-site-root .c64-authentic-screen .c64-terminal:focus-within .c64-terminal-cursor-inverse {
+  animation: c64-cursor-blink 1s steps(1, end) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   #c64-site-root .c64-authentic-screen .c64-disk-type-cursor {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  #c64-site-root .c64-authentic-screen .c64-terminal-cursor-inverse {
     animation: none !important;
     opacity: 1;
   }

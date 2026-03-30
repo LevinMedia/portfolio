@@ -12,6 +12,11 @@ export const LEGACY_SITE_THEME_KEY = 'site-theme'
  * Used when boot mode is `session`.
  */
 export const C64_HOME_BOOT_LINES_SESSION_KEY = 'c64-home-boot-lines-done'
+/**
+ * First full-page pathname in this tab (set inline in site layout). Used to defer the home CRT boot
+ * until drawers are closed when the user did not land on `/` first.
+ */
+export const C64_SESSION_ENTRY_PATH_KEY = 'c64-session-entry-path'
 
 export type C64Accent =
   | 'classic'
@@ -40,7 +45,7 @@ export interface C64Settings {
 export const defaultC64Settings: C64Settings = {
   accent: 'classic',
   screenTint: 'default',
-  scanlines: false,
+  scanlines: true,
   boot: 'session',
   textScale: 'comfortable',
 }
