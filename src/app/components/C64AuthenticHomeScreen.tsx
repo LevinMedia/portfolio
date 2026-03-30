@@ -338,6 +338,11 @@ export default function C64AuthenticHomeScreen({
   /** Show on-screen [STOP] only on phones / coarse-pointer tablets (desktop uses Escape). */
   const [basicStopTouchUi, setBasicStopTouchUi] = useState(false)
   const basicProgramRef = useRef(createBasicProgram())
+  /** C64-style: directory load overwrites BASIC program RAM (no NEW line). */
+  const wipeBasicProgramMemory = () => {
+    basicProgramRef.current = createBasicProgram()
+    resetDirectEvalContext()
+  }
   /** After manual LOAD "$",8 finishes, LIST prints the disk catalog in the terminal log. */
   const [diskCatalogReady, setDiskCatalogReady] = useState(false)
   const basicAbortRef = useRef<AbortController | null>(null)
@@ -1279,6 +1284,7 @@ export default function C64AuthenticHomeScreen({
         }
         if (isLoadDiskCatalogCommand(next)) {
           setTerminalPendingRun(null)
+          wipeBasicProgramMemory()
           terminalLineIdRef.current += 1
           const catLineId = terminalLineIdRef.current
           setTerminalHistory((prev) => [
@@ -1361,6 +1367,7 @@ export default function C64AuthenticHomeScreen({
     }
 
     if (isLoadDiskCatalogCommand(next)) {
+      wipeBasicProgramMemory()
       terminalLineIdRef.current += 1
       const catLineId = terminalLineIdRef.current
       setTerminalHistory((prev) => [

@@ -9,7 +9,7 @@ This is the dialect implemented in `src/lib/c64-basic.ts` for the authentic C64 
 ## How you use it
 
 - **Numbered lines** — Type `10 PRINT "HELLO"`, Enter. The line is stored; there is no `READY.` after each stored line (unlike typing at the real C64 immediate mode).
-- **LIST** — With a stored program, prints those lines in the log. With **no** program lines, logs `LIST` / `READY.` and scrolls to the **clickable disk directory** above the prompt (after `LOAD "$",8`, after a PRG `LOAD`, or anytime — not pasted as plain text).
+- **LIST** — With a stored program, prints those lines in the log. With **no** program lines, logs `LIST` / `READY.` and scrolls to the **clickable disk directory** above the prompt (after `LOAD "$",8`, after a PRG `LOAD`, or anytime — not pasted as plain text). Typing **`LOAD "$",8`** (or `LOAD"$",8`) **clears** the stored program, like a real directory load overwriting BASIC memory, so the next **LIST** can show the disk.
 - **NEW** — Clears the stored program.
 - **RUN** — Runs from the lowest line number (or continues after `LOAD` / `RUN` flows from the disk UI).
 - **GOTO n** — Direct or inside a program; target line must exist or you get `?UNDEF'D STATEMENT ERROR`.
