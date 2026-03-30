@@ -9,6 +9,56 @@ export const size = {
   height: 675, // 16:9 to match common OG previews
 }
 
+function buildAllowedImageHosts(): Set<string> {
+  const hosts = new Set<string>()
+
+  const fromEnv = process.env.OG_ALLOWED_IMAGE_HOSTS
+  if (fromEnv) {
+    for (const raw of fromEnv.split(',')) {
+      const host = raw.trim().toLowerCase()
+      if (host) hosts.add(host)
+    }
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (siteUrl) {
+    try {
+      hosts.add(new URL(siteUrl).hostname.toLowerCase())
+    } catch {
+      // ignore invalid env values
+    }
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (supabaseUrl) {
+    try {
+      hosts.add(new URL(supabaseUrl).hostname.toLowerCase())
+    } catch {
+      // ignore invalid env values
+    }
+  }
+
+  return hosts
+}
+
+function normalizeAndValidateOgImageUrl(raw: string): string | null {
+  const allowedHosts = buildAllowedImageHosts()
+  if (allowedHosts.size === 0) return null
+
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return null
+  }
+
+  const protocol = parsed.protocol.toLowerCase()
+  if (protocol !== 'https:' && protocol !== 'http:') return null
+
+  const host = parsed.hostname.toLowerCase()
+  return allowedHosts.has(host) ? parsed.toString() : null
+}
+
 export default async function Image({
   params,
 }: {
@@ -19,6 +69,11 @@ export default async function Image({
 
   if (!note) {
     return new Response('Not found', { status: 404 })
+  }
+
+  const safeImageUrl = normalizeAndValidateOgImageUrl(note.feature_image_url)
+  if (!safeImageUrl) {
+    return new Response('Invalid OG image URL', { status: 400 })
   }
 
   return new ImageResponse(
@@ -34,7 +89,7 @@ export default async function Image({
         }}
       >
         <img
-          src={note.feature_image_url}
+          src={safeImageUrl}
           alt={note.title}
           style={{
             width: '100%',
@@ -51,5 +106,4 @@ export default async function Image({
     }
   )
 }
-
 
