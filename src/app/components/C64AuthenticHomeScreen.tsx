@@ -1,10 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ClipboardEvent, KeyboardEvent, ReactNode, RefObject } from 'react'
 import {
   C64_HOME_BOOT_LINES_SESSION_KEY,
+  C64_SESSION_ENTRY_PATH_KEY,
   loadC64Settings,
 } from '@/lib/c64-settings'
 import type { BasicOutputOp } from '@/lib/c64-basic'
@@ -1099,7 +1106,34 @@ export default function C64AuthenticHomeScreen({
     schedule(step, LOAD_TYPEWRITER_MS)
   }
 
+  /**
+   * First full load of the tab was not `/` → wait until no site drawer covers the CRT, then run boot
+   * once so the sequence is visible the first time they reach a clear home.
+   */
+  const sessionEntryWasNotHomeRef = useRef<boolean | null>(null)
+  useLayoutEffect(() => {
+    if (sessionEntryWasNotHomeRef.current !== null) {
+      return
+    }
+    try {
+      const p = sessionStorage.getItem(C64_SESSION_ENTRY_PATH_KEY) ?? '/'
+      sessionEntryWasNotHomeRef.current = p !== '/' && p !== ''
+    } catch {
+      sessionEntryWasNotHomeRef.current = false
+    }
+  }, [])
+
+  const authenticBootStartedRef = useRef(false)
+
+  /** Landed on `/` first: boot immediately (may run under a query-param drawer). */
   useEffect(() => {
+    if (sessionEntryWasNotHomeRef.current === true) {
+      return undefined
+    }
+    if (authenticBootStartedRef.current) {
+      return undefined
+    }
+
     const settings = loadC64Settings()
     const reduced =
       typeof window !== 'undefined' &&
@@ -1114,21 +1148,25 @@ export default function C64AuthenticHomeScreen({
     }
 
     if (settings.boot === 'off' || reduced) {
+      authenticBootStartedRef.current = true
       skipToCompleteBoot()
-      return
+      return undefined
     }
 
     if (settings.boot === 'session') {
       try {
         if (sessionStorage.getItem(C64_HOME_BOOT_LINES_SESSION_KEY)) {
+          authenticBootStartedRef.current = true
           skipToCompleteBoot()
-          return
+          return undefined
         }
       } catch {
         // ignore
       }
     }
 
+    authenticBootStartedRef.current = true
+    let bootFinishedLatch = false
     const timeouts: number[] = []
     let cancelled = false
 
@@ -1142,6 +1180,7 @@ export default function C64AuthenticHomeScreen({
     }
 
     const finishBoot = () => {
+      bootFinishedLatch = true
       if (settings.boot === 'session') {
         try {
           sessionStorage.setItem(C64_HOME_BOOT_LINES_SESSION_KEY, '1')
@@ -1235,8 +1274,169 @@ export default function C64AuthenticHomeScreen({
       for (const id of timeouts) {
         window.clearTimeout(id)
       }
+      if (!bootFinishedLatch) {
+        authenticBootStartedRef.current = false
+      }
     }
   }, [])
+
+  useEffect(() => {
+    const notHomeFirst = sessionEntryWasNotHomeRef.current === true
+    if (!notHomeFirst) {
+      return undefined
+    }
+    if (authenticBootStartedRef.current) {
+      return undefined
+    }
+    if (drawerOpen) {
+      return undefined
+    }
+
+    const settings = loadC64Settings()
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const skipToCompleteBoot = () => {
+      setLinesShown(CENTER_STAGE_COUNT)
+      setDiskCompletedLines([...DISK_SEQUENCE_LINES])
+      setDiskTyping(null)
+      setDiskSpinnerGlyph(null)
+      setBootComplete(true)
+    }
+
+    if (settings.boot === 'off' || reduced) {
+      authenticBootStartedRef.current = true
+      skipToCompleteBoot()
+      return undefined
+    }
+
+    if (settings.boot === 'session') {
+      try {
+        if (sessionStorage.getItem(C64_HOME_BOOT_LINES_SESSION_KEY)) {
+          authenticBootStartedRef.current = true
+          skipToCompleteBoot()
+          return undefined
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    authenticBootStartedRef.current = true
+    let bootFinishedLatch = false
+
+    const timeouts: number[] = []
+    let cancelled = false
+
+    const after = (ms: number, fn: () => void) => {
+      const id = window.setTimeout(() => {
+        if (!cancelled) {
+          fn()
+        }
+      }, ms) as unknown as number
+      timeouts.push(id)
+    }
+
+    const finishBoot = () => {
+      bootFinishedLatch = true
+      if (settings.boot === 'session') {
+        try {
+          sessionStorage.setItem(C64_HOME_BOOT_LINES_SESSION_KEY, '1')
+        } catch {
+          // ignore
+        }
+      }
+      setBootComplete(true)
+    }
+
+    const runDiskLine = (lineIndex: number) => {
+      if (cancelled) {
+        return
+      }
+      if (lineIndex >= DISK_SEQUENCE_LINES.length) {
+        finishBoot()
+        return
+      }
+      const text = DISK_SEQUENCE_LINES[lineIndex]
+      if (text === '') {
+        setDiskCompletedLines((prev) => [...prev, ''])
+        after(DISK_BLANK_LINE_PAUSE_MS, () => runDiskLine(lineIndex + 1))
+        return
+      }
+
+      let visible = 0
+      setDiskTyping({ line: text, count: 0 })
+
+      const typeStep = () => {
+        if (cancelled) {
+          return
+        }
+        visible += 1
+        setDiskTyping({ line: text, count: visible })
+        if (visible < text.length) {
+          after(DISK_TYPE_MS, typeStep)
+        } else {
+          after(DISK_TYPE_MS, () => {
+            if (cancelled) {
+              return
+            }
+            if (text === 'LOADING') {
+              const runSpinFrame = (frame: number) => {
+                if (cancelled) {
+                  return
+                }
+                setDiskTyping({ line: text, count: text.length })
+                setDiskSpinnerGlyph(DISK_SPIN_CHARS[frame % DISK_SPIN_CHARS.length])
+                if (frame + 1 < DISK_SPIN_FRAME_COUNT) {
+                  after(DISK_SPIN_FRAME_MS, () => runSpinFrame(frame + 1))
+                } else {
+                  setDiskSpinnerGlyph(null)
+                  setDiskCompletedLines((prev) => [...prev, text])
+                  setDiskTyping(null)
+                  const pauseAfter =
+                    DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 320
+                  after(pauseAfter, () => runDiskLine(lineIndex + 1))
+                }
+              }
+              runSpinFrame(0)
+              return
+            }
+            setDiskCompletedLines((prev) => [...prev, text])
+            setDiskTyping(null)
+            const pauseAfter =
+              DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 320
+            if (lineIndex < DISK_SEQUENCE_LINES.length - 1) {
+              after(pauseAfter, () => runDiskLine(lineIndex + 1))
+            } else {
+              after(pauseAfter, finishBoot)
+            }
+          })
+        }
+      }
+
+      after(DISK_TYPE_MS, typeStep)
+    }
+
+    setLinesShown(1)
+    after(ROM_PAUSE_MS_AFTER_LINE[0] ?? 220, () => {
+      setLinesShown(2)
+      after(ROM_PAUSE_MS_AFTER_LINE[1] ?? 200, () => {
+        setLinesShown(3)
+        after(ROM_PAUSE_MS_AFTER_LINE[2] ?? 360, () => runDiskLine(0))
+      })
+    })
+
+    return () => {
+      cancelled = true
+      for (const id of timeouts) {
+        window.clearTimeout(id)
+      }
+      if (!bootFinishedLatch) {
+        authenticBootStartedRef.current = false
+      }
+    }
+  }, [drawerOpen])
 
   terminalSubmitRef.current = (nextRaw: string) => {
     const next = nextRaw.replace(/\r/g, '').trim()

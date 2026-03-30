@@ -26,6 +26,11 @@ const C64_INLINE_INIT = `
   el.style.setProperty('--c64-text-scale',scale);
   el.dataset.c64Scanlines=s.scanlines?'on':'off';
   el.dataset.c64Boot=s.boot||'session';
+  try{
+    if(sessionStorage.getItem('c64-session-entry-path')==null){
+      sessionStorage.setItem('c64-session-entry-path',location.pathname||'/');
+    }
+  }catch(e){}
 })();
 `
 
