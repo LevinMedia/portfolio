@@ -34,7 +34,7 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
           <>
             {/* Desktop: "Selected works / Title" pattern */}
             <span className="hidden md:inline">
-              <span className="text-muted-foreground">Selected works</span>
+              <span className="text-[#ffffff]/75">Selected works</span>
               {workTitle && (
                 <span 
                   className="transition-opacity duration-300 ease-in-out"
@@ -43,15 +43,15 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
                     display: 'inline'
                   }}
                 >
-                  <span className="mx-2 text-muted-foreground">/</span>
-                  <span>{workTitle}</span>
+                  <span className="mx-2 text-[#ffffff]/45">/</span>
+                  <span className="text-[#ffffff]">{workTitle}</span>
                 </span>
               )}
             </span>
             
             {/* Mobile: Show nothing until title scrolls into sticky state; when shown, use 16px */}
             {(!isTitleVisible && workTitle) ? (
-              <span className="md:hidden text-base" style={{ whiteSpace: 'nowrap' }}>{workTitle}</span>
+              <span className="md:hidden text-base text-[#ffffff]" style={{ whiteSpace: 'nowrap' }}>{workTitle}</span>
             ) : null}
           </>
         }

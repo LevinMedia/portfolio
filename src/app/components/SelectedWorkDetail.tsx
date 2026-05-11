@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import VideoPlayer from './VideoPlayer'
 
 interface SelectedWorkDetailProps {
@@ -146,7 +147,10 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8">
-          <h1 ref={titleRef} className="text-4xl font-bold text-white font-[family-name:var(--font-geist-mono)]">
+          <h1
+            ref={titleRef}
+            className="text-4xl font-bold font-[family-name:var(--font-geist-mono)] text-[#ffffff] [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]"
+          >
             {work.title}
           </h1>
         </div>
@@ -168,12 +172,24 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
                 <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                    h1: ({ children }) => <h1 className="text-3xl font-bold text-foreground mb-4 mt-6 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-2xl font-bold mb-3 mt-5 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--accent)' }}>{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-xl font-semibold mb-3 mt-4 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--secondary)' }}>{children}</h3>,
-                    h4: ({ children }) => <h4 className="text-lg font-semibold text-foreground mb-2 mt-3 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h4>,
-                    h5: ({ children }) => <h5 className="text-base font-semibold text-foreground mb-2 mt-3 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h5>,
-                    h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h6>,
+                    h1: ({ children }) => (
+                      <h1 className="text-3xl font-bold text-[#ffffff] mb-4 mt-6 font-[family-name:var(--font-geist-mono)]">{children}</h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-2xl font-bold text-[#ffffff] mb-3 mt-5 font-[family-name:var(--font-geist-mono)]">{children}</h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-xl font-semibold uppercase tracking-wide text-[#ffffff] mb-3 mt-4 font-[family-name:var(--font-geist-mono)]">{children}</h3>
+                    ),
+                    h4: ({ children }) => (
+                      <h4 className="text-lg font-semibold text-[#ffffff] mb-2 mt-3 font-[family-name:var(--font-geist-mono)]">{children}</h4>
+                    ),
+                    h5: ({ children }) => (
+                      <h5 className="text-base font-semibold text-[#ffffff] mb-2 mt-3 font-[family-name:var(--font-geist-mono)]">{children}</h5>
+                    ),
+                    h6: ({ children }) => (
+                      <h6 className="text-sm font-semibold text-[#ffffff] mb-2 mt-2 font-[family-name:var(--font-geist-mono)]">{children}</h6>
+                    ),
                     p: ({ children, node }) => {
                       // Check if this paragraph only contains an image
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,7 +236,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
                     )
                   }}
                 >
-                  {part.content}
+                  {normalizeLiteralHtmlBreaksInMarkdown(part.content)}
                 </ReactMarkdown>
               </div>
             )

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { TrashIcon, CheckIcon, XMarkIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 
 interface SocialLinks {
   linkedin?: string
@@ -288,7 +289,7 @@ export default function GuestbookAdmin() {
                     )
                   }}
                 >
-                  {entry.message}
+                  {normalizeLiteralHtmlBreaksInMarkdown(entry.message)}
                 </ReactMarkdown>
               </div>
 

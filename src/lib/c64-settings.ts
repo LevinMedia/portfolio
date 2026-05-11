@@ -45,7 +45,7 @@ export interface C64Settings {
 export const defaultC64Settings: C64Settings = {
   accent: 'classic',
   screenTint: 'default',
-  scanlines: true,
+  scanlines: false,
   boot: 'session',
   textScale: 'comfortable',
 }
@@ -204,12 +204,18 @@ export function getC64ThemeColors(
   return { screen, border, crtInk }
 }
 
-function onAccentForeground(accentHex: string): string {
-  const lum = chroma(accentHex).luminance()
-  if (lum > 0.52) {
-    return chroma.mix('#080510', accentHex, 0.12).hex()
+/**
+ * Pick white vs near-black for text/icons on a solid `bgHex` so contrast stays strong across
+ * every C64 accent (pastels included). Uses WCAG contrast ratio from chroma-js.
+ */
+function pickHighContrastForeground(bgHex: string): string {
+  try {
+    const onWhite = chroma.contrast(bgHex, '#ffffff')
+    const onDark = chroma.contrast(bgHex, '#0a0a12')
+    return onWhite >= onDark ? '#ffffff' : '#0a0a12'
+  } catch {
+    return '#0a0a12'
   }
-  return chroma.mix('#f8f8ff', accentHex, 0.08).hex()
 }
 
 function buildCssVarSnapshot(
@@ -224,11 +230,8 @@ function buildCssVarSnapshot(
       : chroma.mix(crtInk, '#ffffff', 0.1).hex()
   const mutedFg = chroma.mix(screen, crtInk, 0.52).hex()
   const secondary = chroma.mix(screen, accentHex, 0.4).hex()
-  const secondaryFg =
-    accent === 'white'
-      ? chroma.mix(accentHex, crtInk, 0.28).hex()
-      : chroma.mix(accentHex, '#ffffff', 0.32).hex()
-  const onPrimary = onAccentForeground(accentHex)
+  const onPrimary = pickHighContrastForeground(accentHex)
+  const secondaryFg = pickHighContrastForeground(secondary)
 
   return {
     '--c64-screen-bg': screen,
@@ -249,7 +252,7 @@ function buildCssVarSnapshot(
     '--accent': accentHex,
     '--accent-foreground': onPrimary,
     '--destructive': '#ee4444',
-    '--destructive-foreground': '#ffffff',
+    '--destructive-foreground': pickHighContrastForeground('#ee4444'),
     '--ring': accentHex,
   }
 }
@@ -277,7 +280,8 @@ const TEXT_SCALE: Record<C64TextScale, string> = {
 
 export function saveC64Settings(settings: C64Settings): void {
   if (typeof window === 'undefined') return
-  localStorage.setItem(C64_STORAGE_KEY, JSON.stringify(settings))
+  const toSave: C64Settings = { ...settings, textScale: 'comfortable' }
+  localStorage.setItem(C64_STORAGE_KEY, JSON.stringify(toSave))
 }
 
 export function loadC64Settings(): C64Settings {
@@ -290,6 +294,7 @@ export function loadC64Settings(): C64Settings {
       if (String(merged.accent) === 'cyan' || String(merged.accent) === 'lightblue') {
         merged.accent = 'classic'
       }
+      merged.textScale = 'comfortable'
       return merged
     }
     const legacy = localStorage.getItem(LEGACY_SITE_THEME_KEY)
@@ -324,7 +329,7 @@ export function applyC64ToElement(el: HTMLElement, s: C64Settings): void {
   for (const [k, v] of Object.entries(snap)) {
     el.style.setProperty(k, v)
   }
-  el.style.setProperty('--c64-text-scale', TEXT_SCALE[s.textScale])
+  el.style.setProperty('--c64-text-scale', TEXT_SCALE.comfortable)
 
   el.dataset.c64Scanlines = s.scanlines ? 'on' : 'off'
   el.dataset.c64Boot = s.boot

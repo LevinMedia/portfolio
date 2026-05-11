@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sanitizeText, sanitizeMarkdown } from '@/lib/sanitize'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     // Sanitize inputs to prevent XSS
     const sanitizedTitle = sanitizeText(title)
     const sanitizedSlug = sanitizeText(slug).toLowerCase().replace(/[^a-z0-9-]/g, '-')
-    const sanitizedContent = sanitizeMarkdown(content)
+    const sanitizedContent = sanitizeMarkdown(normalizeLiteralHtmlBreaksInMarkdown(content))
     const sanitizedImageUrl = sanitizeText(feature_image_url)
     const sanitizedAuthor = sanitizeText(author || 'David Levin')
     const sanitizedOgAlign = ['top', 'center', 'bottom'].includes((og_vertical_align || '').toLowerCase())

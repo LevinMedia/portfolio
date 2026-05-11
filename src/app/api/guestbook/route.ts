@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeMarkdown, sanitizeText, sanitizeUrl } from '@/lib/sanitize'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Sanitize inputs to prevent XSS
     const sanitizedName = sanitizeText(name)
-    const sanitizedMessage = sanitizeMarkdown(message)
+    const sanitizedMessage = sanitizeMarkdown(normalizeLiteralHtmlBreaksInMarkdown(message))
 
     // Validate social links structure and sanitize URLs
     const validSocialLinks = {
