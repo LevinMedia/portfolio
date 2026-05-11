@@ -34,7 +34,7 @@ export default function FieldNotePage({ params }: { params: Promise<{ slug: stri
           <>
             {/* Desktop: "Field notes / Title" pattern */}
             <span className="hidden md:inline">
-              <span className="text-muted-foreground">Field notes</span>
+              <span className="text-[#ffffff]/75">Field notes</span>
               {noteTitle && (
                 <span 
                   className="transition-opacity duration-300 ease-in-out"
@@ -43,15 +43,15 @@ export default function FieldNotePage({ params }: { params: Promise<{ slug: stri
                     display: 'inline'
                   }}
                 >
-                  <span className="mx-2 text-muted-foreground">/</span>
-                  <span>{noteTitle}</span>
+                  <span className="mx-2 text-[#ffffff]/45">/</span>
+                  <span className="text-[#ffffff]">{noteTitle}</span>
                 </span>
               )}
             </span>
             
             {/* Mobile: Show nothing until title scrolls into sticky state; when shown, use 16px */}
             {(!isTitleVisible && noteTitle) ? (
-              <span className="md:hidden text-base" style={{ whiteSpace: 'nowrap' }}>{noteTitle}</span>
+              <span className="md:hidden text-base text-[#ffffff]" style={{ whiteSpace: 'nowrap' }}>{noteTitle}</span>
             ) : null}
           </>
         }

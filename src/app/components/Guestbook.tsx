@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import { PaperAirplaneIcon, UserIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { Input } from '@headlessui/react'
 import ReactMarkdown from 'react-markdown'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import remarkGfm from 'remark-gfm'
 import MilkdownEditor from './MilkdownEditor'
 import Button from './Button'
+import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
 
 interface SocialLinks {
   linkedin?: string
@@ -32,8 +34,8 @@ interface GuestbookFormData {
 const boxClass =
   'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
 
-const fieldClass =
-  'block w-full px-3 py-2 border-2 border-[var(--c64-accent)]/45 bg-[var(--c64-border-bg)]/25 text-foreground placeholder:text-foreground/45 shadow-none focus:outline-none focus:ring-2 focus:ring-[var(--c64-accent)] focus:border-[var(--c64-accent)] sm:text-sm transition-colors rounded-none'
+const fieldClass = c64FormFieldClass
+const guestbookFieldLabelClass = c64FormFieldLabelClass
 
 export default function Guestbook() {
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
@@ -180,7 +182,7 @@ export default function Guestbook() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Field */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className={`${guestbookFieldLabelClass} mb-2`}>
               Your Name
             </label>
             <Input
@@ -196,7 +198,7 @@ export default function Guestbook() {
 
           {/* Message Field */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className={`${guestbookFieldLabelClass} mb-2`}>
               Your Message
             </label>
             <div className="relative gb-editor">
@@ -212,13 +214,13 @@ export default function Guestbook() {
 
           {/* Social Links */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">
+            <label className={`${guestbookFieldLabelClass} mb-3`}>
               Your Social Links (Optional)
             </label>
             <div className="grid grid-cols-2 gap-4">
               {['linkedin', 'threads', 'twitter', 'instagram'].map((platform) => (
                 <div key={platform}>
-                  <label className="block text-xs text-muted-foreground mb-1 capitalize">
+                  <label className={`${guestbookFieldLabelClass} mb-1.5 capitalize`}>
                     {getSocialIcon(platform)} {platform}
                   </label>
                   <Input
@@ -362,7 +364,7 @@ export default function Guestbook() {
                     )
                   }}
                 >
-                  {entry.message}
+                  {normalizeLiteralHtmlBreaksInMarkdown(entry.message)}
                 </ReactMarkdown>
               </div>
 

@@ -3,7 +3,6 @@
 import { Button as HeadlessButton } from '@headlessui/react'
 import { forwardRef } from 'react'
 import { clsx } from 'clsx'
-import chroma from 'chroma-js'
 
 export interface ButtonProps {
   children: React.ReactNode
@@ -34,48 +33,21 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     fullWidth = false,
     ...props 
   }, ref) => {
-    // Determine text color for solid buttons based on background contrast
-    // Calculate on each render to react to color changes
-    const getTextColorForSolid = (colorName: string): string => {
-      if (typeof window === 'undefined') return 'text-white'
-      
-      try {
-        // Get the computed CSS variable value
-        const themeRoot =
-          document.getElementById('c64-site-root') ?? document.documentElement
-        const bgColor = getComputedStyle(themeRoot)
-          .getPropertyValue(`--${colorName}`)
-          .trim()
-        
-        if (!bgColor) return 'text-white'
-        
-        const whiteContrast = chroma.contrast(bgColor, '#ffffff')
-        const darkContrast = chroma.contrast(bgColor, '#09090b')
-        
-        // Use dark text if it has better contrast than white
-        return darkContrast > whiteContrast ? 'text-[#09090b]' : 'text-white'
-      } catch {
-        return 'text-white'
-      }
-    }
-    
     const baseStyles = fullWidth 
-      ? 'flex w-full items-center justify-center font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
-      : 'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
+      ? 'flex w-full items-center justify-center font-bold tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
+      : 'inline-flex items-center justify-center font-bold tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
     
-    // Calculate text color for solid buttons only when needed
-    const getTextColorClass = (): string => {
-      if (style !== 'solid') return ''
-      return getTextColorForSolid(color)
-    }
-    
-    // Style variants (visual treatment)
+    // Style variants (visual treatment). Solid text uses theme foreground tokens (SSR-safe).
     const styleVariants = {
       solid: {
-        primary: `bg-primary ${getTextColorClass()} hover:bg-primary/90 focus-visible:outline-primary`,
-        secondary: `bg-secondary ${getTextColorClass()} hover:bg-secondary/90 focus-visible:outline-secondary`,
-        accent: `bg-accent ${getTextColorClass()} hover:bg-accent/90 focus-visible:outline-accent`,
-        destructive: `bg-destructive ${getTextColorClass()} hover:bg-destructive/90 focus-visible:outline-destructive`
+        primary:
+          'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-primary',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-secondary/90 focus-visible:outline-secondary',
+        accent:
+          'bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:outline-accent',
+        destructive:
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:outline-destructive',
       },
       outline: {
         primary: 'border !border-primary text-primary hover:bg-primary/10 focus-visible:outline-primary dark:brightness-125',
@@ -92,10 +64,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
     
     const sizeStyles = {
-      xsmall: 'h-6 px-2 text-xs',
-      small: 'h-8 px-3 text-sm',
-      medium: 'h-10 px-4 text-sm',
-      large: 'h-12 px-6 text-base'
+      xsmall: 'h-6 px-2 text-xs font-semibold tracking-normal',
+      small: 'h-8 px-3 text-sm font-semibold tracking-normal',
+      /** Match C64 form label scale (`text-base` / `sm:text-lg` in guestbook / sign-in). */
+      medium: 'min-h-11 px-4 py-2.5 text-base',
+      large: 'min-h-14 px-6 py-3 text-base sm:text-lg',
     }
     
     return (

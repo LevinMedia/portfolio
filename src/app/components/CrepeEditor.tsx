@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 
 interface CrepeEditorProps {
   value: string
@@ -98,7 +99,7 @@ export default function CrepeEditor({ value, onChange, placeholder, className }:
       {showPreview ? (
         <div className="p-3 min-h-[200px] prose prose-sm max-w-none dark:prose-invert">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {value || '*Nothing to preview yet...*'}
+            {normalizeLiteralHtmlBreaksInMarkdown(value || '*Nothing to preview yet...*')}
           </ReactMarkdown>
         </div>
       ) : (

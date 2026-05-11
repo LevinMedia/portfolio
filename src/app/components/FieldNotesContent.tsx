@@ -88,7 +88,7 @@ const FieldNotesContent: React.FC = () => {
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <h3 className="text-white text-sm font-medium font-[family-name:var(--font-geist-mono)] text-center px-2 bg-black/50 rounded-sm">
+                <h3 className="text-center px-2 py-1.5 font-[family-name:var(--font-geist-mono)] text-base sm:text-lg font-bold leading-tight text-[#ffffff] bg-black/70 [text-shadow:0_1px_3px_rgba(0,0,0,0.95)] rounded-sm">
                   {note.title}
                 </h3>
               </div>

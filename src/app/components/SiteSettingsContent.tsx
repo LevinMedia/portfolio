@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
-import Button from './Button'
 import {
   defaultC64Settings,
   LEGACY_SITE_THEME_KEY,
@@ -13,7 +12,6 @@ import {
   type C64BootMode,
   type C64ScreenTint,
   type C64Settings,
-  type C64TextScale,
 } from '@/lib/c64-settings'
 import {
   applyC64SettingsNow,
@@ -25,8 +23,8 @@ const ACCENT_OPTIONS: { id: C64Accent; label: string }[] = [
   { id: 'yellow', label: 'Yellow' },
   { id: 'green', label: 'Green' },
   { id: 'pink', label: 'Pink' },
-  { id: 'orange', label: 'Orange' },
-  { id: 'white', label: 'White' },
+  { id: 'orange', label: 'Dirt' },
+  { id: 'white', label: 'Abyss' },
   { id: 'red', label: 'Red' },
 ]
 
@@ -40,11 +38,6 @@ const BOOT_OPTIONS: { id: C64BootMode; label: string; hint: string }[] = [
   { id: 'off', label: 'Off', hint: 'Home shows the classic boot text immediately (no type-in)' },
   { id: 'session', label: 'Once per tab', hint: 'Type-in animation once; then instant until you close this tab' },
   { id: 'always', label: 'Always animate', hint: 'Type-in lines every time the home page loads' },
-]
-
-const TEXT_OPTIONS: { id: C64TextScale; label: string }[] = [
-  { id: 'compact', label: 'Compact' },
-  { id: 'comfortable', label: 'Comfortable' },
 ]
 
 export default function SiteSettingsContent() {
@@ -106,7 +99,7 @@ export default function SiteSettingsContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 c64-site-settings">
       <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
         <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
           Highlight color
@@ -157,28 +150,6 @@ export default function SiteSettingsContent() {
 
       <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
         <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
-          Text size
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {TEXT_OPTIONS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => persist({ ...settings, textScale: id })}
-              className={`min-h-11 px-4 py-2 border-2 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                settings.textScale === id
-                  ? 'border-primary bg-primary/20'
-                  : 'border-border hover:bg-muted'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
-        <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
           Effects
         </h3>
         <label className="flex items-center gap-3 min-h-11 cursor-pointer">
@@ -186,7 +157,7 @@ export default function SiteSettingsContent() {
             type="checkbox"
             checked={settings.scanlines}
             onChange={(e) => persist({ ...settings, scanlines: e.target.checked })}
-            className="h-5 w-5 border-2 border-primary accent-primary"
+            className="h-5 w-5 shrink-0"
           />
           <span className="text-foreground">CRT scanlines overlay</span>
         </label>
@@ -207,7 +178,7 @@ export default function SiteSettingsContent() {
                 name="c64-boot"
                 checked={settings.boot === id}
                 onChange={() => persist({ ...settings, boot: id })}
-                className="mt-1 h-4 w-4 border-2 border-primary accent-primary"
+                className="mt-1 h-4 w-4 shrink-0"
               />
               <span>
                 <span className="block font-bold text-foreground">{label}</span>
@@ -215,23 +186,6 @@ export default function SiteSettingsContent() {
               </span>
             </label>
           ))}
-        </div>
-      </section>
-
-      <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
-        <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
-          Preview
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          <Button style="solid" color="primary" size="small">
-            Primary
-          </Button>
-          <Button style="outline" color="accent" size="small">
-            Outline
-          </Button>
-          <Button style="ghost" color="primary" size="small">
-            Ghost
-          </Button>
         </div>
       </section>
 

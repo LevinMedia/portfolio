@@ -90,16 +90,16 @@ const DISK_SEQUENCE_LINES = [
 const BOOT_LINE_BANNER = '**** LEVINMEDIA 64 BASIC V2 ****'
 
 /** ms after each ROM line before the next (banner → blank → RAM). */
-const ROM_PAUSE_MS_AFTER_LINE: number[] = [220, 200, 360]
+const ROM_PAUSE_MS_AFTER_LINE: number[] = [110, 100, 180]
 
 /** ms between each revealed character while typing disk lines (left → right). */
-const DISK_TYPE_MS = 42
+const DISK_TYPE_MS = 21
 
 /** ms after an empty disk line before continuing. */
-const DISK_BLANK_LINE_PAUSE_MS = 200
+const DISK_BLANK_LINE_PAUSE_MS = 100
 
-/** After “LOADING” is typed: square cursor becomes ASCII spinner; total hold = 12×125ms = 1500ms. */
-const DISK_SPIN_FRAME_MS = 125
+/** After “LOADING” is typed: square cursor becomes ASCII spinner; total hold = 12×62ms ≈ 744ms. */
+const DISK_SPIN_FRAME_MS = 62
 const DISK_SPIN_FRAME_COUNT = 12
 
 const DISK_SPIN_CHARS = ['|', '/', '-', '\\'] as const
@@ -108,13 +108,13 @@ const DISK_SPIN_CHARS = ['|', '/', '-', '\\'] as const
  * ms after a disk line is fully typed (and spinner done, if any), before the next line starts.
  */
 const DISK_PAUSE_AFTER_LINE_MS: number[] = [
-  340,
-  400,
-  260,
-  420,
-  280,
-  360,
-  360,
+  170,
+  200,
+  130,
+  210,
+  140,
+  180,
+  180,
 ]
 
 const BOOT_LINE_RAM = '64K RAM SYSTEM  38911 BASIC BYTES FREE'
@@ -272,19 +272,19 @@ function TerminalDiskCatalogEmbed({
   )
 }
 
-const LOAD_TYPEWRITER_MS = 42
-const LOAD_AFTER_TYPED_PAUSE_MS = 140
+const LOAD_TYPEWRITER_MS = 21
+const LOAD_AFTER_TYPED_PAUSE_MS = 70
 
 /** Terminal load sequence after a valid LOAD line (matches C64 disk behavior). */
-const TERMINAL_LOAD_BLANK_PAUSE_MS = 200
-const TERMINAL_LOAD_AFTER_BLANK_MS = 280
-const TERMINAL_LOAD_AFTER_SEARCHING_MS = 380
-/** Same cadence as boot disk LOADING spinner (12×125ms ≈ 1.5s). */
+const TERMINAL_LOAD_BLANK_PAUSE_MS = 100
+const TERMINAL_LOAD_AFTER_BLANK_MS = 140
+const TERMINAL_LOAD_AFTER_SEARCHING_MS = 190
+/** Same cadence as boot disk LOADING spinner (12×62ms ≈ 744ms). */
 const TERMINAL_LOAD_SPIN_FRAME_MS = DISK_SPIN_FRAME_MS
 const TERMINAL_LOAD_SPIN_FRAME_COUNT = DISK_SPIN_FRAME_COUNT
 const TERMINAL_LOAD_SPIN_CHARS = DISK_SPIN_CHARS
 /** After READY. on click path: brief beat before RUN + open. */
-const TERMINAL_AUTO_RUN_PAUSE_MS = 120
+const TERMINAL_AUTO_RUN_PAUSE_MS = 60
 
 function isAnySiteDrawerOpen(searchParams: ReturnType<typeof useSearchParams>): boolean {
   return (
@@ -465,7 +465,7 @@ export default function C64AuthenticHomeScreen({
     }
     const id = window.setTimeout(() => {
       focusC64TerminalInput(terminalInputRef)
-    }, 80)
+    }, 40)
     return () => window.clearTimeout(id)
   }, [bootComplete])
 
@@ -494,7 +494,7 @@ export default function C64AuthenticHomeScreen({
           return
         }
         playDiskListReplayRef.current()
-      }, 200)
+      }, 100)
       return () => window.clearTimeout(id)
     }
     return undefined
@@ -1237,7 +1237,7 @@ export default function C64AuthenticHomeScreen({
                   setDiskCompletedLines((prev) => [...prev, text])
                   setDiskTyping(null)
                   const pauseAfter =
-                    DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 320
+                    DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 160
                   after(pauseAfter, () => runDiskLine(lineIndex + 1))
                 }
               }
@@ -1247,7 +1247,7 @@ export default function C64AuthenticHomeScreen({
             setDiskCompletedLines((prev) => [...prev, text])
             setDiskTyping(null)
             const pauseAfter =
-              DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 320
+              DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 160
             if (lineIndex < DISK_SEQUENCE_LINES.length - 1) {
               after(pauseAfter, () => runDiskLine(lineIndex + 1))
             } else {
@@ -1261,11 +1261,11 @@ export default function C64AuthenticHomeScreen({
     }
 
     setLinesShown(1)
-    after(ROM_PAUSE_MS_AFTER_LINE[0] ?? 220, () => {
+    after(ROM_PAUSE_MS_AFTER_LINE[0] ?? 110, () => {
       setLinesShown(2)
-      after(ROM_PAUSE_MS_AFTER_LINE[1] ?? 200, () => {
+      after(ROM_PAUSE_MS_AFTER_LINE[1] ?? 100, () => {
         setLinesShown(3)
-        after(ROM_PAUSE_MS_AFTER_LINE[2] ?? 360, () => runDiskLine(0))
+        after(ROM_PAUSE_MS_AFTER_LINE[2] ?? 180, () => runDiskLine(0))
       })
     })
 
@@ -1395,7 +1395,7 @@ export default function C64AuthenticHomeScreen({
                   setDiskCompletedLines((prev) => [...prev, text])
                   setDiskTyping(null)
                   const pauseAfter =
-                    DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 320
+                    DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 160
                   after(pauseAfter, () => runDiskLine(lineIndex + 1))
                 }
               }
@@ -1405,7 +1405,7 @@ export default function C64AuthenticHomeScreen({
             setDiskCompletedLines((prev) => [...prev, text])
             setDiskTyping(null)
             const pauseAfter =
-              DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 320
+              DISK_PAUSE_AFTER_LINE_MS[lineIndex] ?? 160
             if (lineIndex < DISK_SEQUENCE_LINES.length - 1) {
               after(pauseAfter, () => runDiskLine(lineIndex + 1))
             } else {
@@ -1419,11 +1419,11 @@ export default function C64AuthenticHomeScreen({
     }
 
     setLinesShown(1)
-    after(ROM_PAUSE_MS_AFTER_LINE[0] ?? 220, () => {
+    after(ROM_PAUSE_MS_AFTER_LINE[0] ?? 110, () => {
       setLinesShown(2)
-      after(ROM_PAUSE_MS_AFTER_LINE[1] ?? 200, () => {
+      after(ROM_PAUSE_MS_AFTER_LINE[1] ?? 100, () => {
         setLinesShown(3)
-        after(ROM_PAUSE_MS_AFTER_LINE[2] ?? 360, () => runDiskLine(0))
+        after(ROM_PAUSE_MS_AFTER_LINE[2] ?? 180, () => runDiskLine(0))
       })
     })
 
