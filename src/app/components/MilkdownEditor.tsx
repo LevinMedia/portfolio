@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import { Crepe } from '@milkdown/crepe'
+import { ADMIN_VIDEO_MAX_BYTES } from '@/lib/admin-video-upload'
 import '@milkdown/crepe/theme/common/style.css'
 // Don't import frame.css - we'll use our own theme
 
@@ -29,30 +31,80 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
   const handleVideoUpload = async (file: File) => {
     setIsUploadingVideo(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'selected-works-videos')
-
-      console.log('📹 Uploading video:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB')
-
-      const response = await fetch('/api/admin/upload-video', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ Video upload failed:', errorData)
-        alert('Failed to upload video: ' + errorData.error)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (!supabaseUrl || !supabaseAnonKey) {
+        alert('Missing Supabase public env (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY).')
         return
       }
 
-      const data = await response.json()
-      console.log('✅ Video uploaded successfully!')
-      console.log('🔗 Video URL:', data.url)
+      if (file.size > ADMIN_VIDEO_MAX_BYTES) {
+        alert(
+          `Video is too large (max ${Math.floor(ADMIN_VIDEO_MAX_BYTES / (1024 * 1024))} MB). Your file is ${(file.size / (1024 * 1024)).toFixed(1)} MB.`,
+        )
+        return
+      }
 
-      // Copy video markdown to clipboard for user to paste
-      const videoMarkdown = `!video[Video](${data.url})`
+      const isQuickTimeMov =
+        file.type === 'video/quicktime' || /\.mov$/i.test(file.name)
+      if (
+        isQuickTimeMov &&
+        !window.confirm(
+          'QuickTime (.mov) files often fail in the site video player (HEVC, ProRes, etc.). For reliable playback, export to MP4 with H.264 video and AAC audio first.\n\nUpload this .mov anyway?',
+        )
+      ) {
+        return
+      }
+
+      console.log('📹 Uploading video:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB')
+
+      const initRes = await fetch('/api/admin/upload-video/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          folder: 'selected-works-videos',
+          fileName: file.name,
+          contentType: file.type || 'video/mp4',
+          fileSize: file.size,
+        }),
+      })
+
+      if (!initRes.ok) {
+        const err = await initRes.json().catch(() => ({}))
+        console.error('❌ Video init failed:', err)
+        alert('Failed to start upload: ' + (err.error || initRes.statusText))
+        return
+      }
+
+      const { path, token, publicUrl } = (await initRes.json()) as {
+        path: string
+        token: string
+        publicUrl: string
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey)
+      const { error: uploadError } = await supabase.storage.from('media').uploadToSignedUrl(path, token, file, {
+        contentType: file.type || 'video/mp4',
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+      if (uploadError) {
+        console.error('❌ Video upload failed:', uploadError)
+        let detail = uploadError.message
+        if (/exceeded the maximum allowed size/i.test(detail)) {
+          detail +=
+            '\n\nSupabase Storage enforces a max file size per project (Free plan: 50 MB). For ~108 MB videos, upgrade to Pro (or higher) and raise “Global file size limit” under Dashboard → Storage → Settings, then retry.'
+        }
+        alert('Failed to upload video: ' + detail)
+        return
+      }
+
+      console.log('✅ Video uploaded successfully!')
+      console.log('🔗 Video URL:', publicUrl)
+
+      const videoMarkdown = `!video[Video](${publicUrl})`
       
       try {
         await navigator.clipboard.writeText(videoMarkdown)

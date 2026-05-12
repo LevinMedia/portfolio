@@ -52,8 +52,10 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
           player.on('error', () => {
             const err = player.error()
             if (err) {
+              const url = srcRef.current
+              const looksLikeMov = /\.mov(\?|#|$)/i.test(url)
               let errorMessage = 'Unable to play this video.'
-              
+
               switch (err.code) {
                 case 1: // MEDIA_ERR_ABORTED
                   errorMessage = 'Video playback was aborted.'
@@ -62,10 +64,14 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
                   errorMessage = 'A network error caused the video download to fail.'
                   break
                 case 3: // MEDIA_ERR_DECODE
-                  errorMessage = 'Video format is not supported by your browser. Try re-encoding to H.264 MP4.'
+                  errorMessage = looksLikeMov
+                    ? 'This .mov uses a codec your browser cannot decode (common with HEVC or ProRes). Re-export as MP4 with H.264 video and AAC audio.'
+                    : 'Video format is not supported by your browser. Try re-encoding to H.264 MP4.'
                   break
                 case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
-                  errorMessage = 'Video format is not supported or file is corrupted.'
+                  errorMessage = looksLikeMov
+                    ? 'QuickTime (.mov) files often use codecs that web players cannot play, even when the file is fine. Export to MP4: H.264 video + AAC audio for reliable playback.'
+                    : 'Video format is not supported or file is corrupted.'
                   break
                 default:
                   errorMessage = `Video error: ${err.message || 'Unknown error'}`
