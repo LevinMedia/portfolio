@@ -66,7 +66,10 @@ const FieldNotesContent: React.FC = () => {
 
   return (
     <div className="c64-media">
-      <div className="grid grid-cols-4 sm:grid-cols-6" style={{ gap: 'var(--grid-major)' }}>
+      <div
+        className="grid grid-cols-4 sm:grid-cols-6"
+        style={{ gap: 'var(--grid-major)', padding: 'var(--grid-major)' }}
+      >
         {notes.map((note) => (
           <div
             key={note.id}
