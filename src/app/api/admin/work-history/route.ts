@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { sanitizeText, sanitizeUrl } from '@/lib/sanitize'
+import { sanitizeText, sanitizeUrl, sanitizeMarkdown } from '@/lib/sanitize'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
+
+function sanitizePositionDescription(description: string | undefined | null): string | null {
+  if (!description?.trim()) return null
+  return sanitizeMarkdown(normalizeLiteralHtmlBreaksInMarkdown(description))
+}
 
 export async function GET() {
   try {
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest) {
         p_company_id: data.company_id,
         p_position_title: sanitizeText(data.position_title),
         p_start_date: data.start_date,
-        p_position_description: sanitizeText(data.position_description || '') || null,
+        p_position_description: sanitizePositionDescription(data.position_description),
         p_end_date: data.end_date || null,
         p_position_order: data.position_order || 0,
         p_position_id: null
@@ -115,7 +121,7 @@ export async function PUT(request: NextRequest) {
         p_company_id: data.company_id,
         p_position_title: sanitizeText(data.position_title),
         p_start_date: data.start_date,
-        p_position_description: sanitizeText(data.position_description || '') || null,
+        p_position_description: sanitizePositionDescription(data.position_description),
         p_end_date: data.end_date || null,
         p_position_order: data.position_order || 0,
         p_position_id: id

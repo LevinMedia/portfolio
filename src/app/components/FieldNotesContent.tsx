@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
+import { createDrawerListCache } from '@/lib/drawer-list-cache'
+import C64GridTile from './C64GridTile'
 
 interface FieldNote {
   id: string
@@ -19,23 +22,36 @@ interface FieldNote {
   author: string
 }
 
+const fieldNotesCache = createDrawerListCache<FieldNote[]>()
+
+function sortFieldNotes(notes: FieldNote[]): FieldNote[] {
+  return [...notes].sort((a, b) => {
+    const dateA = new Date(a.published_at || 0).getTime()
+    const dateB = new Date(b.published_at || 0).getTime()
+    return dateB - dateA
+  })
+}
+
 const FieldNotesContent: React.FC = () => {
   const router = useRouter()
-  const [notes, setNotes] = useState<FieldNote[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const cached = fieldNotesCache.get()
+  const [notes, setNotes] = useState<FieldNote[]>(cached ?? [])
+  const [isLoading, setIsLoading] = useState(!fieldNotesCache.has())
 
   useEffect(() => {
+    if (fieldNotesCache.has()) {
+      setNotes(fieldNotesCache.get() ?? [])
+      setIsLoading(false)
+      return
+    }
+
     const fetchNotes = async () => {
       try {
         const response = await fetch('/api/field-notes')
         if (response.ok) {
           const data = await response.json()
-          // Sort by published_at descending (reverse chronological)
-          const sortedNotes = (data.notes || []).sort((a: FieldNote, b: FieldNote) => {
-            const dateA = new Date(a.published_at || 0).getTime()
-            const dateB = new Date(b.published_at || 0).getTime()
-            return dateB - dateA
-          })
+          const sortedNotes = sortFieldNotes(data.notes || [])
+          fieldNotesCache.set(sortedNotes)
           setNotes(sortedNotes)
         }
       } catch (error) {
@@ -48,12 +64,9 @@ const FieldNotesContent: React.FC = () => {
     fetchNotes()
   }, [])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
+  const showLoader = useC64LoaderVisible(isLoading)
+  if (showLoader) {
+    return <C64LoadingScreen label="Loading field notes" />
   }
 
   if (notes.length === 0) {
@@ -67,36 +80,22 @@ const FieldNotesContent: React.FC = () => {
   return (
     <div className="c64-media">
       <div
-        className="grid grid-cols-4 sm:grid-cols-6"
-        style={{ gap: 'var(--grid-major)', padding: 'var(--grid-major)' }}
+        className="c64-media-grid grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-8"
+        style={{ padding: 'var(--grid-major)' }}
       >
         {notes.map((note) => (
-          <div
+          <C64GridTile
             key={note.id}
-            className="relative border-4 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/30 col-span-2"
-            style={{ padding: 'var(--grid-major)' }}
-          >
-            <div
-              className="relative aspect-square overflow-hidden cursor-pointer group"
-              onClick={() => router.push(`/field-notes/${note.slug}`)}
-            >
-              <div
-                className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
-                style={{
-                  backgroundImage: `url(${note.feature_image_url})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: `${note.thumbnail_crop.x}% ${note.thumbnail_crop.y}%`,
-                  transform: `scale(${100 / note.thumbnail_crop.width})`,
-                  transformOrigin: `${note.thumbnail_crop.x}% ${note.thumbnail_crop.y}%`,
-                }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <h3 className="text-center px-2 py-1.5 font-[family-name:var(--font-geist-mono)] text-base sm:text-lg font-bold leading-tight text-[#ffffff] bg-black/70 [text-shadow:0_1px_3px_rgba(0,0,0,0.95)] rounded-sm">
-                  {note.title}
-                </h3>
-              </div>
-            </div>
-          </div>
+            title={note.title}
+            onClick={() => router.push(`/field-notes/${note.slug}`)}
+            imageStyle={{
+              backgroundImage: `url(${note.feature_image_url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: `${note.thumbnail_crop.x}% ${note.thumbnail_crop.y}%`,
+              transform: `scale(${100 / note.thumbnail_crop.width})`,
+              transformOrigin: `${note.thumbnail_crop.x}% ${note.thumbnail_crop.y}%`,
+            }}
+          />
         ))}
       </div>
     </div>

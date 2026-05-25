@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SelectedWorkServer } from '@/lib/selected-works-server'
+import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
+import { createDrawerListCache } from '@/lib/drawer-list-cache'
+import C64GridTile from './C64GridTile'
 
 interface SelectedWork {
   id: string
@@ -24,23 +27,43 @@ interface SelectedWorksContentProps {
   initialWorks?: SelectedWorkServer[] | null
 }
 
+const selectedWorksCache = createDrawerListCache<SelectedWork[]>()
+
+function sortSelectedWorks(works: SelectedWork[]): SelectedWork[] {
+  return [...works].sort((a, b) => b.display_order - a.display_order)
+}
+
 const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ initialWorks = null }) => {
   const router = useRouter()
-  const [works, setWorks] = useState<SelectedWork[]>(initialWorks ?? [])
-  const [isLoading, setIsLoading] = useState(initialWorks === null)
+  const fromServer = initialWorks !== null
+  const fromCache = selectedWorksCache.has()
+  const [works, setWorks] = useState<SelectedWork[]>(
+    () => initialWorks ?? selectedWorksCache.get() ?? [],
+  )
+  const [isLoading, setIsLoading] = useState(!fromServer && !fromCache)
 
   useEffect(() => {
     if (initialWorks !== null) {
-      setWorks(initialWorks)
+      const ordered = sortSelectedWorks(initialWorks as SelectedWork[])
+      selectedWorksCache.set(ordered)
+      setWorks(ordered)
       setIsLoading(false)
       return
     }
+
+    if (selectedWorksCache.has()) {
+      setWorks(selectedWorksCache.get() ?? [])
+      setIsLoading(false)
+      return
+    }
+
     const fetchWorks = async () => {
       try {
         const response = await fetch('/api/selected-works', { credentials: 'same-origin' })
         if (response.ok) {
           const data = await response.json()
-          const orderedWorks = (data.works || []).sort((a: SelectedWork, b: SelectedWork) => b.display_order - a.display_order)
+          const orderedWorks = sortSelectedWorks(data.works || [])
+          selectedWorksCache.set(orderedWorks)
           setWorks(orderedWorks)
         }
       } catch (error) {
@@ -52,12 +75,9 @@ const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ initialWork
     fetchWorks()
   }, [initialWorks])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
+  const showLoader = useC64LoaderVisible(isLoading)
+  if (showLoader) {
+    return <C64LoadingScreen label="Loading featured work" />
   }
 
   if (works.length === 0) {
@@ -71,36 +91,22 @@ const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ initialWork
   return (
     <div className="c64-media">
       <div
-        className="grid grid-cols-4 sm:grid-cols-6"
-        style={{ gap: 'var(--grid-major)', padding: 'var(--grid-major)' }}
+        className="c64-media-grid grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-8"
+        style={{ padding: 'var(--grid-major)' }}
       >
         {works.map((work) => (
-          <div
+          <C64GridTile
             key={work.id}
-            className="relative border-4 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/30 col-span-2"
-            style={{ padding: 'var(--grid-major)' }}
-          >
-            <div
-              className="relative aspect-square overflow-hidden cursor-pointer group"
-              onClick={() => router.push(`/selected-works/${work.slug}`)}
-            >
-              <div
-                className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
-                style={{
-                  backgroundImage: `url(${work.feature_image_url})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: `${work.thumbnail_crop.x}% ${work.thumbnail_crop.y}%`,
-                  transform: `scale(${100 / work.thumbnail_crop.width})`,
-                  transformOrigin: `${work.thumbnail_crop.x}% ${work.thumbnail_crop.y}%`,
-                }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <h3 className="text-center px-2 py-1.5 font-[family-name:var(--font-geist-mono)] text-base sm:text-lg font-bold leading-tight text-[#ffffff] bg-black/70 [text-shadow:0_1px_3px_rgba(0,0,0,0.95)] rounded-sm">
-                  {work.title}
-                </h3>
-              </div>
-            </div>
-          </div>
+            title={work.title}
+            onClick={() => router.push(`/selected-works/${work.slug}`)}
+            imageStyle={{
+              backgroundImage: `url(${work.feature_image_url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: `${work.thumbnail_crop.x}% ${work.thumbnail_crop.y}%`,
+              transform: `scale(${100 / work.thumbnail_crop.width})`,
+              transformOrigin: `${work.thumbnail_crop.x}% ${work.thumbnail_crop.y}%`,
+            }}
+          />
         ))}
       </div>
     </div>

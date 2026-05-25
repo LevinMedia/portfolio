@@ -1,4 +1,5 @@
 import { VT323 } from 'next/font/google'
+import localFont from 'next/font/local'
 import C64SettingsApplier from '@/app/components/C64SettingsApplier'
 import { C64_INLINE_THEME_VARS_JSON } from '@/lib/c64-settings'
 
@@ -6,6 +7,14 @@ const vt323 = VT323({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-vt323',
+})
+
+const c64ProMono = localFont({
+  src: '../../../public/fonts/C64_Pro_Mono-STYLE.woff2',
+  display: 'swap',
+  variable: '--font-c64-pro',
+  fallback: ['ui-monospace', 'monospace'],
+  preload: true,
 })
 
 /** Inline apply so first paint matches saved prefs (theme table from @/lib/c64-settings). */
@@ -48,7 +57,7 @@ export default function SiteLayout({
       />
     <div
       id="c64-site-root"
-      className={`c64-site ${vt323.variable} min-h-svh w-full min-w-0`}
+      className={`c64-site ${vt323.variable} ${c64ProMono.variable} min-h-svh w-full min-w-0`}
       suppressHydrationWarning
     >
       <script dangerouslySetInnerHTML={{ __html: C64_INLINE_INIT }} />

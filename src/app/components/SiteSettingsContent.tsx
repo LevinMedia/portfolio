@@ -17,6 +17,16 @@ import {
   applyC64SettingsNow,
   dispatchC64SettingsChanged,
 } from '@/app/components/C64SettingsApplier'
+import DrawerSection from './DrawerSection'
+import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
+import {
+  c64DrawerBtnClass,
+  c64DrawerBtnSelectedClass,
+  c64DrawerChoiceClass,
+  c64DrawerChoiceLabelClass,
+  c64DrawerHintClass,
+  c64DrawerStackClass,
+} from '@/lib/c64-drawer-classes'
 
 const ACCENT_OPTIONS: { id: C64Accent; label: string }[] = [
   { id: 'classic', label: 'Classic' },
@@ -89,22 +99,15 @@ export default function SiteSettingsContent() {
     router.push('/')
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-10 w-10 border-4 border-primary border-t-transparent motion-safe:animate-spin" aria-hidden />
-        <span className="sr-only">Loading settings</span>
-      </div>
-    )
+  const showLoader = useC64LoaderVisible(isLoading)
+  if (showLoader) {
+    return <C64LoadingScreen label="Loading settings" />
   }
 
   return (
-    <div className="space-y-6 c64-site-settings">
-      <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
-        <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
-          Highlight color
-        </h3>
-        <p className="text-sm text-muted-foreground mb-3">
+    <div className={`c64-site-settings c64-drawer-copy ${c64DrawerStackClass}`}>
+      <DrawerSection title="Highlight color">
+        <p className={`${c64DrawerHintClass} mb-4`}>
           Picks the whole site palette: dark screen and borders shift with this hue, highlights stay
           in the classic C64 spirit (Dim / Default / Bright still control overall lightness).
         </p>
@@ -114,87 +117,63 @@ export default function SiteSettingsContent() {
               key={id}
               type="button"
               onClick={() => persist({ ...settings, accent: id })}
-              className={`min-h-11 min-w-11 px-3 py-2 border-2 text-sm font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                settings.accent === id
-                  ? 'border-primary bg-primary/20 text-foreground'
-                  : 'border-border bg-background text-foreground hover:bg-muted'
-              }`}
+              className={settings.accent === id ? c64DrawerBtnSelectedClass : c64DrawerBtnClass}
             >
               {label}
             </button>
           ))}
         </div>
-      </section>
+      </DrawerSection>
 
-      <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
-        <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
-          Screen brightness
-        </h3>
+      <DrawerSection title="Screen brightness">
         <div className="flex flex-wrap gap-2">
           {TINT_OPTIONS.map(({ id, label }) => (
             <button
               key={id}
               type="button"
               onClick={() => persist({ ...settings, screenTint: id })}
-              className={`min-h-11 px-4 py-2 border-2 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                settings.screenTint === id
-                  ? 'border-primary bg-primary/20'
-                  : 'border-border hover:bg-muted'
-              }`}
+              className={settings.screenTint === id ? c64DrawerBtnSelectedClass : c64DrawerBtnClass}
             >
               {label}
             </button>
           ))}
         </div>
-      </section>
+      </DrawerSection>
 
-      <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
-        <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
-          Effects
-        </h3>
-        <label className="flex items-center gap-3 min-h-11 cursor-pointer">
+      <DrawerSection title="Effects">
+        <label className={c64DrawerChoiceClass}>
           <input
             type="checkbox"
             checked={settings.scanlines}
             onChange={(e) => persist({ ...settings, scanlines: e.target.checked })}
-            className="h-5 w-5 shrink-0"
           />
-          <span className="text-foreground">CRT scanlines overlay</span>
+          <span className={c64DrawerChoiceLabelClass}>CRT scanlines overlay</span>
         </label>
-      </section>
+      </DrawerSection>
 
-      <section className="border-2 border-primary bg-background p-4 c64-screen-grid">
-        <h3 className="text-lg font-bold text-foreground mb-3 border-b-2 border-primary pb-2">
-          Home boot sequence
-        </h3>
+      <DrawerSection title="Home boot sequence">
         <div className="space-y-2">
           {BOOT_OPTIONS.map(({ id, label, hint }) => (
-            <label
-              key={id}
-              className="flex items-start gap-3 p-2 border-2 border-transparent hover:border-border cursor-pointer rounded-none"
-            >
+            <label key={id} className={c64DrawerChoiceClass}>
               <input
                 type="radio"
                 name="c64-boot"
                 checked={settings.boot === id}
                 onChange={() => persist({ ...settings, boot: id })}
-                className="mt-1 h-4 w-4 shrink-0"
               />
-              <span>
-                <span className="block font-bold text-foreground">{label}</span>
-                <span className="block text-sm text-muted-foreground">{hint}</span>
-              </span>
+              <span className={c64DrawerChoiceLabelClass}>{label}</span>
+              <span className={c64DrawerHintClass}>{hint}</span>
             </label>
           ))}
         </div>
-      </section>
+      </DrawerSection>
 
       {showSignOut && (
-        <div className="flex justify-center pt-6 pb-2">
+        <div className="flex justify-center pt-2 pb-2">
           <button
             type="button"
             onClick={handleSignOut}
-            className="inline-flex items-center gap-2 min-h-11 px-3 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className={`inline-flex items-center gap-2 min-h-11 px-3 ${c64DrawerHintClass} hover:text-foreground transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--c64-accent)]`}
           >
             <ArrowRightOnRectangleIcon className="h-4 w-4" />
             Sign out

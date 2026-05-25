@@ -53,7 +53,7 @@ export const WithPageContent: Story = {
           Click any navigation item to see the routing in action. The component handles:
         </p>
         <ul className="list-disc list-inside text-foreground/80 space-y-2">
-          <li>Selected works navigation</li>
+          <li>Featured work navigation</li>
           <li>Work history navigation</li>
           <li>About page navigation</li>
           <li>Stats page navigation</li>

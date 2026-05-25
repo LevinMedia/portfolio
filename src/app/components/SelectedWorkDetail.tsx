@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import VideoPlayer from './VideoPlayer'
+import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 
 interface SelectedWorkDetailProps {
   slug: string
@@ -111,12 +112,9 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
   }, [onTitleVisibilityChange, work])
 
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
+  const showLoader = useC64LoaderVisible(isLoading)
+  if (showLoader) {
+    return <C64LoadingScreen label="Loading work" />
   }
 
   if (error || !work) {

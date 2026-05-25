@@ -1,8 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
-
-const boxClass =
-  'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
+import DrawerSection from './DrawerSection'
+import { c64DrawerFooterClass, c64DrawerStackClass } from '@/lib/c64-drawer-classes'
 
 /** Full-width hero; taller box on md+ so desktop shows more of the portrait (object-cover). */
 const aboutHeroHeightClass =
@@ -10,7 +9,7 @@ const aboutHeroHeightClass =
 
 const AboutContent: React.FC = () => {
   return (
-    <div className="c64-about-content c64-drawer-copy space-y-6 sm:space-y-8 pb-24 pt-0">
+    <div className={`c64-about-content c64-drawer-copy ${c64DrawerStackClass} pb-24 pt-0`}>
       <figure
         className={`relative mx-auto w-full max-w-full shrink-0 overflow-hidden ${aboutHeroHeightClass}`}
       >
@@ -24,17 +23,7 @@ const AboutContent: React.FC = () => {
         />
       </figure>
 
-      <section
-        className={`${boxClass} p-5 sm:p-7`}
-        aria-labelledby="about-david-heading"
-      >
-        <h2
-          id="about-david-heading"
-          className="text-lg sm:text-xl font-bold uppercase tracking-[0.12em] text-[var(--c64-accent)] mb-5 border-b-4 border-[var(--c64-accent)] pb-3"
-        >
-          About David
-        </h2>
-
+      <DrawerSection title="About David" titleId="about-david-heading">
         <div className="c64-prose space-y-4 leading-snug text-foreground">
           <p>
             I specialize in designing complex, data-driven experiences that feel intuitive and
@@ -65,7 +54,7 @@ const AboutContent: React.FC = () => {
               href="/Levin_Resume.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--c64-accent)] underline underline-offset-[3px]"
+              className="underline underline-offset-[3px]"
             >
               Resume (PDF)
             </a>
@@ -73,24 +62,15 @@ const AboutContent: React.FC = () => {
               href="https://www.linkedin.com/in/levinmedia/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--c64-accent)] underline underline-offset-[3px]"
+              className="underline underline-offset-[3px]"
             >
               LinkedIn
             </a>
           </div>
         </div>
-      </section>
+      </DrawerSection>
 
-      <section
-        className={`${boxClass} p-5 sm:p-7`}
-        aria-labelledby="about-site-heading"
-      >
-        <h2
-          id="about-site-heading"
-          className="text-lg sm:text-xl font-bold uppercase tracking-[0.12em] text-[var(--c64-accent)] mb-5 border-b-4 border-[var(--c64-accent)] pb-3"
-        >
-          About this site
-        </h2>
+      <DrawerSection title="About this site" titleId="about-site-heading">
         <div className="c64-prose space-y-4 leading-snug text-foreground">
           <p>
             Building and maintaining a portfolio site has always been at the absolute bottom of my
@@ -114,11 +94,11 @@ const AboutContent: React.FC = () => {
             </a>
           </p>
         </div>
-      </section>
+      </DrawerSection>
 
-      <footer className="border-t-4 border-[var(--c64-accent)]/35 pt-4 uppercase tracking-wider text-[var(--c64-accent)]/85 bg-[var(--c64-screen-bg)]/90">
+      <footer className={c64DrawerFooterClass}>
         <p className="m-0">
-          <span className="text-[var(--foreground)]/70">Last update:</span>{' '}
+          <span>Last update:</span>{' '}
           {new Date().toLocaleDateString()}
         </p>
       </footer>
