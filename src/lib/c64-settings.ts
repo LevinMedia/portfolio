@@ -204,6 +204,72 @@ export function getC64ThemeColors(
   return { screen, border, crtInk }
 }
 
+/** WCAG 2.x contrast ratio for normal-sized text */
+export const WCAG_AA_NORMAL_TEXT = 4.5
+
+/** Small buffer so computed hex values stay at or above AA after float rounding */
+const CONTRAST_SAFETY_MARGIN = 0.03
+
+/** Slightly above AA for primary body copy on the CRT screen */
+const BODY_TEXT_TARGET = 5.5
+
+/**
+ * Lighten `fg` toward `mixWith` until contrast on `bg` meets `minRatio`.
+ */
+export function ensureContrastOnBackground(
+  fg: string,
+  bg: string,
+  minRatio: number,
+  mixWith = '#ffffff',
+): string {
+  const target = minRatio + CONTRAST_SAFETY_MARGIN
+  try {
+    if (chroma.contrast(fg, bg) >= target) return fg
+    let lo = 0
+    let hi = 1
+    for (let i = 0; i < 48; i++) {
+      const mid = (lo + hi) / 2
+      const candidate = chroma.mix(fg, mixWith, mid, 'rgb')
+      if (chroma.contrast(candidate, bg) >= target) hi = mid
+      else lo = mid
+    }
+    return chroma.mix(fg, mixWith, hi, 'rgb').hex()
+  } catch {
+    return fg
+  }
+}
+
+/**
+ * Darkest text color between `screen` and `fg` that still meets `minRatio` (secondary/meta copy).
+ */
+export function mutedForegroundOnScreen(
+  screen: string,
+  fg: string,
+  minRatio = WCAG_AA_NORMAL_TEXT,
+): string {
+  try {
+    let lo = 0
+    let hi = 1
+    let best = ensureContrastOnBackground(fg, screen, minRatio)
+    for (let i = 0; i < 48; i++) {
+      const mid = (lo + hi) / 2
+      const candidate = chroma.mix(screen, fg, mid, 'rgb')
+      const ratio = chroma.contrast(candidate, screen)
+      const distinct = chroma.deltaE(candidate, fg) >= 6
+      const target = minRatio + CONTRAST_SAFETY_MARGIN
+      if (ratio >= target && distinct) {
+        best = candidate.hex()
+        hi = mid
+      } else {
+        lo = mid
+      }
+    }
+    return ensureContrastOnBackground(best, screen, minRatio)
+  } catch {
+    return ensureContrastOnBackground(fg, screen, minRatio)
+  }
+}
+
 /**
  * Pick white vs near-black for text/icons on a solid `bgHex` so contrast stays strong across
  * every C64 accent (pastels included). Uses WCAG contrast ratio from chroma-js.
@@ -224,11 +290,18 @@ function buildCssVarSnapshot(
 ): Record<string, string> {
   const { screen, border, crtInk } = getC64ThemeColors(accent, screenTint)
   const accentHex = C64_ACCENT_HEX[accent]
-  const fg =
+  const fgBase =
     accent === 'white'
       ? chroma.mix(crtInk, accentHex, 0.14).hex()
       : chroma.mix(crtInk, '#ffffff', 0.1).hex()
-  const mutedFg = chroma.mix(screen, crtInk, 0.52).hex()
+  const fg = ensureContrastOnBackground(fgBase, screen, BODY_TEXT_TARGET)
+  const mutedFg = mutedForegroundOnScreen(screen, fg, WCAG_AA_NORMAL_TEXT)
+  const linkOnScreen = ensureContrastOnBackground(accentHex, screen, WCAG_AA_NORMAL_TEXT)
+  const headingOnScreen =
+    chroma.contrast('#ffffff', screen) >= WCAG_AA_NORMAL_TEXT
+      ? '#ffffff'
+      : ensureContrastOnBackground('#ffffff', screen, WCAG_AA_NORMAL_TEXT)
+  const drawerHeaderText = ensureContrastOnBackground(accentHex, border, WCAG_AA_NORMAL_TEXT)
   const secondary = chroma.mix(screen, accentHex, 0.4).hex()
   const onPrimary = pickHighContrastForeground(accentHex)
   const secondaryFg = pickHighContrastForeground(secondary)
@@ -239,6 +312,9 @@ function buildCssVarSnapshot(
     '--c64-accent': accentHex,
     '--c64-crt-ink': crtInk,
     '--c64-bezel-bg': crtInk,
+    '--c64-heading-on-screen': headingOnScreen,
+    '--c64-link-on-screen': linkOnScreen,
+    '--c64-drawer-header-text': drawerHeaderText,
     '--background': screen,
     '--foreground': fg,
     '--muted': 'color-mix(in srgb, var(--c64-screen-bg) 72%, #000)',

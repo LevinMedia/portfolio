@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Drawer from './Drawer'
 import WorkHistoryContent from './WorkHistoryContent'
@@ -10,7 +10,9 @@ import FieldNotesContent from './FieldNotesContent'
 import SiteSettingsContent from './SiteSettingsContent'
 import StatsContent from './StatsContent'
 import Guestbook from './Guestbook'
-import C64AuthenticHomeScreen from './C64AuthenticHomeScreen'
+import C64AuthenticHomeScreen, {
+  type C64AuthenticHomeScreenHandle,
+} from './C64AuthenticHomeScreen'
 import { usePageTitle } from '../hooks/usePageTitle'
 import type { SelectedWorkServer } from '@/lib/selected-works-server'
 
@@ -33,6 +35,7 @@ export default function HomePageClient({
 }: HomePageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const c64Ref = useRef<C64AuthenticHomeScreenHandle>(null)
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(false)
@@ -43,7 +46,7 @@ export default function HomePageClient({
 
   const pageTitle = isWorkHistoryOpen ? 'Work History'
     : isAboutOpen ? 'About'
-    : isSelectedWorksOpen ? 'Selected Works'
+    : isSelectedWorksOpen ? 'Featured Work'
     : isFieldNotesOpen ? 'Field Notes'
     : isSiteSettingsOpen ? 'Site Settings'
     : isGuestbookOpen ? 'Guestbook'
@@ -52,74 +55,111 @@ export default function HomePageClient({
 
   usePageTitle(pageTitle)
 
+  /** While closing, URL can still show the drawer param briefly — don't snap the drawer back open. */
+  const closingDrawerParamsRef = useRef(new Set<string>())
+
+  const syncDrawerFromUrl = (
+    paramKey: string,
+    setOpen: (open: boolean) => void,
+  ) => {
+    const urlOpen = searchParams.get(paramKey) === 'true'
+    if (closingDrawerParamsRef.current.has(paramKey)) {
+      if (!urlOpen) {
+        closingDrawerParamsRef.current.delete(paramKey)
+        setOpen(false)
+      }
+      return
+    }
+    setOpen(urlOpen)
+  }
+
   useEffect(() => {
-    const showWorkHistory = searchParams.get('work-history') === 'true'
-    const showAbout = searchParams.get('about') === 'true'
-    const showSelectedWorks = searchParams.get('selected-works') === 'true'
-    const showFieldNotes = searchParams.get('field-notes') === 'true'
-    const showGuestbook = searchParams.get('guestbook') === 'true'
-    const showStats = searchParams.get('stats') === 'true'
-    const showSiteSettings = searchParams.get('site-settings') === 'true'
-    setIsWorkHistoryOpen(showWorkHistory)
-    setIsAboutOpen(showAbout)
-    setIsSelectedWorksOpen(showSelectedWorks)
-    setIsFieldNotesOpen(showFieldNotes)
-    setIsGuestbookOpen(showGuestbook)
-    setIsStatsOpen(showStats)
-    setIsSiteSettingsOpen(showSiteSettings)
+    syncDrawerFromUrl('work-history', setIsWorkHistoryOpen)
+    syncDrawerFromUrl('about', setIsAboutOpen)
+    syncDrawerFromUrl('selected-works', setIsSelectedWorksOpen)
+    syncDrawerFromUrl('field-notes', setIsFieldNotesOpen)
+    syncDrawerFromUrl('guestbook', setIsGuestbookOpen)
+    syncDrawerFromUrl('stats', setIsStatsOpen)
+    syncDrawerFromUrl('site-settings', setIsSiteSettingsOpen)
   }, [searchParams])
 
-  const handleWorkHistoryClose = () => {
-    setIsWorkHistoryOpen(false)
+  const openDrawerByParam = (paramKey: string, setOpen: (open: boolean) => void) => {
+    closingDrawerParamsRef.current.delete(paramKey)
+    setOpen(true)
+    router.push(`?${paramKey}=true`, { scroll: false })
+  }
+
+  const closeSiteDrawer = (setOpen: (open: boolean) => void, paramKey: string) => {
+    closingDrawerParamsRef.current.add(paramKey)
+    setOpen(false)
     const params = new URLSearchParams(searchParams.toString())
-    params.delete('work-history')
+    params.delete(paramKey)
     router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+  }
+
+  const handleWorkHistoryClose = () => {
+    closeSiteDrawer(setIsWorkHistoryOpen, 'work-history')
   }
 
   const handleAboutClose = () => {
-    setIsAboutOpen(false)
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('about')
-    router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+    closeSiteDrawer(setIsAboutOpen, 'about')
   }
 
   const handleSiteSettingsClose = () => {
-    setIsSiteSettingsOpen(false)
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('site-settings')
-    router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+    closeSiteDrawer(setIsSiteSettingsOpen, 'site-settings')
   }
 
   const handleSelectedWorksClose = () => {
-    setIsSelectedWorksOpen(false)
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('selected-works')
-    router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+    closeSiteDrawer(setIsSelectedWorksOpen, 'selected-works')
   }
 
   const handleFieldNotesClose = () => {
-    setIsFieldNotesOpen(false)
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('field-notes')
-    router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+    closeSiteDrawer(setIsFieldNotesOpen, 'field-notes')
   }
 
   const handleGuestbookClose = () => {
-    setIsGuestbookOpen(false)
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('guestbook')
-    router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+    closeSiteDrawer(setIsGuestbookOpen, 'guestbook')
   }
 
   const handleStatsClose = () => {
-    setIsStatsOpen(false)
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('stats')
-    router.push(params.toString() ? `?${params.toString()}` : '/', { scroll: false })
+    closeSiteDrawer(setIsStatsOpen, 'stats')
   }
 
+  const siteDrawerOpen =
+    isWorkHistoryOpen ||
+    isAboutOpen ||
+    isSelectedWorksOpen ||
+    isFieldNotesOpen ||
+    isSiteSettingsOpen ||
+    isGuestbookOpen ||
+    isStatsOpen
+
   const openSection = (key: string) => {
-    router.push(`?${key}=true`, { scroll: false })
+    switch (key) {
+      case 'about':
+        openDrawerByParam('about', setIsAboutOpen)
+        break
+      case 'work-history':
+        openDrawerByParam('work-history', setIsWorkHistoryOpen)
+        break
+      case 'selected-works':
+        openDrawerByParam('selected-works', setIsSelectedWorksOpen)
+        break
+      case 'field-notes':
+        openDrawerByParam('field-notes', setIsFieldNotesOpen)
+        break
+      case 'stats':
+        openDrawerByParam('stats', setIsStatsOpen)
+        break
+      case 'guestbook':
+        openDrawerByParam('guestbook', setIsGuestbookOpen)
+        break
+      case 'site-settings':
+        openDrawerByParam('site-settings', setIsSiteSettingsOpen)
+        break
+      default:
+        router.push(`?${key}=true`, { scroll: false })
+    }
   }
 
   return (
@@ -131,6 +171,8 @@ export default function HomePageClient({
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <C64AuthenticHomeScreen
+          ref={c64Ref}
+          siteDrawerOpen={siteDrawerOpen}
           onOpenAbout={() => openSection('about')}
           onOpenWorkHistory={() => openSection('work-history')}
           onOpenSelectedWorks={() => openSection('selected-works')}
@@ -163,7 +205,7 @@ export default function HomePageClient({
         <Drawer
           isOpen={isSelectedWorksOpen}
           onClose={handleSelectedWorksClose}
-          title="Selected works"
+          title="Featured work"
           icon={<CommandLineIcon className="w-6 h-6" />}
           contentPadding="p-0"
           maxWidth=""

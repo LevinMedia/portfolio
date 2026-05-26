@@ -1,13 +1,14 @@
 'use client'
 
 import {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react'
-import { useSearchParams } from 'next/navigation'
 import type { ClipboardEvent, KeyboardEvent, ReactNode, RefObject } from 'react'
 import {
   C64_HOME_BOOT_LINES_SESSION_KEY,
@@ -155,7 +156,7 @@ const DIRECTORY_ROWS: DirEntry[] = [
   { kind: 'del' },
   { kind: 'prg', blocks: 52, name: 'WORK HISTORY', action: 'onOpenWorkHistory' },
   { kind: 'del' },
-  { kind: 'prg', blocks: 102, name: 'FEATURED WORKS', action: 'onOpenSelectedWorks' },
+  { kind: 'prg', blocks: 102, name: 'FEATURED WORK', action: 'onOpenSelectedWorks' },
   { kind: 'del' },
   { kind: 'prg', blocks: 66, name: 'FIELD NOTES', action: 'onOpenFieldNotes' },
   { kind: 'del' },
@@ -177,7 +178,7 @@ const DIRECTORY_BLOCKS_FREE = Math.max(16, DIRECTORY_DISK_BLOCKS - DIRECTORY_BLO
 const LOAD_COMMAND_BY_ACTION: Record<keyof C64HomeCommandHandlers, string> = {
   onOpenAbout: 'LOAD "ABOUT",8,1',
   onOpenWorkHistory: 'LOAD "WORK HISTORY",8,1',
-  onOpenSelectedWorks: 'LOAD "FEATURED WORKS",8,1',
+  onOpenSelectedWorks: 'LOAD "FEATURED WORK",8,1',
   onOpenFieldNotes: 'LOAD "FIELD NOTES",8,1',
   onOpenStats: 'LOAD "STATS",8,1',
   onOpenGuestbook: 'LOAD "GUESTBOOK",8,1',
@@ -188,6 +189,7 @@ const LOAD_LABEL_TO_ACTION: Record<string, keyof C64HomeCommandHandlers> = {
   ABOUT: 'onOpenAbout',
   'WORK HISTORY': 'onOpenWorkHistory',
   HISTORY: 'onOpenWorkHistory',
+  'FEATURED WORK': 'onOpenSelectedWorks',
   'FEATURED WORKS': 'onOpenSelectedWorks',
   WORKS: 'onOpenSelectedWorks',
   'FIELD NOTES': 'onOpenFieldNotes',
@@ -286,32 +288,34 @@ const TERMINAL_LOAD_SPIN_CHARS = DISK_SPIN_CHARS
 /** After READY. on click path: brief beat before RUN + open. */
 const TERMINAL_AUTO_RUN_PAUSE_MS = 60
 
-function isAnySiteDrawerOpen(searchParams: ReturnType<typeof useSearchParams>): boolean {
-  return (
-    searchParams.get('about') === 'true' ||
-    searchParams.get('work-history') === 'true' ||
-    searchParams.get('selected-works') === 'true' ||
-    searchParams.get('field-notes') === 'true' ||
-    searchParams.get('guestbook') === 'true' ||
-    searchParams.get('stats') === 'true' ||
-    searchParams.get('site-settings') === 'true'
-  )
+export type C64AuthenticHomeScreenHandle = {
+  restoreTerminalOnDrawerClose: () => void
 }
 
-type C64AuthenticHomeScreenProps = C64HomeCommandHandlers
+type C64AuthenticHomeScreenProps = C64HomeCommandHandlers & {
+  /** Mirrors HomePageClient drawer `isOpen` state (updates before URL). */
+  siteDrawerOpen: boolean
+}
 
-export default function C64AuthenticHomeScreen({
-  onOpenAbout,
-  onOpenWorkHistory,
-  onOpenSelectedWorks,
-  onOpenFieldNotes,
-  onOpenStats,
-  onOpenGuestbook,
-  onOpenSiteSettings,
-}: C64AuthenticHomeScreenProps) {
-  const searchParams = useSearchParams()
-  const drawerOpen = isAnySiteDrawerOpen(searchParams)
+const C64AuthenticHomeScreen = forwardRef<
+  C64AuthenticHomeScreenHandle,
+  C64AuthenticHomeScreenProps
+>(function C64AuthenticHomeScreen(
+  {
+    siteDrawerOpen,
+    onOpenAbout,
+    onOpenWorkHistory,
+    onOpenSelectedWorks,
+    onOpenFieldNotes,
+    onOpenStats,
+    onOpenGuestbook,
+    onOpenSiteSettings,
+  },
+  ref,
+) {
+  const drawerOpen = siteDrawerOpen
   const wasDrawerOpenRef = useRef(false)
+  const pendingScrollRestoreRef = useRef<number | null>(null)
 
   const [linesShown, setLinesShown] = useState(0)
   /** Full lines already printed in the disk block (typewriter finished per line). */
@@ -356,8 +360,18 @@ export default function C64AuthenticHomeScreen({
   /** One terminal row that grows while PRINT uses `;` (no newline yet). */
   const basicLivePrintRowIdRef = useRef<number | null>(null)
   const basicPrintRafRef = useRef<number | null>(null)
-  /** Latest “replay LIST after drawer” impl (ref so drawer timeout always calls current). */
-  const playDiskListReplayRef = useRef<() => void>(() => {})
+  /** Terminal state before a directory PRG click (restored when the site drawer closes). */
+  type TerminalSnapshot = {
+    history: C64TerminalHistoryRow[]
+    line: string
+    caretPos: number
+    scrollTop: number
+    lineId: number
+  }
+  const preProgramLoadTerminalSnapshotRef = useRef<TerminalSnapshot | null>(null)
+  const terminalHistoryRef = useRef<C64TerminalHistoryRow[]>([])
+  const terminalLineRef = useRef('')
+  const terminalCaretPosRef = useRef(0)
   const terminalLineIdRef = useRef(0)
   const terminalTypewriterRunIdRef = useRef(0)
   const terminalTypewriterTimeoutRef = useRef<number | undefined>(undefined)
@@ -401,6 +415,83 @@ export default function C64AuthenticHomeScreen({
   useEffect(() => {
     terminalSequenceBusyRef.current = terminalSequenceBusy
   }, [terminalSequenceBusy])
+
+  useEffect(() => {
+    terminalHistoryRef.current = terminalHistory
+  }, [terminalHistory])
+
+  useEffect(() => {
+    terminalLineRef.current = terminalLine
+  }, [terminalLine])
+
+  useEffect(() => {
+    terminalCaretPosRef.current = terminalCaretPos
+  }, [terminalCaretPos])
+
+  const cloneTerminalHistory = (
+    rows: C64TerminalHistoryRow[],
+  ): C64TerminalHistoryRow[] =>
+    rows.map((row) =>
+      row.kind === 'text'
+        ? { id: row.id, kind: 'text', text: row.text }
+        : { id: row.id, kind: 'disk-catalog' },
+    )
+
+  const capturePreProgramLoadTerminalSnapshot = () => {
+    preProgramLoadTerminalSnapshotRef.current = {
+      history: cloneTerminalHistory(terminalHistoryRef.current),
+      line: terminalLineRef.current,
+      caretPos: terminalCaretPosRef.current,
+      scrollTop: scrollViewportRef.current?.scrollTop ?? 0,
+      lineId: terminalLineIdRef.current,
+    }
+  }
+
+  const restorePreProgramLoadTerminalSnapshot = useCallback(() => {
+    const snap = preProgramLoadTerminalSnapshotRef.current
+    if (!snap) {
+      window.requestAnimationFrame(() => {
+        focusC64TerminalInput(terminalInputRef, { force: true })
+      })
+      return
+    }
+    preProgramLoadTerminalSnapshotRef.current = null
+    terminalTypewriterRunIdRef.current += 1
+    terminalLoadRunIdRef.current += 1
+    clearTerminalLoadTimeoutsOnly()
+    if (terminalTypewriterTimeoutRef.current !== undefined) {
+      window.clearTimeout(terminalTypewriterTimeoutRef.current)
+      terminalTypewriterTimeoutRef.current = undefined
+    }
+    terminalLineIdRef.current = snap.lineId
+    setTerminalHistory(cloneTerminalHistory(snap.history))
+    setTerminalLine(snap.line)
+    setTerminalCaretPos(snap.caretPos)
+    setTerminalAutoTyping(false)
+    setTerminalSequenceBusy(false)
+    setTerminalLoadingLineId(null)
+    setTerminalLoadingGlyph(null)
+    setTerminalPendingRun(null)
+    setDiskCatalogReady(false)
+    pendingScrollRestoreRef.current = snap.scrollTop
+  }, [])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      restoreTerminalOnDrawerClose: restorePreProgramLoadTerminalSnapshot,
+    }),
+    [restorePreProgramLoadTerminalSnapshot],
+  )
+
+  useLayoutEffect(() => {
+    if (pendingScrollRestoreRef.current === null || !scrollViewportRef.current) {
+      return
+    }
+    scrollViewportRef.current.scrollTop = pendingScrollRestoreRef.current
+    pendingScrollRestoreRef.current = null
+    focusC64TerminalInput(terminalInputRef, { force: true })
+  }, [terminalHistory, terminalLine])
 
   useEffect(() => {
     basicRunningRef.current = basicRunning
@@ -470,35 +561,20 @@ export default function C64AuthenticHomeScreen({
   }, [bootComplete])
 
   /**
-   * When a site drawer closes, replay loading the disk catalog (LOAD"$",8 → SEARCHING → LOADING →
-   * READY.) then LIST + clickable directory embed + READY. Skip if terminal is busy or BASIC runs.
+   * When a site drawer closes after a directory PRG load, restore the terminal log to its
+   * pre-click state before paint (avoids a flash of LOAD/RUN lines as the drawer slides away).
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!bootComplete) {
+      wasDrawerOpenRef.current = drawerOpen
       return
     }
     const wasOpen = wasDrawerOpenRef.current
     wasDrawerOpenRef.current = drawerOpen
-    if (wasOpen && !drawerOpen) {
-      const id = window.setTimeout(() => {
-        if (terminalAutoTypingRef.current || terminalSequenceBusyRef.current) {
-          window.requestAnimationFrame(() => {
-            focusC64TerminalInput(terminalInputRef)
-          })
-          return
-        }
-        if (basicRunningRef.current) {
-          window.requestAnimationFrame(() => {
-            focusC64TerminalInput(terminalInputRef)
-          })
-          return
-        }
-        playDiskListReplayRef.current()
-      }, 100)
-      return () => window.clearTimeout(id)
+    if (wasOpen && !drawerOpen && !basicRunningRef.current) {
+      restorePreProgramLoadTerminalSnapshot()
     }
-    return undefined
-  }, [bootComplete, drawerOpen])
+  }, [bootComplete, drawerOpen, restorePreProgramLoadTerminalSnapshot])
 
   useEffect(() => {
     return () => {
@@ -1012,28 +1088,8 @@ export default function C64AuthenticHomeScreen({
     }, tLoading)
   }
 
-  playDiskListReplayRef.current = () => {
-    if (!bootComplete) {
-      return
-    }
-    if (terminalTypewriterTimeoutRef.current !== undefined) {
-      window.clearTimeout(terminalTypewriterTimeoutRef.current)
-    }
-    terminalTypewriterRunIdRef.current += 1
-    setTerminalLine('')
-    setTerminalAutoTyping(false)
-    startTerminalDiskCatalogSequence({
-      logSyntheticLoadLine: true,
-      endWithListEmbed: true,
-      onComplete: () => {
-        window.requestAnimationFrame(() => {
-          focusC64TerminalInput(terminalInputRef, { force: true })
-        })
-      },
-    })
-  }
-
   const playLoadCommandFromList = (action: keyof C64HomeCommandHandlers) => {
+    capturePreProgramLoadTerminalSnapshot()
     const full = LOAD_COMMAND_BY_ACTION[action]
     const reduced =
       typeof window !== 'undefined' &&
@@ -1726,7 +1782,8 @@ export default function C64AuthenticHomeScreen({
                 Disk directory: use the clickable program rows here, or type LOAD &quot;NAME&quot;,8,1
                 and RUN. LIST with no BASIC program inserts the same clickable directory in the command
                 log below. After LOAD &quot;$&quot;,8, LIST does that and clears $-catalog readiness.
-                Close a site panel to replay LIST in the log. Tab into a list; arrow keys or Home and End;
+                Close a site panel to return the command log to how it was before you loaded a program.
+                Tab into a list; arrow keys or Home and End;
                 Enter to run.
               </p>
 
@@ -1819,7 +1876,7 @@ export default function C64AuthenticHomeScreen({
                 )}
                 <div className="c64-terminal-prompt relative mt-0 block w-full max-w-full min-h-[1.35em]">
                   <label htmlFor="c64-terminal-input" className="sr-only">
-                    Disk: use the directory above or type LOAD &quot;NAME&quot;,8,1 then Enter; when the computer prints READY., type RUN and Enter to open, or pick a program from the list (RUN is typed for you). With no BASIC program, LIST inserts a clickable disk catalog into this log. LOAD &quot;$&quot;,8 then LIST does the same and clears $-catalog readiness. Escape clears that readiness. BASIC: numbered lines store without READY after each line; LIST lists the program if any lines exist. PRINT supports CHR$(), RND(), INT, SIN, COS, comparisons (equals and less-than / greater-than), caret for power, one-letter variables A through Z with optional LET, IF condition THEN line number, FOR and NEXT (each on its own line; nested loops allowed), semicolons to stay on the same line, commas for spacing, and colons to put more than one statement on a line. Logical screen rows follow PRINT newlines; the view may wrap long lines on narrow screens. Output wraps in the browser like a modern terminal, not a fixed 40-column C64 screen. NEW, GOTO, RUN; on touch devices a Stop control appears while a program runs; on desktop use Escape when no panel is open.
+                    Disk: use the directory above or type LOAD &quot;NAME&quot;,8,1 then Enter; when the computer prints READY., type RUN and Enter to open, or pick a program from the list (RUN is typed for you). Closing a site panel clears the load animation from the log and restores the prior screen. With no BASIC program, LIST inserts a clickable disk catalog into this log. LOAD &quot;$&quot;,8 then LIST does the same and clears $-catalog readiness. Escape clears that readiness. BASIC: numbered lines store without READY after each line; LIST lists the program if any lines exist. PRINT supports CHR$(), RND(), INT, SIN, COS, comparisons (equals and less-than / greater-than), caret for power, one-letter variables A through Z with optional LET, IF condition THEN line number, FOR and NEXT (each on its own line; nested loops allowed), semicolons to stay on the same line, commas for spacing, and colons to put more than one statement on a line. Logical screen rows follow PRINT newlines; the view may wrap long lines on narrow screens. Output wraps in the browser like a modern terminal, not a fixed 40-column C64 screen. NEW, GOTO, RUN; on touch devices a Stop control appears while a program runs; on desktop use Escape when no panel is open.
                   </label>
                   {basicRunning && basicStopTouchUi ? (
                     <button
@@ -1948,4 +2005,6 @@ export default function C64AuthenticHomeScreen({
       </div>
     </div>
   )
-}
+})
+
+export default C64AuthenticHomeScreen

@@ -9,6 +9,15 @@ import remarkGfm from 'remark-gfm'
 import MilkdownEditor from './MilkdownEditor'
 import Button from './Button'
 import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
+import DrawerSection from './DrawerSection'
+import {
+  c64DrawerCardClass,
+  c64DrawerEntryHeaderClass,
+  c64DrawerEntryHeadingClass,
+  c64DrawerMetaClass,
+  c64DrawerStackClass,
+} from '@/lib/c64-drawer-classes'
+import { C64LoadingScreen, C64SpriteLoader, useC64LoaderVisible } from './C64SpriteLoader'
 
 interface SocialLinks {
   linkedin?: string
@@ -30,9 +39,6 @@ interface GuestbookFormData {
   message: string
   socialLinks: SocialLinks
 }
-
-const boxClass =
-  'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
 
 const fieldClass = c64FormFieldClass
 const guestbookFieldLabelClass = c64FormFieldLabelClass
@@ -149,19 +155,16 @@ export default function Guestbook() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
+  const showLoader = useC64LoaderVisible(isLoading)
+  if (showLoader) {
+    return <C64LoadingScreen label="Loading guestbook" />
   }
 
   return (
-    <div className="c64-guestbook-content c64-drawer-copy w-full space-y-6 sm:space-y-8">
+    <div className={`c64-guestbook-content c64-drawer-copy w-full ${c64DrawerStackClass}`}>
       {/* Big Button to Show Form */}
       {!isFormVisible && (
-        <section className={`${boxClass} p-5 sm:p-6`} aria-label="Leave a message">
+        <section className={c64DrawerCardClass} aria-label="Leave a message">
           <Button
             onClick={() => setIsFormVisible(true)}
             style="outline"
@@ -178,7 +181,7 @@ export default function Guestbook() {
 
       {/* Add New Entry Form */}
       {isFormVisible && (
-        <section className={`${boxClass} p-5 sm:p-7`} aria-label="New guestbook entry">
+        <DrawerSection title="New entry" ariaLabel="New guestbook entry">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Field */}
           <div>
@@ -272,7 +275,9 @@ export default function Guestbook() {
               color="primary"
               size="medium"
               iconLeft={isSubmitting ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                <span className="inline-flex h-5 w-8 items-center justify-center overflow-hidden">
+                  <C64SpriteLoader className="scale-[0.06] origin-center" />
+                </span>
               ) : (
                 <PaperAirplaneIcon className="h-4 w-4" />
               )}
@@ -281,15 +286,15 @@ export default function Guestbook() {
             </Button>
           </div>
         </form>
-        </section>
+        </DrawerSection>
       )}
 
       {/* Guestbook Entries */}
-      <div className="space-y-6 sm:space-y-8">
+      <div className={c64DrawerStackClass}>
         {entries.length === 0 ? (
-          <section className={`${boxClass} p-8 text-center`} aria-label="No entries">
+          <section className={`${c64DrawerCardClass} p-8 text-center`} aria-label="No entries">
             <UserIcon className="h-12 w-12 text-[var(--c64-accent)]/70 mx-auto mb-4" />
-            <p className="text-foreground/75">No messages yet. Be the first to leave one! 🎉</p>
+            <p className="text-foreground">No messages yet. Be the first to leave one! 🎉</p>
           </section>
         ) : (
           entries.map((entry) => {
@@ -297,23 +302,17 @@ export default function Guestbook() {
             const shouldStackSocialLinks = activeSocialLinks.length >= 3
 
             return (
-              <article
-                key={entry.id}
-                className={`${boxClass} p-5 sm:p-7`}
-              >
-              {/* Entry Header */}
-              <div className="flex items-start mb-5 pb-3 border-b-4 border-[var(--c64-accent)]">
+              <article key={entry.id} className={c64DrawerCardClass}>
+              <div className={c64DrawerEntryHeaderClass}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 flex-shrink-0 border-2 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/40 flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(0,0,0,0.2)]">
-                    <span className="text-[var(--c64-accent)] font-bold">
+                    <span className="text-[var(--c64-link-on-screen,var(--c64-accent))] font-bold">
                       {entry.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold uppercase tracking-[0.06em] text-[var(--c64-accent)]">
-                      {entry.name}
-                    </h3>
-                    <p className="text-foreground/65 uppercase tracking-wide mt-1">{formatDate(entry.created_at)}</p>
+                    <h3 className={c64DrawerEntryHeadingClass}>{entry.name}</h3>
+                    <p className={`${c64DrawerMetaClass} mt-1`}>{formatDate(entry.created_at)}</p>
                   </div>
                 </div>
               </div>
@@ -370,10 +369,10 @@ export default function Guestbook() {
 
               {/* Social Links */}
               {activeSocialLinks.length > 0 && (
-                <div className="pt-4 border-t-4 border-[var(--c64-accent)]/35">
+                <div className="pt-4 border-t-4 border-[var(--c64-accent)]/35 mt-2">
                   {shouldStackSocialLinks ? (
                     <div className="flex flex-col items-start space-y-2">
-                      <span className="text-xs text-[var(--c64-accent)]/85 uppercase tracking-wider">Connect:</span>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">Connect:</span>
                       <div className="flex flex-wrap gap-4">
                         {activeSocialLinks.map(([platform, url]) => (
                           <a
@@ -381,7 +380,7 @@ export default function Guestbook() {
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-foreground/70 hover:text-[var(--c64-accent)] transition-colors"
+                            className="flex items-center space-x-1 text-muted-foreground hover:text-[var(--c64-link-on-screen,var(--c64-accent))] transition-colors"
                           >
                             <span>{getSocialIcon(platform)}</span>
                             <span className="text-xs capitalize">{platform}</span>
@@ -391,14 +390,14 @@ export default function Guestbook() {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-4">
-                      <span className="text-xs text-[var(--c64-accent)]/85 uppercase tracking-wider">Connect:</span>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">Connect:</span>
                       {activeSocialLinks.map(([platform, url]) => (
                         <a
                           key={platform}
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center space-x-1 text-foreground/70 hover:text-[var(--c64-accent)] transition-colors"
+                          className="flex items-center space-x-1 text-muted-foreground hover:text-[var(--c64-link-on-screen,var(--c64-accent))] transition-colors"
                         >
                           <span>{getSocialIcon(platform)}</span>
                           <span className="text-xs capitalize">{platform}</span>

@@ -18,7 +18,7 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
   const [isTitleVisible, setIsTitleVisible] = useState(true)
 
   // Update page title dynamically
-  usePageTitle(workTitle || 'Selected Works')
+  usePageTitle(workTitle || 'Featured Work')
 
   const handleClose = () => {
     router.push('/?selected-works=true')
@@ -32,9 +32,9 @@ export default function SelectedWorkPage({ params }: { params: Promise<{ slug: s
         onClose={handleClose}
         title={
           <>
-            {/* Desktop: "Selected works / Title" pattern */}
+            {/* Desktop: "Featured work / Title" pattern */}
             <span className="hidden md:inline">
-              <span className="text-[#ffffff]/75">Selected works</span>
+              <span className="text-[#ffffff]/75">Featured work</span>
               {workTitle && (
                 <span 
                   className="transition-opacity duration-300 ease-in-out"

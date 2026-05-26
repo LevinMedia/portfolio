@@ -128,7 +128,7 @@ ${listItemsHtml}
             <div className="w-full">
               <ButtonTooltip fullWidth>
                 <Button style="solid" color="primary" size="medium" fullWidth iconLeft={<CommandLineIcon className="w-5 h-5" />} onClick={onSelectedWorksClick}>
-                  View selected work
+                  View featured work
                 </Button>
               </ButtonTooltip>
             </div>

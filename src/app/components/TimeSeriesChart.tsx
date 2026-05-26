@@ -4,12 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { Listbox } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { c64DrawerCardClass, c64DrawerSectionHeaderClass, c64DrawerSectionHeadingClass } from '@/lib/c64-drawer-classes'
+import { fetchStatsJson } from '@/lib/stats-fetch'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 type AggKey = 'hour' | 'day' | 'week' | 'month' | 'quarter'
-
-const c64BoxClass =
-  'border-4 border-[var(--c64-accent)] bg-[var(--c64-screen-bg)] c64-petscii-frame c64-screen-grid'
 
 interface Point {
   t: string
@@ -28,19 +27,21 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
 
   // Fetch data whenever range or aggregation changes
   useEffect(() => {
-    let cancelled = false
-    // fetching state not used for UI
-    fetch(`/api/admin/stats/timeseries?range=${range}&agg=${agg}`)
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return
-        setAllowedAggs(d.allowedAggs)
-        // Snap to server-selected agg to avoid invalid state
-        setAgg(d.agg)
-        setPoints(d.points || [])
-      })
-      .finally(() => {})
-    return () => { cancelled = true }
+    const controller = new AbortController()
+    fetchStatsJson<{
+      allowedAggs?: AggKey[]
+      agg?: AggKey
+      points?: Point[]
+    }>(`/api/admin/stats/timeseries?range=${range}&agg=${agg}`, controller.signal).then(
+      ({ data, error }) => {
+        if (controller.signal.aborted || !data) return
+        if (error) return
+        if (data.allowedAggs) setAllowedAggs(data.allowedAggs)
+        if (data.agg) setAgg(data.agg)
+        setPoints(data.points || [])
+      },
+    )
+    return () => controller.abort()
   }, [range, agg])
 
   useMemo(() => allowedAggs.length === 1, [allowedAggs])
@@ -431,15 +432,15 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   }, [points, agg, containerWidth, chartHeight])
 
   return (
-    <div className={`${c64BoxClass} rounded-none`}>
-      <div className="px-4 py-3 sm:p-5 md:p-7">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 pb-3 border-b-4 border-[var(--c64-accent)]">
+    <section className={c64DrawerCardClass}>
+        <div className={c64DrawerSectionHeaderClass}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
-            <h3 className="text-lg sm:text-xl font-bold uppercase tracking-[0.1em] text-[var(--c64-accent)]">
+            <h2 className={c64DrawerSectionHeadingClass}>
               Traffic over time
-            </h3>
+            </h2>
             {/* Legend inline with title */}
-            <div className="hidden md:flex items-center gap-4 text-sm text-foreground/75">
+            <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--primary)' }} /> <span>Views</span></div>
               <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--accent)' }} /> <span>Visitors</span></div>
             </div>
@@ -461,10 +462,10 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
               </div>
             </Listbox>
           </div>
+          </div>
         </div>
         <div ref={containerRef} className="w-full" style={{ height: chartHeight }} />
-      </div>
-    </div>
+    </section>
   )
 }
 

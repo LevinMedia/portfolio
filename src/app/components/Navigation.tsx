@@ -99,7 +99,7 @@ export default function Navigation() {
     },
     {
       icon: <CommandLineIcon className="w-5 h-5" />,
-      label: "Selected works",
+      label: "Featured work",
       onClick: handleSelectedWorksOpen
     },
     {
@@ -140,7 +140,7 @@ export default function Navigation() {
           return `<Navigation>
   <LevinMediaLogo size={32} onClick={() => window.location.href = '/'} />
   <NavigationItem icon={<DocumentTextIcon />} label="Field notes" onClick={handleFieldNotesOpen} />
-  <NavigationItem icon={<CommandLineIcon />} label="Selected works" onClick={handleSelectedWorksOpen} />
+  <NavigationItem icon={<CommandLineIcon />} label="Featured work" onClick={handleSelectedWorksOpen} />
   <NavigationItem icon={<BriefcaseIcon />} label="Work history" onClick={handleWorkHistoryOpen} />
   <NavigationItem icon={<QuestionMarkCircleIcon />} label="About" onClick={handleAboutOpen} />
   <NavigationItem icon={<ChartBarSquareIcon />} label="Stats" onClick={handleStatsOpen} />

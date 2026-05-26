@@ -13,6 +13,7 @@ import Image from 'next/image'
 import CompanyLogoUploader from '@/app/components/CompanyLogoUploader'
 import Input from '@/app/components/ui/Input'
 import Textarea from '@/app/components/ui/Textarea'
+import MarkdownContent from '@/app/components/MarkdownContent'
 import Select from '@/app/components/ui/Select'
 
 interface WorkPosition {
@@ -364,9 +365,9 @@ export default function WorkHistoryAdmin() {
                               {position.position_title}
                             </h4>
                             {position.position_description && (
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {position.position_description}
-                              </p>
+                              <div className="text-sm text-muted-foreground mt-1 [&_.c64-prose_p]:text-sm [&_.c64-prose_p]:text-muted-foreground">
+                                <MarkdownContent>{position.position_description}</MarkdownContent>
+                              </div>
                             )}
                             <p className="text-xs text-muted-foreground mt-2">
                               {new Date(position.start_date).toLocaleDateString()} - {position.end_date ? new Date(position.end_date).toLocaleDateString() : 'Present'}
@@ -535,7 +536,7 @@ export default function WorkHistoryAdmin() {
       {/* Position Form Modal */}
       {showPositionForm && (
         <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-background border-border/20" style={{ 
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-background border-border/20" style={{ 
             backgroundImage: `
               linear-gradient(rgba(115, 115, 115, 0.03) 1px, transparent 1px),
               linear-gradient(90deg, rgba(115, 115, 115, 0.03) 1px, transparent 1px)
@@ -566,13 +567,19 @@ export default function WorkHistoryAdmin() {
                   onChange={(e) => setPositionForm({ ...positionForm, position_title: e.target.value })}
                   placeholder="Enter position title"
                 />
-                <Textarea
-                  label="Description"
-                  value={positionForm.position_description}
-                  onChange={(e) => setPositionForm({ ...positionForm, position_description: e.target.value })}
-                  rows={3}
-                  placeholder="Enter position description"
-                />
+                <div>
+                  <Textarea
+                    label="Description"
+                    value={positionForm.position_description}
+                    onChange={(e) => setPositionForm({ ...positionForm, position_description: e.target.value })}
+                    rows={10}
+                    placeholder="Enter position description"
+                    className="font-mono text-sm"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Markdown supported: **bold**, *italic*, lists, links. Line breaks are preserved.
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Start Date"
