@@ -1,12 +1,21 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { c64DrawerBtnClass } from '@/lib/c64-drawer-classes'
+import { XMarkIcon } from '@heroicons/react/24/outline'
+import {
+  focusFirstWhenReady,
+  getFocusableElements,
+} from '@/lib/focus'
+import ChromeDrawerBreadcrumbs, {
+  type ChromeDrawerBreadcrumb,
+} from './ChromeDrawerBreadcrumbs'
+import ChromeDrawerLogo from './ChromeDrawerLogo'
 
 interface DrawerProps {
   isOpen: boolean
   onClose: () => void
-  title: string | React.ReactNode
+  title?: string | React.ReactNode
+  breadcrumbs?: ChromeDrawerBreadcrumb[]
   icon?: React.ReactNode
   showLinkedInButton?: boolean
   linkedInUrl?: string
@@ -15,23 +24,24 @@ interface DrawerProps {
   children: React.ReactNode
 }
 
-const Drawer: React.FC<DrawerProps> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  icon, 
+const Drawer: React.FC<DrawerProps> = ({
+  isOpen,
+  onClose,
+  title,
+  breadcrumbs,
+  icon,
   showLinkedInButton = false,
   linkedInUrl,
-  contentPadding = "p-4",
-  maxWidth = "max-w-2xl",
+  contentPadding = 'p-4',
+  maxWidth = 'max-w-2xl',
   children,
 }) => {
-  const [mounted, setMounted] = useState(false)
+  const isFlushPage = contentPadding === 'p-0'
   const [headerScrolled, setHeaderScrolled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  /** Pixels to scroll before header shadow (gap from header bottom to first content). */
   const scrollShadowThresholdRef = useRef(16)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   const measureScrollShadowThreshold = useCallback(() => {
     const scroller = scrollRef.current
@@ -71,10 +81,6 @@ const Drawer: React.FC<DrawerProps> = ({
   }, [])
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
     if (!isOpen) {
       setHeaderScrolled(false)
       return undefined
@@ -99,11 +105,66 @@ const Drawer: React.FC<DrawerProps> = ({
 
     return () => {
       cancelAnimationFrame(raf)
-
       scroller.removeEventListener('scroll', onScroll)
       ro.disconnect()
     }
   }, [isOpen, syncHeaderShadow, measureScrollShadowThreshold, children])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const body = contentRef.current
+      const drawer = scrollRef.current
+      if (!body || !drawer) return
+
+      const focusables = getFocusableElements(body)
+      if (focusables.length === 0) return
+
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement
+
+      if (e.shiftKey) {
+        if (active === first || (active instanceof Node && !body.contains(active))) {
+          e.preventDefault()
+          last.focus({ preventScroll: true })
+        }
+        return
+      }
+
+      if (active === last || (active instanceof Node && !drawer.contains(active))) {
+        e.preventDefault()
+        first.focus({ preventScroll: true })
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      const restore = previousFocusRef.current
+      previousFocusRef.current = null
+      if (restore?.isConnected) {
+        requestAnimationFrame(() => restore.focus({ preventScroll: true }))
+      }
+      return undefined
+    }
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+
+    let cancelFocusReady = () => {}
+    const timer = window.setTimeout(() => {
+      cancelFocusReady = focusFirstWhenReady(contentRef.current)
+    }, 50)
+
+    return () => {
+      window.clearTimeout(timer)
+      cancelFocusReady()
+    }
+  }, [isOpen, children])
 
   useEffect(() => {
     if (isOpen) {
@@ -131,46 +192,60 @@ const Drawer: React.FC<DrawerProps> = ({
       e.stopPropagation()
       onClose()
     }
-    // Capture phase so nested components / libraries that stopPropagation on bubble still close.
     document.addEventListener('keydown', onKeyDown, true)
     return () => document.removeEventListener('keydown', onKeyDown, true)
   }, [isOpen, onClose])
 
-  if (!mounted) return null
-
   return (
     <>
-      {/* Drawer */}
+      <div
+        className={`drawer-chrome-backdrop fixed inset-0 z-[9] transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!isOpen}
+        onClick={onClose}
+      />
+
       <div
         ref={scrollRef}
-        className={`drawer-container fixed inset-x-0 bottom-0 w-full max-w-none bg-[var(--c64-screen-bg)] border-t-4 border-x-4 border-[var(--c64-accent)] transform-gpu transition-transform duration-300 ease-out motion-reduce:transition-none ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
+        className={`drawer-container drawer-chrome fixed inset-x-0 bottom-0 w-full max-w-none transform-gpu transition-transform duration-300 ease-out motion-reduce:transition-none ${
+          isOpen ? 'translate-y-0 drawer-chrome--open' : 'translate-y-full'
         }`}
         style={{
           overflowY: 'auto',
           zIndex: 10,
         }}
+        inert={!isOpen ? true : undefined}
+        aria-hidden={!isOpen}
+        role="dialog"
+        aria-modal={isOpen ? true : undefined}
       >
-        {/* Header — inverse status bar */}
         <div
-          className={`c64-drawer-header flex items-center justify-between sticky top-0 z-40 border-b-4 border-[var(--c64-accent)] bg-[var(--c64-border-bg)] ${
+          className={`c64-drawer-header flex items-center justify-between sticky top-0 z-40 ${
             headerScrolled ? 'c64-drawer-header--scrolled' : ''
           }`}
-          style={{
-            padding: 'var(--grid-major)',
-            minHeight: '64px',
-          }}
         >
           <div className="flex items-center gap-3 overflow-hidden min-w-0">
-            {icon && <div className="flex items-center flex-shrink-0 [&_svg]:text-current">{icon}</div>}
-            <h2 className="text-xl font-normal whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-[0.08em]">
-              {title}
-            </h2>
+            {icon ? (
+              <div className="flex items-center flex-shrink-0 [&_svg]:text-current [&_svg]:h-5 [&_svg]:w-5">
+                {icon}
+              </div>
+            ) : (
+              <ChromeDrawerLogo />
+            )}
+            {breadcrumbs ? (
+              <ChromeDrawerBreadcrumbs items={breadcrumbs} />
+            ) : title ? (
+              <h2 className="chrome-drawer-title whitespace-nowrap overflow-hidden text-ellipsis">
+                {title}
+              </h2>
+            ) : null}
             {showLinkedInButton && linkedInUrl && (
               <div className="hidden sm:block">
                 <button
                   type="button"
-                  className={c64DrawerBtnClass}
+                  className="c64-drawer-btn"
+                  tabIndex={-1}
                   onClick={() => window.open(linkedInUrl, '_blank')}
                 >
                   View on LinkedIn
@@ -179,29 +254,29 @@ const Drawer: React.FC<DrawerProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              className={`${c64DrawerBtnClass} whitespace-nowrap`}
+              className="chrome-drawer-close"
+              tabIndex={-1}
               onClick={onClose}
+              aria-label="Close"
             >
-              CLOSE [ESC]
+              <span className="hidden sm:inline">Close</span>
+              <XMarkIcon className="size-6 shrink-0 sm:size-5 sm:ml-1" aria-hidden />
             </button>
           </div>
         </div>
 
-        {/* Content */}
         <div
           ref={contentRef}
-          className={`c64-drawer-page ${contentPadding} flex justify-center`}
+          className={`c64-drawer-page ${contentPadding}${isFlushPage ? ' c64-drawer-page--flush' : ' c64-drawer-page--stacked'} flex justify-center`}
         >
           <div className={`w-full ${maxWidth} pb-24`}>{children}</div>
         </div>
       </div>
-
-
     </>
   )
 }
 
-export default Drawer 
+export default Drawer

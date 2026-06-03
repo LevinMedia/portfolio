@@ -5,13 +5,13 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import the entire map component to avoid SSR issues
-const LeafletMap = dynamic(() => import('./LeafletMap'), { 
+const LeafletMap = dynamic(() => import('./LeafletMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-80 bg-muted/20 border border-border/20 rounded-none flex items-center justify-center">
-      <div className="text-muted-foreground">Loading map...</div>
+    <div className="chrome-map-shell h-80 flex items-center justify-center">
+      <p className="text-sm chrome-loader__label">Loading map…</p>
     </div>
-  )
+  ),
 })
 
 type GeoPoint = {
@@ -115,13 +115,6 @@ export default function VisitorMap({ points, showMockData = false }: VisitorMapP
       setDisplayPoints(normalized)
     }
   }, [points, showMockData])
-
-  // Debug logging
-  console.log('VisitorMap render:', { 
-    pointsLength: points.length, 
-    showMockData, 
-    displayPointsLength: displayPoints.length
-  })
 
   return <LeafletMap points={displayPoints} />
 }

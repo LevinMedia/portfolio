@@ -10,6 +10,16 @@ import { fetchStatsJson } from '@/lib/stats-fetch'
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 type AggKey = 'hour' | 'day' | 'week' | 'month' | 'quarter'
 
+function formatAggLabel(agg: AggKey): string {
+  return agg.charAt(0).toUpperCase() + agg.slice(1)
+}
+
+function getSiteCssVar(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback
+  const root = document.getElementById('c64-site-root') ?? document.documentElement
+  return getComputedStyle(root).getPropertyValue(name).trim() || fallback
+}
+
 interface Point {
   t: string
   views: number
@@ -24,6 +34,13 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   const clipPathId = useRef<string>(`ts-clip-${Math.random().toString(36).slice(2)}`)
   const [containerWidth, setContainerWidth] = useState<number>(0)
   const [chartHeight, setChartHeight] = useState<number>(240)
+  const [themeEpoch, setThemeEpoch] = useState(0)
+
+  useEffect(() => {
+    const onTheme = () => setThemeEpoch((n) => n + 1)
+    window.addEventListener('c64-settings-changed', onTheme)
+    return () => window.removeEventListener('c64-settings-changed', onTheme)
+  }, [])
 
   // Fetch data whenever range or aggregation changes
   useEffect(() => {
@@ -270,7 +287,10 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     yAxisSelection.call(yAxis)
 
     // Horizontal gridlines aligned to y ticks; baseline solid, others dotted
-    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#334155'
+    const borderColor =
+      getSiteCssVar('--chrome-border', '') ||
+      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() ||
+      '#334155'
     const grid = svg.append('g').attr('class', 'y-grid')
     grid
       .selectAll('line')
@@ -296,8 +316,17 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('width', width - margin.left - margin.right)
       .attr('height', height - margin.top - margin.bottom)
 
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#10b981'
-    const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#3b82f6'
+    const viewsColor = getSiteCssVar('--chrome-chart-views', getSiteCssVar('--chrome-accent', '#0071e3'))
+    const visitorsColor = getSiteCssVar('--chrome-chart-visitors', '#34c759')
+    const tipFill = getSiteCssVar('--chrome-card-bg', '') ||
+      getComputedStyle(document.documentElement).getPropertyValue('--background').trim() ||
+      '#ffffff'
+    const tipStroke = getSiteCssVar('--chrome-border', '') ||
+      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() ||
+      '#e5e5ea'
+    const tipTextFill = getSiteCssVar('--chrome-text', '') ||
+      getComputedStyle(document.documentElement).getPropertyValue('--foreground').trim() ||
+      '#1d1d1f'
 
     const line = d3
       .line<{ date: Date; value: number }>()
@@ -313,14 +342,14 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     plot
       .append('path')
       .attr('fill', 'none')
-      .attr('stroke', primary)
+      .attr('stroke', viewsColor)
       .attr('stroke-width', 2)
       .attr('d', line(seriesViews)!)
 
     plot
       .append('path')
       .attr('fill', 'none')
-      .attr('stroke', accent)
+      .attr('stroke', visitorsColor)
       .attr('stroke-width', 2)
       .attr('d', line(seriesVisitors)!)
 
@@ -353,12 +382,12 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
 
     const tipBox = tip.append('g')
     const tipRect = tipBox.append('rect')
-      .attr('rx', 4)
-      .attr('ry', 4)
-      .attr('fill', getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#0b0b0b')
-      .attr('stroke', getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#2a2a2a')
+      .attr('rx', 10)
+      .attr('ry', 10)
+      .attr('fill', tipFill)
+      .attr('stroke', tipStroke)
     const tipText = tipBox.append('text')
-      .attr('fill', getComputedStyle(document.documentElement).getPropertyValue('--foreground').trim() || '#e5e7eb')
+      .attr('fill', tipTextFill)
       .attr('font-size', 12)
       .attr('font-family', 'ui-sans-serif, system-ui, sans-serif')
 
@@ -429,7 +458,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       })
       .on('mouseleave', () => tip.style('display', 'none'))
 
-  }, [points, agg, containerWidth, chartHeight])
+  }, [points, agg, containerWidth, chartHeight, themeEpoch])
 
   return (
     <section className={c64DrawerCardClass}>
@@ -441,21 +470,30 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
             </h2>
             {/* Legend inline with title */}
             <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--primary)' }} /> <span>Views</span></div>
-              <div className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--accent)' }} /> <span>Visitors</span></div>
+              <div className="flex items-center gap-2">
+                <span className="stats-chart-legend-dot--views inline-block h-2.5 w-2.5 rounded-full" />
+                <span>Views</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="stats-chart-legend-dot--visitors inline-block h-2.5 w-2.5 rounded-full" />
+                <span>Visitors</span>
+              </div>
             </div>
           </div>
           <div className="w-full sm:w-48 shrink-0">
             <Listbox value={agg} onChange={setAgg} disabled={allowedAggs.length === 1}>
               <div className="relative">
-                <Listbox.Button className={`w-full text-left border-2 border-[var(--c64-accent)]/60 rounded-none px-3 pr-8 py-2 text-sm relative bg-[var(--c64-border-bg)]/30 text-foreground ${allowedAggs.length === 1 ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                  {agg}
-                  <ChevronDownIcon className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-[var(--c64-accent)]" />
+                <Listbox.Button
+                  className="chrome-select__trigger"
+                  disabled={allowedAggs.length === 1}
+                >
+                  {formatAggLabel(agg)}
+                  <ChevronDownIcon className="chrome-select__chevron" aria-hidden />
                 </Listbox.Button>
-                <Listbox.Options className="absolute left-0 right-0 mt-1 max-h-60 overflow-auto bg-[var(--c64-screen-bg)] border-2 border-[var(--c64-accent)] rounded-none z-20 w-full">
-                  {allowedAggs.map(option => (
-                    <Listbox.Option key={option} value={option} className="px-3 py-2 text-sm hover:bg-[var(--c64-border-bg)]/50 cursor-pointer text-foreground">
-                      {option}
+                <Listbox.Options className="chrome-select__options">
+                  {allowedAggs.map((option) => (
+                    <Listbox.Option key={option} value={option} className="chrome-select__option">
+                      {formatAggLabel(option)}
                     </Listbox.Option>
                   ))}
                 </Listbox.Options>

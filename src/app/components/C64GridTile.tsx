@@ -11,17 +11,17 @@ type C64GridTileProps = {
 }
 
 export default function C64GridTile({ onClick, imageStyle, title }: C64GridTileProps) {
+  const tileRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
 
   const resetTilt = useCallback((active: boolean) => {
-    const el = frameRef.current
-    if (!el) return
-    const tile = el.closest('.c64-grid-tile')
-    if (!tile) return
-    el.style.setProperty('--c64-px', '0')
-    el.style.setProperty('--c64-py', '0')
-    el.style.setProperty('--c64-tilt-x', '0deg')
-    el.style.setProperty('--c64-tilt-y', '0deg')
+    const frame = frameRef.current
+    const tile = tileRef.current
+    if (!frame || !tile) return
+    frame.style.setProperty('--c64-px', '0')
+    frame.style.setProperty('--c64-py', '0')
+    frame.style.setProperty('--c64-tilt-x', '0deg')
+    frame.style.setProperty('--c64-tilt-y', '0deg')
     if (active) {
       tile.setAttribute('data-tilt', 'active')
     } else {
@@ -31,17 +31,17 @@ export default function C64GridTile({ onClick, imageStyle, title }: C64GridTileP
 
   const handleMove = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
-      const el = frameRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
+      const tile = tileRef.current
+      const frame = frameRef.current
+      if (!tile || !frame) return
+      const rect = tile.getBoundingClientRect()
       const px = (e.clientX - rect.left) / rect.width - 0.5
       const py = (e.clientY - rect.top) / rect.height - 0.5
-      el.style.setProperty('--c64-px', String(px))
-      el.style.setProperty('--c64-py', String(py))
-      el.style.setProperty('--c64-tilt-x', `${-py * TILT_MAX_DEG}deg`)
-      el.style.setProperty('--c64-tilt-y', `${px * TILT_MAX_DEG}deg`)
-      const tile = el.closest('.c64-grid-tile')
-      tile?.setAttribute('data-tilt', 'active')
+      frame.style.setProperty('--c64-px', String(px))
+      frame.style.setProperty('--c64-py', String(py))
+      frame.style.setProperty('--c64-tilt-x', `${-py * TILT_MAX_DEG}deg`)
+      frame.style.setProperty('--c64-tilt-y', `${px * TILT_MAX_DEG}deg`)
+      tile.setAttribute('data-tilt', 'active')
     },
     [],
   )
@@ -51,22 +51,23 @@ export default function C64GridTile({ onClick, imageStyle, title }: C64GridTileP
   }, [resetTilt])
 
   return (
-    <div className="c64-grid-tile col-span-2">
-      <div
-        ref={frameRef}
-        className="c64-grid-tile__frame"
-        onMouseMove={handleMove}
-        onMouseLeave={handleLeave}
-        onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onClick()
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
+    <div
+      ref={tileRef}
+      className="c64-grid-tile col-span-2"
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={title}
+    >
+      <div ref={frameRef} className="c64-grid-tile__frame">
         <div className="c64-grid-tile__stage">
           <div className="c64-grid-tile__bg" aria-hidden>
             <div className="c64-grid-tile__bg-inner" style={imageStyle} />

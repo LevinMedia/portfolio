@@ -9,18 +9,18 @@ const aboutHeroHeightClass =
 
 const AboutContent: React.FC = () => {
   return (
-    <div className={`c64-about-content c64-drawer-copy ${c64DrawerStackClass} pb-24 pt-0`}>
-      <figure
-        className={`relative mx-auto w-full max-w-full shrink-0 overflow-hidden ${aboutHeroHeightClass}`}
-      >
-        <Image
-          src="/levin-about.png"
-          alt="Portrait of David Levin"
-          fill
-          className="object-cover object-top"
-          sizes="(max-width: 42rem) 100vw, 42rem"
-          priority
-        />
+    <div className={`c64-about-content c64-drawer-copy ${c64DrawerStackClass} pb-24`}>
+      <figure className="c64-about-hero mx-auto w-full max-w-full shrink-0">
+        <div className={`relative overflow-hidden ${aboutHeroHeightClass}`}>
+          <Image
+            src="/levin-about.png"
+            alt="Portrait of David Levin"
+            fill
+            className="object-cover object-top"
+            sizes="(max-width: 42rem) 100vw, 42rem"
+            priority
+          />
+        </div>
       </figure>
 
       <DrawerSection title="About David" titleId="about-david-heading">

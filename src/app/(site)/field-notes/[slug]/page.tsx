@@ -1,11 +1,10 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import FieldNoteDetail from '@/app/components/FieldNoteDetail'
 import Drawer from '@/app/components/Drawer'
 import Navigation from '@/app/components/Navigation'
-import { DocumentTextIcon } from '@heroicons/react/24/outline'
 import { usePageTitle } from '@/app/hooks/usePageTitle'
 
 /** Legacy bottom bar; off on full-bleed note pages for now. Flip to true to restore. */
@@ -20,42 +19,33 @@ export default function FieldNotePage({ params }: { params: Promise<{ slug: stri
   // Update page title dynamically
   usePageTitle(noteTitle || 'Field Notes')
 
+  useEffect(() => {
+    setNoteTitle('')
+    setIsTitleVisible(true)
+  }, [slug])
+
   const handleClose = () => {
     router.push('/?field-notes=true')
   }
 
+  const goHome = () => {
+    router.push('/')
+  }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="chrome-standalone-page relative min-h-screen min-h-[100dvh] bg-[var(--chrome-bg-solid,#f5f5f7)]">
       <Drawer
         isOpen={true}
         onClose={handleClose}
-        title={
-          <>
-            {/* Desktop: "Field notes / Title" pattern */}
-            <span className="hidden md:inline">
-              <span className="text-[#ffffff]/75">Field notes</span>
-              {noteTitle && (
-                <span 
-                  className="transition-opacity duration-300 ease-in-out"
-                  style={{ 
-                    opacity: isTitleVisible ? 0 : 1,
-                    display: 'inline'
-                  }}
-                >
-                  <span className="mx-2 text-[#ffffff]/45">/</span>
-                  <span className="text-[#ffffff]">{noteTitle}</span>
-                </span>
-              )}
-            </span>
-            
-            {/* Mobile: Show nothing until title scrolls into sticky state; when shown, use 16px */}
-            {(!isTitleVisible && noteTitle) ? (
-              <span className="md:hidden text-base text-[#ffffff]" style={{ whiteSpace: 'nowrap' }}>{noteTitle}</span>
-            ) : null}
-          </>
-        }
-        icon={<DocumentTextIcon className="w-6 h-6" />}
+        breadcrumbs={[
+          { label: 'Home', onClick: goHome },
+          { label: 'Field notes', onClick: handleClose },
+          {
+            label: noteTitle,
+            current: true,
+            visible: !!noteTitle && !isTitleVisible,
+          },
+        ]}
         contentPadding="p-0"
         maxWidth=""
       >

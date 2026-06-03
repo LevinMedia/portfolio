@@ -1736,10 +1736,10 @@ const C64AuthenticHomeScreen = forwardRef<
 
   return (
     <div className="flex flex-1 flex-col w-full min-w-0 min-h-0">
-      <div className="c64-authentic-screen w-full min-w-0 flex flex-1 min-h-0 flex-col overflow-hidden shadow-[inset_0_0_0_2px_rgba(0,0,0,0.35)]">
+      <div className="c64-authentic-screen relative w-full min-w-0 flex flex-1 min-h-0 flex-col overflow-hidden">
         <div
           ref={scrollViewportRef}
-          className="c64-authentic-screen-scroll flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain py-4 sm:py-6 md:py-8 px-3 sm:px-5 md:px-6"
+          className="c64-authentic-screen-scroll relative z-[2] flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain py-4 sm:py-6 md:py-8 px-3 sm:px-5 md:px-6"
         >
           <div className="flex w-full flex-col items-start">
           <div className="text-center shrink-0 w-fit max-w-full mx-auto">

@@ -4,26 +4,26 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import {
-  defaultC64Settings,
-  LEGACY_SITE_THEME_KEY,
-  loadC64Settings,
-  saveC64Settings,
+  defaultSiteSettings,
+  loadSiteSettings,
+  saveSiteSettings,
   type C64Accent,
   type C64BootMode,
-  type C64ScreenTint,
-  type C64Settings,
-} from '@/lib/c64-settings'
+  type AppColorMode,
+  type SiteSettings,
+} from '@/lib/site-settings'
 import {
   applyC64SettingsNow,
   dispatchC64SettingsChanged,
 } from '@/app/components/C64SettingsApplier'
 import DrawerSection from './DrawerSection'
+import ChromeSegmentedControl from './ChromeSegmentedControl'
+import C64SettingsPreview from './C64SettingsPreview'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import {
-  c64DrawerBtnClass,
-  c64DrawerBtnSelectedClass,
   c64DrawerChoiceClass,
   c64DrawerChoiceLabelClass,
+  c64DrawerEntryHeadingClass,
   c64DrawerHintClass,
   c64DrawerStackClass,
 } from '@/lib/c64-drawer-classes'
@@ -38,21 +38,21 @@ const ACCENT_OPTIONS: { id: C64Accent; label: string }[] = [
   { id: 'red', label: 'Red' },
 ]
 
-const TINT_OPTIONS: { id: C64ScreenTint; label: string }[] = [
-  { id: 'dim', label: 'Dim' },
-  { id: 'default', label: 'Default' },
-  { id: 'bright', label: 'Bright' },
+const COLOR_MODE_OPTIONS: { id: AppColorMode; label: string }[] = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
 ]
 
 const BOOT_OPTIONS: { id: C64BootMode; label: string; hint: string }[] = [
-  { id: 'off', label: 'Off', hint: 'Home shows the classic boot text immediately (no type-in)' },
-  { id: 'session', label: 'Once per tab', hint: 'Type-in animation once; then instant until you close this tab' },
-  { id: 'always', label: 'Always animate', hint: 'Type-in lines every time the home page loads' },
+  { id: 'session', label: 'Once per session', hint: 'Run boot sequence on first home page view of session' },
+  { id: 'off', label: 'Off', hint: 'Never run boot sequence animation' },
+  { id: 'always', label: 'Always animate', hint: 'Run boot sequence every home page view' },
 ]
 
 export default function SiteSettingsContent() {
   const router = useRouter()
-  const [settings, setSettings] = useState<C64Settings>(defaultC64Settings)
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [showSignOut, setShowSignOut] = useState(false)
 
@@ -70,19 +70,19 @@ export default function SiteSettingsContent() {
   }, [])
 
   useEffect(() => {
-    const s = loadC64Settings()
+    const s = loadSiteSettings()
     setSettings(s)
     applyC64SettingsNow(s)
     setIsLoading(false)
   }, [])
 
-  const persist = useCallback((next: C64Settings) => {
+  const persist = useCallback((next: SiteSettings) => {
     setSettings(next)
-    saveC64Settings(next)
+    saveSiteSettings(next)
     applyC64SettingsNow(next)
     dispatchC64SettingsChanged()
     try {
-      localStorage.removeItem(LEGACY_SITE_THEME_KEY)
+      localStorage.removeItem('site-theme')
       localStorage.removeItem('selected-preset')
     } catch {
       // ignore
@@ -106,60 +106,67 @@ export default function SiteSettingsContent() {
 
   return (
     <div className={`c64-site-settings c64-drawer-copy ${c64DrawerStackClass}`}>
-      <DrawerSection title="Highlight color">
-        <p className={`${c64DrawerHintClass} mb-4`}>
-          Picks the whole site palette: dark screen and borders shift with this hue, highlights stay
-          in the classic C64 spirit (Dim / Default / Bright still control overall lightness).
+      <DrawerSection title="C64 settings" titleId="c64-settings-heading">
+        <p className="chrome-settings-intro mb-4">
+          Control the C64 terminal appearance only.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {ACCENT_OPTIONS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => persist({ ...settings, accent: id })}
-              className={settings.accent === id ? c64DrawerBtnSelectedClass : c64DrawerBtnClass}
-            >
-              {label}
-            </button>
-          ))}
+
+        <h3 className={`${c64DrawerEntryHeadingClass} chrome-settings-section-heading`}>
+          Styles
+        </h3>
+        <div className="chrome-settings-styles-block">
+          <div className="chrome-settings-field chrome-settings-field--color">
+            <span className={`${c64DrawerChoiceLabelClass} chrome-settings-field-label`}>
+              Color
+            </span>
+            <ChromeSegmentedControl
+              ariaLabel="C64 highlight color"
+              options={ACCENT_OPTIONS}
+              value={settings.c64.accent}
+              onChange={(accent) => persist({ ...settings, c64: { ...settings.c64, accent } })}
+              fullWidth
+            />
+            <C64SettingsPreview
+              accent={settings.c64.accent}
+              scanlines={settings.c64.scanlines}
+              colorMode={settings.app.colorMode}
+            />
+          </div>
+
+          <label className={c64DrawerChoiceClass}>
+            <input
+              type="checkbox"
+              checked={settings.c64.scanlines}
+              onChange={(e) =>
+                persist({
+                  ...settings,
+                  c64: { ...settings.c64, scanlines: e.target.checked },
+                })
+              }
+            />
+            <span className={c64DrawerChoiceLabelClass}>Scanlines</span>
+            <span className={c64DrawerHintClass}>Shown on the home screen only</span>
+          </label>
         </div>
-      </DrawerSection>
 
-      <DrawerSection title="Screen brightness">
-        <div className="flex flex-wrap gap-2">
-          {TINT_OPTIONS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => persist({ ...settings, screenTint: id })}
-              className={settings.screenTint === id ? c64DrawerBtnSelectedClass : c64DrawerBtnClass}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </DrawerSection>
-
-      <DrawerSection title="Effects">
-        <label className={c64DrawerChoiceClass}>
-          <input
-            type="checkbox"
-            checked={settings.scanlines}
-            onChange={(e) => persist({ ...settings, scanlines: e.target.checked })}
-          />
-          <span className={c64DrawerChoiceLabelClass}>CRT scanlines overlay</span>
-        </label>
-      </DrawerSection>
-
-      <DrawerSection title="Home boot sequence">
-        <div className="space-y-2">
+        <h3
+          className={`${c64DrawerEntryHeadingClass} chrome-settings-section-heading chrome-settings-boot-heading`}
+        >
+          Boot Sequence
+        </h3>
+        <div className="chrome-settings-boot-options space-y-2">
           {BOOT_OPTIONS.map(({ id, label, hint }) => (
             <label key={id} className={c64DrawerChoiceClass}>
               <input
                 type="radio"
                 name="c64-boot"
-                checked={settings.boot === id}
-                onChange={() => persist({ ...settings, boot: id })}
+                checked={settings.c64.boot === id}
+                onChange={() =>
+                  persist({
+                    ...settings,
+                    c64: { ...settings.c64, boot: id },
+                  })
+                }
               />
               <span className={c64DrawerChoiceLabelClass}>{label}</span>
               <span className={c64DrawerHintClass}>{hint}</span>
@@ -168,12 +175,30 @@ export default function SiteSettingsContent() {
         </div>
       </DrawerSection>
 
+      <DrawerSection title="Program settings" titleId="app-settings-heading">
+        <p className="chrome-settings-intro">
+          Control the color mode of programs launched from the C64 terminal.
+        </p>
+        <div className="chrome-settings-field chrome-settings-field--color-mode">
+          <span className={`${c64DrawerChoiceLabelClass} chrome-settings-field-label`}>
+            Color mode
+          </span>
+          <ChromeSegmentedControl
+            ariaLabel="Application color mode"
+            options={COLOR_MODE_OPTIONS}
+            value={settings.app.colorMode}
+            onChange={(colorMode) => persist({ ...settings, app: { colorMode } })}
+            fullWidth
+          />
+        </div>
+      </DrawerSection>
+
       {showSignOut && (
         <div className="flex justify-center pt-2 pb-2">
           <button
             type="button"
             onClick={handleSignOut}
-            className={`inline-flex items-center gap-2 min-h-11 px-3 ${c64DrawerHintClass} hover:text-foreground transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--c64-accent)]`}
+            className={`inline-flex items-center gap-2 min-h-11 px-3 ${c64DrawerHintClass} hover:text-[var(--chrome-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--chrome-focus-ring)]`}
           >
             <ArrowRightOnRectangleIcon className="h-4 w-4" />
             Sign out

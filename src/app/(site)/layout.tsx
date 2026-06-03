@@ -23,17 +23,36 @@ const C64_INLINE_INIT = `
   var TABLE=${C64_INLINE_THEME_VARS_JSON};
   var el=document.getElementById('c64-site-root');
   if(!el)return;
-  var def={accent:'classic',screenTint:'default',scanlines:false,boot:'session'};
-  var s=def;
-  try{var r=localStorage.getItem('site-c64-settings');if(r)s=Object.assign({},def,JSON.parse(r));}catch(e){}
-  if(s.accent==='cyan'||s.accent==='lightblue')s.accent='classic';
-  var accent=s.accent in TABLE?s.accent:'classic';
-  var tint=s.screenTint in TABLE[accent]?s.screenTint:'default';
+  var c64Def={accent:'classic',scanlines:true,boot:'session'};
+  var c64=c64Def;
+  var storedMode='system';
+  try{
+    var p=null;
+    var r=localStorage.getItem('site-c64-settings');
+    if(r){p=JSON.parse(r);c64=Object.assign({},c64Def,p);}
+    var a=localStorage.getItem('site-app-settings');
+    if(a){
+      var ap=JSON.parse(a);
+      if(ap.colorMode==='light'||ap.colorMode==='dark'||ap.colorMode==='system')storedMode=ap.colorMode;
+    }else if(p&&p.screenTint==='dim')storedMode='dark';
+    else if(p&&p.screenTint==='bright')storedMode='light';
+  }catch(e){}
+  function resolveMode(m){
+    if(m==='dark'||m==='light')return m;
+    try{
+      if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)return 'dark';
+    }catch(e){}
+    return 'light';
+  }
+  var colorMode=resolveMode(storedMode);
+  if(c64.accent==='cyan'||c64.accent==='lightblue')c64.accent='classic';
+  var accent=c64.accent in TABLE?c64.accent:'classic';
+  var tint=colorMode==='dark'?'dim':'bright';
   var vars=TABLE[accent][tint];
   for(var k in vars){if(Object.prototype.hasOwnProperty.call(vars,k))el.style.setProperty(k,vars[k]);}
   el.style.setProperty('--c64-text-scale','1.05');
-  el.dataset.c64Scanlines=s.scanlines?'on':'off';
-  el.dataset.c64Boot=s.boot||'session';
+  el.dataset.c64Boot=c64.boot||'session';
+  el.dataset.chromeTheme=colorMode;
   try{
     if(sessionStorage.getItem('c64-session-entry-path')==null){
       sessionStorage.setItem('c64-session-entry-path',location.pathname||'/');

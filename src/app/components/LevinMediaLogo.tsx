@@ -6,16 +6,23 @@ interface LevinMediaLogoProps {
   onClick?: () => void
   /** Solid background so content behind (e.g. particles) doesn't show through */
   fillBackground?: boolean
+  className?: string
 }
 
-const LevinMediaLogo: React.FC<LevinMediaLogoProps> = ({ size = 24, onClick, fillBackground = false }) => {
+const LevinMediaLogo: React.FC<LevinMediaLogoProps> = ({
+  size = 24,
+  onClick,
+  fillBackground = false,
+  className,
+}) => {
   const isInteractive = typeof onClick === 'function'
   return (
     <div 
       className={clsx(
         'border border-blue-200/15 rounded-none flex items-center justify-center transition-colors',
         fillBackground && 'bg-background',
-        isInteractive && 'cursor-pointer hover:bg-foreground/5'
+        isInteractive && 'cursor-pointer hover:bg-foreground/5',
+        className,
       )}
       style={{ 
         width: size, 

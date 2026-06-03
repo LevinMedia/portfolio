@@ -2,11 +2,12 @@
 
 import { useEffect } from 'react'
 import {
-  applyC64ToElement,
-  C64_STORAGE_KEY,
-  loadC64Settings,
-  type C64Settings,
-} from '@/lib/c64-settings'
+  applySiteSettingsToRoot,
+  loadSiteSettings,
+  type SiteSettings,
+} from '@/lib/site-settings'
+import { APP_STORAGE_KEY } from '@/lib/app-settings'
+import { C64_STORAGE_KEY } from '@/lib/c64-settings'
 
 const ROOT_ID = 'c64-site-root'
 
@@ -15,10 +16,10 @@ export function getC64SiteRoot(): HTMLElement | null {
   return document.getElementById(ROOT_ID)
 }
 
-export function applyC64SettingsNow(settings?: C64Settings): void {
+export function applyC64SettingsNow(settings?: SiteSettings): void {
   const el = getC64SiteRoot()
   if (!el) return
-  applyC64ToElement(el, settings ?? loadC64Settings())
+  applySiteSettingsToRoot(el, settings ?? loadSiteSettings())
 }
 
 /**
@@ -29,7 +30,11 @@ export default function C64SettingsApplier() {
     applyC64SettingsNow()
 
     const onStorage = (e: StorageEvent) => {
-      if (e.key === C64_STORAGE_KEY || e.key === null) {
+      if (
+        e.key === C64_STORAGE_KEY ||
+        e.key === APP_STORAGE_KEY ||
+        e.key === null
+      ) {
         applyC64SettingsNow()
       }
     }
@@ -38,9 +43,18 @@ export default function C64SettingsApplier() {
     const onCustom = () => applyC64SettingsNow()
     window.addEventListener('c64-settings-changed', onCustom)
 
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onScheme = () => {
+      if (loadSiteSettings().app.colorMode === 'system') {
+        applyC64SettingsNow()
+      }
+    }
+    mq.addEventListener('change', onScheme)
+
     return () => {
       window.removeEventListener('storage', onStorage)
       window.removeEventListener('c64-settings-changed', onCustom)
+      mq.removeEventListener('change', onScheme)
     }
   }, [])
 

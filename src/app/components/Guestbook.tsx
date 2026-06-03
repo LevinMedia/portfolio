@@ -1,20 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { PaperAirplaneIcon, UserIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
+import { PaperAirplaneIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { Input } from '@headlessui/react'
 import ReactMarkdown from 'react-markdown'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import remarkGfm from 'remark-gfm'
 import MilkdownEditor from './MilkdownEditor'
-import Button from './Button'
 import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
 import DrawerSection from './DrawerSection'
 import {
-  c64DrawerCardClass,
-  c64DrawerEntryHeaderClass,
+  c64DrawerBtnClass,
+  c64DrawerBtnSelectedClass,
   c64DrawerEntryHeadingClass,
+  c64DrawerHintClass,
   c64DrawerMetaClass,
+  c64DrawerSectionHeadingClass,
   c64DrawerStackClass,
 } from '@/lib/c64-drawer-classes'
 import { C64LoadingScreen, C64SpriteLoader, useC64LoaderVisible } from './C64SpriteLoader'
@@ -40,6 +41,13 @@ interface GuestbookFormData {
   socialLinks: SocialLinks
 }
 
+const SOCIAL_PLATFORMS = ['linkedin', 'threads', 'twitter', 'instagram'] as const
+
+const CARD_MS = 320
+const FADE_MS = 220
+
+type ComposePhase = 'idle' | 'expanding' | 'open' | 'collapsing'
+
 const fieldClass = c64FormFieldClass
 const guestbookFieldLabelClass = c64FormFieldLabelClass
 
@@ -47,7 +55,13 @@ export default function Guestbook() {
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isFormVisible, setIsFormVisible] = useState(false)
+  const [composePhase, setComposePhase] = useState<ComposePhase>('idle')
+  const [contentVisible, setContentVisible] = useState(false)
+  const [panelHeight, setPanelHeight] = useState<number | null>(null)
+  const composeTimersRef = useRef<number[]>([])
+  const leaveBtnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const collapsedHeightRef = useRef(44)
   const [formData, setFormData] = useState<GuestbookFormData>({
     name: '',
     message: '',
@@ -55,18 +69,17 @@ export default function Guestbook() {
       linkedin: '',
       threads: '',
       twitter: '',
-      instagram: ''
-    }
+      instagram: '',
+    },
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Fetch guestbook entries
   const fetchEntries = async () => {
     try {
       const response = await fetch('/api/guestbook')
       const data = await response.json()
-      
+
       if (response.ok) {
         setEntries(data.entries)
       } else {
@@ -83,14 +96,111 @@ export default function Guestbook() {
     fetchEntries()
   }, [])
 
-  // Handle form submission
+  const clearComposeTimers = useCallback(() => {
+    composeTimersRef.current.forEach((id) => window.clearTimeout(id))
+    composeTimersRef.current = []
+  }, [])
+
+  const scheduleCompose = useCallback((fn: () => void, ms: number) => {
+    const id = window.setTimeout(fn, ms)
+    composeTimersRef.current.push(id)
+  }, [])
+
+  useEffect(() => () => clearComposeTimers(), [clearComposeTimers])
+
+  const prefersReducedMotion = useCallback(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    [],
+  )
+
+  const openCompose = useCallback(() => {
+    clearComposeTimers()
+    if (prefersReducedMotion()) {
+      setComposePhase('open')
+      setPanelHeight(null)
+      setContentVisible(true)
+      return
+    }
+
+    const collapsed = leaveBtnRef.current?.offsetHeight ?? 44
+    collapsedHeightRef.current = collapsed
+
+    setComposePhase('expanding')
+    setContentVisible(false)
+    setPanelHeight(collapsed)
+
+    scheduleCompose(() => {
+      setContentVisible(true)
+      setComposePhase('open')
+      setPanelHeight(null)
+    }, CARD_MS)
+  }, [clearComposeTimers, prefersReducedMotion, scheduleCompose])
+
+  useLayoutEffect(() => {
+    if (composePhase !== 'expanding') return undefined
+
+    const collapsed = collapsedHeightRef.current
+    if (panelHeight !== collapsed) return undefined
+
+    const panel = panelRef.current
+    if (!panel) return undefined
+
+    const expandedHeight = panel.scrollHeight
+    let innerFrame = 0
+    const frame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        setPanelHeight(expandedHeight)
+      })
+    })
+
+    return () => {
+      cancelAnimationFrame(frame)
+      cancelAnimationFrame(innerFrame)
+    }
+  }, [composePhase, panelHeight])
+
+  const closeCompose = useCallback(() => {
+    clearComposeTimers()
+    if (prefersReducedMotion()) {
+      setComposePhase('idle')
+      setPanelHeight(null)
+      setContentVisible(false)
+      setError('')
+      return
+    }
+
+    setContentVisible(false)
+    setComposePhase('collapsing')
+
+    scheduleCompose(() => {
+      const panel = panelRef.current
+      const collapsed = leaveBtnRef.current?.offsetHeight ?? collapsedHeightRef.current
+      const expandedHeight = panel?.offsetHeight ?? panel?.scrollHeight ?? collapsed
+      setPanelHeight(expandedHeight)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setPanelHeight(collapsed)
+        })
+      })
+    }, FADE_MS)
+
+    scheduleCompose(() => {
+      setComposePhase('idle')
+      setPanelHeight(null)
+      setError('')
+    }, FADE_MS + CARD_MS)
+  }, [clearComposeTimers, prefersReducedMotion, scheduleCompose])
+
+  const isComposeActive = composePhase !== 'idle'
+  const isComposeAnimating = composePhase === 'expanding' || composePhase === 'collapsing'
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
     setSuccess('')
-
-    console.log('📤 Submitting form data:', formData)
 
     try {
       const response = await fetch('/api/guestbook', {
@@ -112,11 +222,10 @@ export default function Guestbook() {
             linkedin: '',
             threads: '',
             twitter: '',
-            instagram: ''
-          }
+            instagram: '',
+          },
         })
-        // Collapse form and refresh entries
-        setIsFormVisible(false)
+        closeCompose()
         await fetchEntries()
       } else {
         setError(data.error || 'Failed to add message')
@@ -128,31 +237,14 @@ export default function Guestbook() {
     }
   }
 
-  // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
-  }
-
-  // Get social icon
-  const getSocialIcon = (platform: string) => {
-    switch (platform) {
-      case 'linkedin':
-        return '💼'
-      case 'threads':
-        return '🧵'
-      case 'twitter':
-        return '🐦'
-      case 'instagram':
-        return '📸'
-      default:
-        return '🔗'
-    }
   }
 
   const showLoader = useC64LoaderVisible(isLoading)
@@ -161,257 +253,257 @@ export default function Guestbook() {
   }
 
   return (
-    <div className={`c64-guestbook-content c64-drawer-copy w-full ${c64DrawerStackClass}`}>
-      {/* Big Button to Show Form */}
-      {!isFormVisible && (
-        <section className={c64DrawerCardClass} aria-label="Leave a message">
-          <Button
-            onClick={() => setIsFormVisible(true)}
-            style="outline"
-            color="primary"
-            size="large"
-            fullWidth
-            iconLeft={<PencilSquareIcon className="w-5 h-5" />}
-            className="!border-2 !border-[var(--c64-accent)] rounded-none"
+    <div className={`c64-guestbook-content c64-drawer-copy ${c64DrawerStackClass}`}>
+      <DrawerSection
+        ariaLabel={isComposeActive ? 'New guestbook entry' : 'Leave a message'}
+        className="chrome-guestbook-compose"
+      >
+        {(composePhase === 'idle' || composePhase === 'collapsing') && (
+          <button
+            ref={leaveBtnRef}
+            type="button"
+            onClick={openCompose}
+            disabled={composePhase === 'collapsing'}
+            tabIndex={composePhase === 'collapsing' ? -1 : 0}
+            aria-hidden={composePhase === 'collapsing'}
+            className={`${c64DrawerBtnClass} chrome-guestbook-leave-btn${
+              composePhase === 'collapsing' ? ' chrome-guestbook-leave-btn--revealing' : ''
+            }`}
           >
+            <PencilSquareIcon className="h-5 w-5 shrink-0" aria-hidden />
             Leave a message on my wall
-          </Button>
-        </section>
-      )}
+          </button>
+        )}
 
-      {/* Add New Entry Form */}
-      {isFormVisible && (
-        <DrawerSection title="New entry" ariaLabel="New guestbook entry">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name Field */}
-          <div>
-            <label className={`${guestbookFieldLabelClass} mb-2`}>
-              Your Name
-            </label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className={fieldClass}
-              placeholder="Enter your name"
-              required
-              maxLength={100}
-            />
-          </div>
-
-          {/* Message Field */}
-          <div>
-            <label className={`${guestbookFieldLabelClass} mb-2`}>
-              Your Message
-            </label>
-            <div className="relative gb-editor">
-              <MilkdownEditor
-                value={formData.message}
-                onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
-                className="min-h-[160px] md:min-h-[200px]"
-                allowVideo={false}
-              />
-            </div>
-            {/* Helper text removed per request */}
-          </div>
-
-          {/* Social Links */}
-          <div>
-            <label className={`${guestbookFieldLabelClass} mb-3`}>
-              Your Social Links (Optional)
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              {['linkedin', 'threads', 'twitter', 'instagram'].map((platform) => (
-                <div key={platform}>
-                  <label className={`${guestbookFieldLabelClass} mb-1.5 capitalize`}>
-                    {getSocialIcon(platform)} {platform}
-                  </label>
-                  <Input
-                    type="url"
-                    value={formData.socialLinks[platform as keyof SocialLinks] || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      socialLinks: {
-                        ...prev.socialLinks,
-                        [platform]: e.target.value
-                      }
-                    }))}
-                    className={fieldClass}
-                    placeholder={`https://${platform}.com/yourusername`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="border-4 border-destructive/60 bg-destructive/10 p-4 rounded-none">
-              <div className="text-sm text-destructive">{error}</div>
-            </div>
-          )}
-
-          {success && (
-            <div className="border-4 border-[var(--c64-accent)]/50 bg-[var(--c64-border-bg)]/40 p-4 rounded-none">
-              <div className="text-sm text-[var(--c64-accent)]">{success}</div>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              onClick={() => setIsFormVisible(false)}
-              style="ghost"
-              color="primary"
-              size="medium"
+        {composePhase !== 'idle' && (
+          <div
+            ref={panelRef}
+            className={`chrome-guestbook-compose-panel${
+              composePhase === 'collapsing' ? ' chrome-guestbook-compose-panel--collapsing' : ''
+            }`}
+            style={panelHeight !== null ? { height: panelHeight } : undefined}
+          >
+            <div
+              className={`chrome-guestbook-compose-panel__content${
+                contentVisible ? ' chrome-guestbook-compose-panel__content--visible' : ''
+              }`}
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              style="solid"
-              color="primary"
-              size="medium"
-              iconLeft={isSubmitting ? (
-                <span className="inline-flex h-5 w-8 items-center justify-center overflow-hidden">
-                  <C64SpriteLoader className="scale-[0.06] origin-center" />
-                </span>
-              ) : (
-                <PaperAirplaneIcon className="h-4 w-4" />
-              )}
-            >
-              {isSubmitting ? 'Adding...' : 'Add to Guestbook'}
-            </Button>
-          </div>
-        </form>
-        </DrawerSection>
-      )}
-
-      {/* Guestbook Entries */}
-      <div className={c64DrawerStackClass}>
-        {entries.length === 0 ? (
-          <section className={`${c64DrawerCardClass} p-8 text-center`} aria-label="No entries">
-            <UserIcon className="h-12 w-12 text-[var(--c64-accent)]/70 mx-auto mb-4" />
-            <p className="text-foreground">No messages yet. Be the first to leave one! 🎉</p>
-          </section>
-        ) : (
-          entries.map((entry) => {
-            const activeSocialLinks = Object.entries(entry.social_links).filter(([, url]) => url)
-            const shouldStackSocialLinks = activeSocialLinks.length >= 3
-
-            return (
-              <article key={entry.id} className={c64DrawerCardClass}>
-              <div className={c64DrawerEntryHeaderClass}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 flex-shrink-0 border-2 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/40 flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(0,0,0,0.2)]">
-                    <span className="text-[var(--c64-link-on-screen,var(--c64-accent))] font-bold">
-                      {entry.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                <h2 className={c64DrawerSectionHeadingClass}>New entry</h2>
+                <form onSubmit={handleSubmit} className="mt-5 space-y-5">
                   <div>
-                    <h3 className={c64DrawerEntryHeadingClass}>{entry.name}</h3>
-                    <p className={`${c64DrawerMetaClass} mt-1`}>{formatDate(entry.created_at)}</p>
+                    <label className={`${guestbookFieldLabelClass} mb-2`}>Your name</label>
+                    <Input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      className={fieldClass}
+                      placeholder="Enter your name"
+                      required
+                      maxLength={100}
+                    />
                   </div>
+
+                  <div>
+                    <label className={`${guestbookFieldLabelClass} mb-2`}>Your message</label>
+                    <div className="gb-editor">
+                      <MilkdownEditor
+                        value={formData.message}
+                        onChange={(value) => setFormData((prev) => ({ ...prev, message: value }))}
+                        className="min-h-[160px] md:min-h-[200px]"
+                        allowVideo={false}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={`${guestbookFieldLabelClass} mb-3`}>
+                      Your social links (optional)
+                    </label>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {SOCIAL_PLATFORMS.map((platform) => (
+                        <div key={platform}>
+                          <label className={`${guestbookFieldLabelClass} mb-1.5 capitalize`}>
+                            {platform}
+                          </label>
+                          <Input
+                            type="url"
+                            value={formData.socialLinks[platform] || ''}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                socialLinks: {
+                                  ...prev.socialLinks,
+                                  [platform]: e.target.value,
+                                },
+                              }))
+                            }
+                            className={fieldClass}
+                            placeholder={`https://${platform}.com/yourusername`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div
+                      className="chrome-guestbook-alert chrome-guestbook-alert--error"
+                      role="alert"
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  {success && (
+                    <div
+                      className="chrome-guestbook-alert chrome-guestbook-alert--success"
+                      role="status"
+                    >
+                      {success}
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={closeCompose}
+                      disabled={isComposeAnimating}
+                      className={c64DrawerBtnClass}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || isComposeAnimating}
+                      className={`${c64DrawerBtnSelectedClass} inline-flex items-center gap-2`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="inline-flex h-5 w-8 items-center justify-center overflow-hidden">
+                            <C64SpriteLoader className="scale-[0.06] origin-center" />
+                          </span>
+                          Adding…
+                        </>
+                      ) : (
+                        <>
+                          <PaperAirplaneIcon className="h-4 w-4 shrink-0" aria-hidden />
+                          Add to guestbook
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+          </div>
+        )}
+      </DrawerSection>
+
+      {entries.length === 0 ? (
+        <DrawerSection ariaLabel="No entries">
+          <p className={`${c64DrawerHintClass} m-0 text-center`}>
+            No messages yet. Be the first to leave one.
+          </p>
+        </DrawerSection>
+      ) : (
+        entries.map((entry) => {
+          const activeSocialLinks = Object.entries(entry.social_links).filter(([, url]) => url)
+
+          return (
+            <DrawerSection key={entry.id} ariaLabel={entry.name}>
+              <div className="flex items-start gap-3 mb-4">
+                <div className="chrome-guestbook-avatar" aria-hidden>
+                  {entry.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 pt-0.5">
+                  <h3 className={c64DrawerEntryHeadingClass}>{entry.name}</h3>
+                  <p className={`${c64DrawerMetaClass} mt-0.5`}>{formatDate(entry.created_at)}</p>
                 </div>
               </div>
 
-              {/* Message Content */}
-              <div className="c64-prose max-w-none mb-4 text-foreground leading-snug">
+              <div className="c64-prose max-w-none mb-4">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({ children }) => <h1 className="text-3xl font-bold text-foreground mb-4 mt-6 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-2xl font-bold mb-3 mt-5 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--accent)' }}>{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-xl font-semibold mb-3 mt-4 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--secondary)' }}>{children}</h3>,
-                    h4: ({ children }) => <h4 className="text-lg font-semibold text-foreground mb-2 mt-3 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h4>,
-                    h5: ({ children }) => <h5 className="text-base font-semibold text-foreground mb-2 mt-3 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h5>,
-                    h6: ({ children }) => <h6 className="text-sm font-semibold text-foreground mb-2 mt-2 font-[family-name:var(--font-geist-mono)]" style={{ color: 'var(--foreground)' }}>{children}</h6>,
+                    h1: ({ children }) => <h1>{children}</h1>,
+                    h2: ({ children }) => <h2>{children}</h2>,
+                    h3: ({ children }) => <h3>{children}</h3>,
+                    h4: ({ children }) => <h4>{children}</h4>,
+                    h5: ({ children }) => <h5>{children}</h5>,
+                    h6: ({ children }) => <h6>{children}</h6>,
                     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-                    blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">{children}</blockquote>,
+                    ul: ({ children }) => (
+                      <ul className="mb-3 list-disc list-outside space-y-1 pl-5">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="mb-3 list-decimal list-outside space-y-1 pl-5">{children}</ol>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-2 border-[var(--chrome-border)] pl-4 italic my-4">
+                        {children}
+                      </blockquote>
+                    ),
                     img: ({ src, alt }) => {
                       if (!src) return null
                       return (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img 
-                          src={src} 
-                          alt={alt || ''} 
-                          className="max-w-full h-auto rounded-md my-4"
+                        <img
+                          src={src}
+                          alt={alt || ''}
+                          className="max-w-full h-auto my-4"
                           loading="lazy"
                         />
                       )
                     },
-                    strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                    em: ({ children }) => <em className="italic text-foreground">{children}</em>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
                     code: ({ children }) => (
-                      <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono text-foreground">
+                      <code className="rounded bg-[color-mix(in_srgb,var(--chrome-text)_6%,var(--chrome-card-bg))] px-1.5 py-0.5 text-sm font-mono">
                         {children}
                       </code>
                     ),
                     pre: ({ children }) => (
-                      <pre className="bg-muted p-4 rounded-md overflow-x-auto my-4">
+                      <pre className="overflow-x-auto rounded-xl border border-[var(--chrome-border)] bg-[color-mix(in_srgb,var(--chrome-text)_5%,var(--chrome-card-bg))] p-4 my-4">
                         {children}
                       </pre>
                     ),
                     a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--chrome-accent)] underline underline-offset-2"
+                      >
                         {children}
                       </a>
-                    )
+                    ),
                   }}
                 >
                   {normalizeLiteralHtmlBreaksInMarkdown(entry.message)}
                 </ReactMarkdown>
               </div>
 
-              {/* Social Links */}
               {activeSocialLinks.length > 0 && (
-                <div className="pt-4 border-t-4 border-[var(--c64-accent)]/35 mt-2">
-                  {shouldStackSocialLinks ? (
-                    <div className="flex flex-col items-start space-y-2">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wider">Connect:</span>
-                      <div className="flex flex-wrap gap-4">
-                        {activeSocialLinks.map(([platform, url]) => (
-                          <a
-                            key={platform}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-muted-foreground hover:text-[var(--c64-link-on-screen,var(--c64-accent))] transition-colors"
-                          >
-                            <span>{getSocialIcon(platform)}</span>
-                            <span className="text-xs capitalize">{platform}</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-4">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wider">Connect:</span>
-                      {activeSocialLinks.map(([platform, url]) => (
-                        <a
-                          key={platform}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center space-x-1 text-muted-foreground hover:text-[var(--c64-link-on-screen,var(--c64-accent))] transition-colors"
-                        >
-                          <span>{getSocialIcon(platform)}</span>
-                          <span className="text-xs capitalize">{platform}</span>
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                <div className="chrome-guestbook-social">
+                  <span className={c64DrawerHintClass}>Connect</span>
+                  <div className="chrome-guestbook-social-links">
+                    {activeSocialLinks.map(([platform, url]) => (
+                      <a
+                        key={platform}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="chrome-guestbook-social-link capitalize"
+                      >
+                        {platform}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
-              </article>
-            )
-          })
-        )}
-      </div>
+            </DrawerSection>
+          )
+        })
+      )}
     </div>
   )
 }
