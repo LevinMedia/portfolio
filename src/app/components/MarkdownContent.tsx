@@ -14,34 +14,28 @@ export default function MarkdownContent({ children, className = '' }: MarkdownCo
   if (!children?.trim()) return null
 
   return (
-    <div className={`c64-prose max-w-none text-foreground leading-snug ${className}`.trim()}>
+    <div className={`c64-prose max-w-none ${className}`.trim()}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
-          h1: ({ children: c }) => (
-            <h1 className="mb-3 mt-4 text-xl font-bold">{c}</h1>
-          ),
-          h2: ({ children: c }) => (
-            <h2 className="mb-3 mt-4 text-lg font-bold">{c}</h2>
-          ),
-          h3: ({ children: c }) => (
-            <h3 className="mb-2 mt-3 text-base font-semibold">{c}</h3>
-          ),
-          h4: ({ children: c }) => (
-            <h4 className="mb-2 mt-3 text-base font-semibold">{c}</h4>
-          ),
-          p: ({ children: c }) => <p className="mb-3 last:mb-0 text-foreground">{c}</p>,
+          h1: ({ children: c }) => <h1>{c}</h1>,
+          h2: ({ children: c }) => <h2>{c}</h2>,
+          h3: ({ children: c }) => <h3>{c}</h3>,
+          h4: ({ children: c }) => <h4>{c}</h4>,
+          h5: ({ children: c }) => <h5>{c}</h5>,
+          h6: ({ children: c }) => <h6>{c}</h6>,
+          p: ({ children: c }) => <p className="mb-3 last:mb-0">{c}</p>,
           ul: ({ children: c }) => (
-            <ul className="mb-3 list-disc list-outside space-y-2 pl-6">{c}</ul>
+            <ul className="mb-3 list-disc list-outside space-y-1.5 pl-6">{c}</ul>
           ),
           ol: ({ children: c }) => (
-            <ol className="mb-3 list-decimal list-outside space-y-2 pl-6">{c}</ol>
+            <ol className="mb-3 list-decimal list-outside space-y-1.5 pl-6">{c}</ol>
           ),
-          li: ({ children: c }) => <li className="pl-1 text-foreground">{c}</li>,
-          strong: ({ children: c }) => <strong className="font-semibold text-foreground">{c}</strong>,
+          li: ({ children: c }) => <li className="pl-0.5">{c}</li>,
+          strong: ({ children: c }) => <strong className="font-semibold">{c}</strong>,
           em: ({ children: c }) => <em className="italic">{c}</em>,
           a: ({ href, children: c }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
+            <a href={href} target="_blank" rel="noopener noreferrer">
               {c}
             </a>
           ),

@@ -29,25 +29,19 @@ export type C64Accent =
 
 export type C64ScreenTint = 'dim' | 'default' | 'bright'
 
-/** off = never show; session = once per tab session; always = every visit until dismissed */
+/** off = never show; session = once per browser session; always = every visit until dismissed */
 export type C64BootMode = 'off' | 'session' | 'always'
-
-export type C64TextScale = 'compact' | 'comfortable'
 
 export interface C64Settings {
   accent: C64Accent
-  screenTint: C64ScreenTint
   scanlines: boolean
   boot: C64BootMode
-  textScale: C64TextScale
 }
 
 export const defaultC64Settings: C64Settings = {
   accent: 'classic',
-  screenTint: 'default',
-  scanlines: false,
+  scanlines: true,
   boot: 'session',
-  textScale: 'comfortable',
 }
 
 /** Classic C64-ish hex values for accents (highlights, links, primary buttons) */
@@ -349,14 +343,13 @@ function buildInlineThemeJson(): Record<string, Record<string, Record<string, st
  */
 export const C64_INLINE_THEME_VARS_JSON = JSON.stringify(buildInlineThemeJson())
 
-const TEXT_SCALE: Record<C64TextScale, string> = {
-  compact: '0.9',
-  comfortable: '1.05',
-}
-
 export function saveC64Settings(settings: C64Settings): void {
   if (typeof window === 'undefined') return
-  const toSave: C64Settings = { ...settings, textScale: 'comfortable' }
+  const toSave: C64Settings = {
+    accent: settings.accent,
+    scanlines: settings.scanlines,
+    boot: settings.boot,
+  }
   localStorage.setItem(C64_STORAGE_KEY, JSON.stringify(toSave))
 }
 
@@ -365,12 +358,27 @@ export function loadC64Settings(): C64Settings {
   try {
     const raw = localStorage.getItem(C64_STORAGE_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<C64Settings> & { accent?: string }
-      const merged = { ...defaultC64Settings, ...parsed }
-      if (String(merged.accent) === 'cyan' || String(merged.accent) === 'lightblue') {
-        merged.accent = 'classic'
+      const parsed = JSON.parse(raw) as Partial<C64Settings> & {
+        accent?: string
+        screenTint?: string
       }
-      merged.textScale = 'comfortable'
+      const merged: C64Settings = {
+        accent: defaultC64Settings.accent,
+        scanlines:
+          typeof parsed.scanlines === 'boolean'
+            ? parsed.scanlines
+            : defaultC64Settings.scanlines,
+        boot:
+          parsed.boot === 'off' || parsed.boot === 'session' || parsed.boot === 'always'
+            ? parsed.boot
+            : defaultC64Settings.boot,
+      }
+      const accentRaw = String(parsed.accent ?? '')
+      if (accentRaw === 'cyan' || accentRaw === 'lightblue') {
+        merged.accent = 'classic'
+      } else if (accentRaw in C64_ACCENT_HEX) {
+        merged.accent = accentRaw as C64Accent
+      }
       return merged
     }
     const legacy = localStorage.getItem(LEGACY_SITE_THEME_KEY)
@@ -398,15 +406,17 @@ export function loadC64Settings(): C64Settings {
 }
 
 /**
- * Apply C64 CSS variables and data attributes on the portfolio root element.
+ * Apply C64 CSS variables on the portfolio root. Screen tint comes from app color mode.
  */
-export function applyC64ToElement(el: HTMLElement, s: C64Settings): void {
-  const snap = buildCssVarSnapshot(s.accent, s.screenTint)
+export function applyC64ToElement(
+  el: HTMLElement,
+  s: C64Settings,
+  screenTint: C64ScreenTint,
+): void {
+  const snap = buildCssVarSnapshot(s.accent, screenTint)
   for (const [k, v] of Object.entries(snap)) {
     el.style.setProperty(k, v)
   }
-  el.style.setProperty('--c64-text-scale', TEXT_SCALE.comfortable)
-
-  el.dataset.c64Scanlines = s.scanlines ? 'on' : 'off'
+  el.style.setProperty('--c64-text-scale', '1.05')
   el.dataset.c64Boot = s.boot
 }

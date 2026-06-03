@@ -4,24 +4,23 @@ import { useEffect, useState } from 'react'
 import VisitorMap from './VisitorMap'
 import TimeSeriesChart from './TimeSeriesChart'
 import DrawerSection from './DrawerSection'
+import ChromeSegmentedControl from './ChromeSegmentedControl'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { fetchStatsJson } from '@/lib/stats-fetch'
 import {
   c64DrawerCardClass,
   c64DrawerCardCompactClass,
-  c64DrawerBtnClass,
-  c64DrawerBtnSelectedClass,
   c64DrawerSectionHeadingClass,
   c64DrawerStackClass,
 } from '@/lib/c64-drawer-classes'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 
-const ranges: { key: RangeKey, label: string }[] = [
-  { key: '24h', label: 'Last 24h' },
-  { key: '7d', label: 'Last 7d' },
-  { key: '30d', label: 'Last 30d' },
-  { key: '1y', label: 'Last 365d' },
+const RANGE_OPTIONS: { id: RangeKey; label: string }[] = [
+  { id: '24h', label: 'Last 24h' },
+  { id: '7d', label: 'Last 7d' },
+  { id: '30d', label: 'Last 30d' },
+  { id: '1y', label: 'Last 365d' },
 ]
 
 export default function StatsContent() {
@@ -98,18 +97,12 @@ export default function StatsContent() {
   return (
     <div className={`c64-stats-content c64-drawer-copy ${c64DrawerStackClass}`}>
       <DrawerSection title="Range" ariaLabel="Date range">
-        <div className="flex flex-wrap gap-2">
-          {ranges.map(r => (
-            <button
-              key={r.key}
-              type="button"
-              onClick={() => setRange(r.key)}
-              className={range === r.key ? c64DrawerBtnSelectedClass : c64DrawerBtnClass}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+        <ChromeSegmentedControl
+          ariaLabel="Statistics date range"
+          options={RANGE_OPTIONS}
+          value={range}
+          onChange={setRange}
+        />
       </DrawerSection>
 
       {showLoader ? (
@@ -124,14 +117,14 @@ export default function StatsContent() {
 
       {!showLoader && !loadError && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <TimeSeriesChart range={range} />
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <Card title="Visitors" value={summary?.totals?.uniqueVisitors ?? '—'} delta={pct(summary?.deltas?.uniqueVisitorsPct)} />
             <Card title="Page Views" value={summary?.totals?.pageViews ?? '—'} delta={pct(summary?.deltas?.pageViewsPct)} />
             <Card title="Countries" value={summary?.totals?.countries ?? '—'} />
             <Card title="Top Page" value={summary?.totals?.topPage?.path ?? '—'} sub={formatCount(summary?.totals?.topPage?.views ?? 0, 'view')} />
           </div>
-
-          <TimeSeriesChart range={range} />
 
           <DrawerSection title="Visitor locations" headingLevel="h3">
             <VisitorMap points={geo} />
@@ -150,17 +143,14 @@ export default function StatsContent() {
                 return (
                   <div key={i} className="relative py-2">
                     <div
-                      className="absolute inset-y-0 left-0 rounded-none opacity-20"
-                      style={{
-                        width: `${finalWidth}%`,
-                        backgroundColor: 'var(--c64-accent)',
-                      }}
+                      className="stats-top-page-bar absolute inset-y-0 left-0 opacity-30"
+                      style={{ width: `${finalWidth}%` }}
                     />
                     <div className="relative flex min-w-0 items-center gap-2 pl-3">
                       <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                         {p.path}
                       </div>
-                      <div className="shrink-0 whitespace-nowrap text-sm text-muted-foreground bg-[var(--c64-border-bg)]/50 border-2 border-[var(--c64-accent)]/25 px-2 py-1 rounded-none">
+                      <div className="stats-top-page-badge shrink-0 whitespace-nowrap text-sm text-muted-foreground px-2 py-1">
                         {formatCount(p.uniques, 'visitor')} • {formatCount(p.views, 'view')}
                       </div>
                     </div>
@@ -179,7 +169,7 @@ function Card({ title, value, sub, delta }: { title: string, value: string | num
   return (
     <div className={`${c64DrawerCardCompactClass} flex flex-col min-h-[5.5rem]`}>
       <h3 className={c64DrawerSectionHeadingClass}>{title}</h3>
-      <div className="text-lg font-semibold text-foreground">{value}</div>
+      <div className="chrome-stat-value text-lg text-foreground">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-1 normal-case tracking-normal">{sub}</div>}
       {delta && (
         <div

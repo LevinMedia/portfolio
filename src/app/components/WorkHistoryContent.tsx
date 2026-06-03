@@ -65,6 +65,37 @@ function formatCompanyYears(positions: WorkPosition[]): string {
   return min === max ? `${min}` : `${min} - ${max}`
 }
 
+function getCompanyDateSpan(positions: WorkPosition[]): { start: Date; end: Date } | null {
+  if (!positions.length) return null
+  const starts = positions.map(p => parseDateOnly(p.start_date))
+  const ends = positions.map(p => (p.end_date ? parseDateOnly(p.end_date) : new Date()))
+  return {
+    start: new Date(Math.min(...starts.map(d => d.getTime()))),
+    end: new Date(Math.max(...ends.map(d => d.getTime()))),
+  }
+}
+
+function humanizeDuration(start: Date, end: Date): string {
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+  if (end.getDate() < start.getDate()) months -= 1
+  months = Math.max(0, months)
+
+  const years = Math.floor(months / 12)
+  const remMonths = months % 12
+  const parts: string[] = []
+  if (years > 0) parts.push(`${years} ${years === 1 ? 'year' : 'years'}`)
+  if (remMonths > 0) parts.push(`${remMonths} ${remMonths === 1 ? 'month' : 'months'}`)
+  if (!parts.length) return 'Less than 1 month'
+  return parts.join(', ')
+}
+
+function formatCompanyDuration(positions: WorkPosition[]): string {
+  const span = getCompanyDateSpan(positions)
+  if (!span) return ''
+  return humanizeDuration(span.start, span.end)
+}
+
 export default function WorkHistoryContent() {
   const [companies, setCompanies] = useState<WorkCompany[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,34 +147,47 @@ export default function WorkHistoryContent() {
 
   return (
     <div className={`c64-work-history-content c64-drawer-copy ${c64DrawerStackClass}`}>
-      {companies.map((company) => (
+      {companies.map((company) => {
+        const companyYears = formatCompanyYears(company.positions)
+        const companyDuration = formatCompanyDuration(company.positions)
+
+        return (
         <DrawerSection key={company.id} ariaLabel={company.company_name}>
           <div className={c64DrawerSectionHeaderClass}>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-12 h-12 relative flex-shrink-0 border-2 border-[var(--c64-accent)] bg-[var(--c64-border-bg)]/40">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0 sm:gap-4">
+                <div className="chrome-work-history-logo">
                   {company.company_name === 'Levin Media' ? (
-                    <LevinMediaLogo size={48} />
+                    <LevinMediaLogo size={48} fillBackground className="chrome-work-history-logo__mark" />
                   ) : company.company_logo_url ? (
                     <Image
                       src={company.company_logo_url}
                       alt={`${company.company_name} logo`}
                       fill
-                      className="object-contain"
+                      className="object-cover"
+                      sizes="48px"
                     />
                   ) : (
                     <div
-                      className="w-full h-full flex items-center justify-center text-lg font-semibold text-muted-foreground bg-muted/50"
+                      className="flex h-full w-full items-center justify-center text-sm font-semibold text-[var(--chrome-muted)]"
                       aria-hidden
                     >
                       {company.company_name.charAt(0)}
                     </div>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h2 className={c64DrawerSectionHeadingClass}>{company.company_name}</h2>
-                  <p className={`${c64DrawerMetaClass} mt-1`}>
-                    {formatCompanyYears(company.positions)}
+                <div className="min-w-0 pt-0.5">
+                  <h2 className={`${c64DrawerSectionHeadingClass} chrome-work-history-company-name`}>
+                    {company.company_name}
+                  </h2>
+                  <p className={`${c64DrawerMetaClass} mt-0.5`}>
+                    {companyYears}
+                    {companyDuration ? (
+                      <>
+                        <span aria-hidden="true"> · </span>
+                        <span>{companyDuration}</span>
+                      </>
+                    ) : null}
                   </p>
                 </div>
               </div>
@@ -157,11 +201,11 @@ export default function WorkHistoryContent() {
               {company.employment_type}
             </p>
           )}
-          <div className="space-y-6 c64-prose">
+          <div className="space-y-6 c64-prose c64-work-history-positions">
             {(company.positions ?? []).map((position) => (
-              <div key={position.id} className="border-l-2 border-[var(--c64-accent)]/20 pl-4 sm:pl-5">
+              <div key={position.id} className="c64-work-history-position">
                 <h3 className={c64DrawerEntryHeadingClass}>{position.position_title}</h3>
-                <p className={`${c64DrawerMetaClass} mb-2 mt-1`}>
+                <p className={`${c64DrawerMetaClass} c64-work-history-position-dates mb-2 mt-0.5`}>
                   {formatDateRange(position.start_date, position.end_date)}
                 </p>
                 {position.position_description && (
@@ -171,7 +215,8 @@ export default function WorkHistoryContent() {
             ))}
           </div>
         </DrawerSection>
-      ))}
+        )
+      })}
       <footer className={c64DrawerFooterClass}>
         <p className="m-0">
           Last updated: {new Date().toLocaleDateString()}

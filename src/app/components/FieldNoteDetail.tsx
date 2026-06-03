@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import VideoPlayer from './VideoPlayer'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
+import { useDrawerHeroTitleVisibility } from '@/app/hooks/useDrawerHeroTitleVisibility'
 
 interface FieldNoteDetailProps {
   slug: string
@@ -91,30 +92,11 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
     fetchNote()
   }, [slug, onTitleLoad])
 
-  // Set up Intersection Observer to detect when title scrolls out of view
-  useEffect(() => {
-    if (!titleRef.current || !onTitleVisibilityChange) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Title is visible if it's intersecting
-        onTitleVisibilityChange(entry.isIntersecting)
-      },
-      {
-        threshold: 0,
-        rootMargin: '-80px 0px 0px 0px', // Account for drawer header height
-      }
-    )
-
-    observer.observe(titleRef.current)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [onTitleVisibilityChange, note])
-
-
   const showLoader = useC64LoaderVisible(isLoading)
+
+  // Enable only after hero h1 is mounted (not during loader overlay)
+  useDrawerHeroTitleVisibility(titleRef, onTitleVisibilityChange, !!note && !showLoader)
+
   if (showLoader) {
     return <C64LoadingScreen label="Loading note" />
   }
@@ -127,40 +109,31 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
     )
   }
 
+  const heroImage = note.feature_image_url?.trim()
+
   return (
-    <div className="c64-prose c64-media c64-drawer-copy">
-      {/* Feature Image with Title Overlay - Full Width Edge to Edge */}
-      <div 
-        className="relative overflow-hidden -mx-4" 
-        style={{ 
-          width: 'calc(100% + 2rem)',
-          maxWidth: 'none',
-          height: '50vh',
-          maxHeight: '50vh'
-        }}
-      >
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ 
-            backgroundImage: `url(${note.feature_image_url})`
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <h1
-            ref={titleRef}
-            className="text-4xl font-bold font-[family-name:var(--font-geist-mono)] text-[#ffffff] [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]"
-          >
+    <div className="c64-drawer-copy">
+      <div className="chrome-detail-hero -mx-4">
+        {heroImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={heroImage}
+            alt=""
+            className="chrome-detail-hero__image"
+            loading="eager"
+          />
+        ) : null}
+        <div className="chrome-detail-hero__scrim" aria-hidden />
+        <div className="chrome-detail-hero__caption">
+          <h1 ref={titleRef} className="chrome-detail-hero__title">
             {note.title}
           </h1>
-          <p className="text-[#ffffff] mt-2 font-[family-name:var(--font-geist-mono)] [text-shadow:0_1px_8px_rgba(0,0,0,0.85)]">
-            {note.author}
-          </p>
+          <p className="chrome-detail-hero__meta">{note.author}</p>
         </div>
       </div>
 
-      <div className="space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
-        <div className="max-w-none text-foreground md:px-32">
+      <div className="c64-prose c64-media space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
+        <div className="max-w-none md:px-32">
           {parseContentWithVideos(note.content).map((part, index) => {
             if (part.type === 'video') {
               return (
@@ -175,36 +148,24 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
                 <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                    h1: ({ children }) => (
-                      <h1 className="text-3xl font-bold text-[#ffffff] mb-4 mt-6 font-[family-name:var(--font-geist-mono)]">{children}</h1>
-                    ),
-                    h2: ({ children }) => (
-                      <h2 className="text-2xl font-bold text-[#ffffff] mb-3 mt-5 font-[family-name:var(--font-geist-mono)]">{children}</h2>
-                    ),
-                    h3: ({ children }) => (
-                      <h3 className="text-xl font-semibold uppercase tracking-wide text-[#ffffff] mb-3 mt-4 font-[family-name:var(--font-geist-mono)]">{children}</h3>
-                    ),
-                    h4: ({ children }) => (
-                      <h4 className="text-lg font-semibold text-[#ffffff] mb-2 mt-3 font-[family-name:var(--font-geist-mono)]">{children}</h4>
-                    ),
-                    h5: ({ children }) => (
-                      <h5 className="text-base font-semibold text-[#ffffff] mb-2 mt-3 font-[family-name:var(--font-geist-mono)]">{children}</h5>
-                    ),
-                    h6: ({ children }) => (
-                      <h6 className="text-sm font-semibold text-[#ffffff] mb-2 mt-2 font-[family-name:var(--font-geist-mono)]">{children}</h6>
-                    ),
+                    h1: ({ children }) => <h1>{children}</h1>,
+                    h2: ({ children }) => <h2>{children}</h2>,
+                    h3: ({ children }) => <h3>{children}</h3>,
+                    h4: ({ children }) => <h4>{children}</h4>,
+                    h5: ({ children }) => <h5>{children}</h5>,
+                    h6: ({ children }) => <h6>{children}</h6>,
                     p: ({ children, node }) => {
                       // Check if this paragraph only contains an image
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       const hasImage = node?.children?.some((child: any) => child.tagName === 'img')
                       if (hasImage) {
-                        return <div className="mb-4 last:mb-0 text-foreground">{children}</div>
+                        return <div className="mb-4 last:mb-0">{children}</div>
                       }
-                      return <p className="mb-4 last:mb-0 text-foreground">{children}</p>
+                      return <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>
                     },
-                    ul: ({ children }) => <ul className="list-disc mb-4 space-y-2 text-foreground" style={{ paddingLeft: '1.5rem' }}>{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal mb-4 space-y-2 text-foreground" style={{ paddingLeft: '1.5rem' }}>{children}</ol>,
-                    li: ({ children }) => <li className="text-foreground">{children}</li>,
+                    ul: ({ children }) => <ul className="list-disc mb-4 space-y-2" style={{ paddingLeft: '1.5rem' }}>{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal mb-4 space-y-2" style={{ paddingLeft: '1.5rem' }}>{children}</ol>,
+                    li: ({ children }) => <li>{children}</li>,
                     blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">{children}</blockquote>,
                     img: ({ src, alt }) => {
                       if (!src) return null
@@ -220,15 +181,15 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
                         </div>
                       )
                     },
-                    strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                    em: ({ children }) => <em className="italic text-foreground">{children}</em>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
                     code: ({ children }) => (
-                      <code className="bg-muted px-2 py-1 rounded text-sm font-mono text-foreground">
+                      <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
                         {children}
                       </code>
                     ),
                     pre: ({ children }) => (
-                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto my-4 text-foreground">
+                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto my-4">
                         {children}
                       </pre>
                     ),

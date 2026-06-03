@@ -135,13 +135,15 @@ export function C64LoadingScreen({
 }: Omit<C64LoadingScreenProps, 'loading'>) {
   return (
     <div
-      className={`c64-loading-screen flex w-full flex-1 items-center justify-center text-[var(--c64-crt-ink)] min-h-[calc(100dvh-11rem)] ${className}`.trim()}
+      className={`c64-loading-screen flex w-full flex-1 items-center justify-center min-h-[calc(100dvh-11rem)] ${className}`.trim()}
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
-      <C64SpriteLoader />
-      <span className="sr-only">{label}</span>
+      <div className="chrome-loader">
+        <C64SpriteLoader />
+        <span className="chrome-loader__label">{label}</span>
+      </div>
     </div>
   )
 }

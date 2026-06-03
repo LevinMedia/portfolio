@@ -1,6 +1,6 @@
-/** Shared C64 drawer form chrome (guestbook, sign-in, etc.). */
+/** Shared form field chrome for drawer panels (guestbook, sign-in, etc.). */
 export const c64FormFieldClass =
-  'block w-full px-3 py-2 border-2 border-[var(--c64-accent)]/45 bg-[var(--c64-border-bg)]/25 text-foreground placeholder:text-foreground/45 shadow-none focus:outline-none focus:ring-2 focus:ring-[var(--c64-accent)] focus:border-[var(--c64-accent)] sm:text-sm transition-colors rounded-none'
+  'c64-form-field block w-full px-3 py-2.5 border text-[length:inherit] placeholder:opacity-50 shadow-none focus:outline-none focus:ring-2 focus:ring-[var(--chrome-focus-ring)] focus:border-[var(--chrome-focus-ring)] sm:text-sm transition-colors'
 
 export const c64FormFieldLabelClass =
-  'block text-sm font-bold uppercase tracking-[0.08em] text-[var(--c64-heading-on-screen,#ffffff)]'
+  'block text-sm font-medium text-[var(--chrome-text)]'
