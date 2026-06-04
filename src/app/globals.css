@@ -2067,6 +2067,12 @@ body > div[style*="position: fixed"] * {
   overflow: visible;
 }
 
+/* Scroll end breathing room on full-bleed featured work / field notes (lists + detail) */
+#c64-site-root .drawer-container.drawer-chrome .c64-drawer-page--flush .c64-drawer-copy,
+#c64-site-root .drawer-container.drawer-chrome .c64-drawer-page--flush .c64-media {
+  padding-bottom: 6rem;
+}
+
 #c64-site-root .drawer-container.drawer-chrome .chrome-sign-in-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
