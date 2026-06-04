@@ -10,47 +10,51 @@ import FieldNotesContent from './FieldNotesContent'
 import SiteSettingsContent from './SiteSettingsContent'
 import StatsContent from './StatsContent'
 import Guestbook from './Guestbook'
+import SignInContent from './SignInContent'
 import C64AuthenticHomeScreen, {
   type C64AuthenticHomeScreenHandle,
 } from './C64AuthenticHomeScreen'
 import { usePageTitle } from '../hooks/usePageTitle'
 import type { SelectedWorkServer } from '@/lib/selected-works-server'
+import type { PortfolioCoverImage } from '@/lib/portfolio-cover-images-server'
 import { defaultC64Settings, loadC64Settings } from '@/lib/c64-settings'
+import { canonicalDrawerSearch, isDrawerParamOpen } from '@/lib/drawer-url'
 
 interface HomePageClientProps {
   initialSelectedWorks: SelectedWorkServer[]
-}
-
-function isDrawerOpenFromUrl(params: ReadonlyURLSearchParams, key: string): boolean {
-  return params.get(key) === 'true'
+  signInCoverImages: PortfolioCoverImage[]
 }
 
 export default function HomePageClient({
   initialSelectedWorks,
+  signInCoverImages,
 }: HomePageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const c64Ref = useRef<C64AuthenticHomeScreenHandle>(null)
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'work-history'),
+    isDrawerParamOpen(searchParams, 'work-history'),
   )
   const [isAboutOpen, setIsAboutOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'about'),
+    isDrawerParamOpen(searchParams, 'about'),
   )
   const [isSelectedWorksOpen, setIsSelectedWorksOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'selected-works'),
+    isDrawerParamOpen(searchParams, 'selected-works'),
   )
   const [isFieldNotesOpen, setIsFieldNotesOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'field-notes'),
+    isDrawerParamOpen(searchParams, 'field-notes'),
   )
   const [isSiteSettingsOpen, setIsSiteSettingsOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'site-settings'),
+    isDrawerParamOpen(searchParams, 'site-settings'),
   )
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'guestbook'),
+    isDrawerParamOpen(searchParams, 'guestbook'),
   )
   const [isStatsOpen, setIsStatsOpen] = useState(() =>
-    isDrawerOpenFromUrl(searchParams, 'stats'),
+    isDrawerParamOpen(searchParams, 'stats'),
+  )
+  const [isSignInOpen, setIsSignInOpen] = useState(() =>
+    isDrawerParamOpen(searchParams, 'sign-in'),
   )
   const [scanlinesAttr, setScanlinesAttr] = useState<'on' | 'off'>(
     defaultC64Settings.scanlines ? 'on' : 'off',
@@ -72,6 +76,7 @@ export default function HomePageClient({
     : isSiteSettingsOpen ? 'Site Settings'
     : isGuestbookOpen ? 'Guestbook'
     : isStatsOpen ? 'Stats'
+    : isSignInOpen ? 'Sign In'
     : null
 
   usePageTitle(pageTitle)
@@ -83,7 +88,7 @@ export default function HomePageClient({
     paramKey: string,
     setOpen: (open: boolean) => void,
   ) => {
-    const urlOpen = searchParams.get(paramKey) === 'true'
+    const urlOpen = isDrawerParamOpen(searchParams, paramKey)
     if (closingDrawerParamsRef.current.has(paramKey)) {
       if (!urlOpen) {
         closingDrawerParamsRef.current.delete(paramKey)
@@ -95,6 +100,12 @@ export default function HomePageClient({
   }
 
   useEffect(() => {
+    const canonical = canonicalDrawerSearch(searchParams)
+    if (canonical !== null) {
+      router.replace(`?${canonical}`, { scroll: false })
+      return
+    }
+
     syncDrawerFromUrl('work-history', setIsWorkHistoryOpen)
     syncDrawerFromUrl('about', setIsAboutOpen)
     syncDrawerFromUrl('selected-works', setIsSelectedWorksOpen)
@@ -102,7 +113,8 @@ export default function HomePageClient({
     syncDrawerFromUrl('guestbook', setIsGuestbookOpen)
     syncDrawerFromUrl('stats', setIsStatsOpen)
     syncDrawerFromUrl('site-settings', setIsSiteSettingsOpen)
-  }, [searchParams])
+    syncDrawerFromUrl('sign-in', setIsSignInOpen)
+  }, [searchParams, router])
 
   const openDrawerByParam = (paramKey: string, setOpen: (open: boolean) => void) => {
     closingDrawerParamsRef.current.delete(paramKey)
@@ -146,6 +158,10 @@ export default function HomePageClient({
     closeSiteDrawer(setIsStatsOpen, 'stats')
   }
 
+  const handleSignInClose = () => {
+    closeSiteDrawer(setIsSignInOpen, 'sign-in')
+  }
+
   const siteDrawerOpen =
     isWorkHistoryOpen ||
     isAboutOpen ||
@@ -153,7 +169,8 @@ export default function HomePageClient({
     isFieldNotesOpen ||
     isSiteSettingsOpen ||
     isGuestbookOpen ||
-    isStatsOpen
+    isStatsOpen ||
+    isSignInOpen
 
   const openSection = (key: string) => {
     switch (key) {
@@ -177,6 +194,9 @@ export default function HomePageClient({
         break
       case 'site-settings':
         openDrawerByParam('site-settings', setIsSiteSettingsOpen)
+        break
+      case 'sign-in':
+        openDrawerByParam('sign-in', setIsSignInOpen)
         break
       default:
         router.push(`?${key}=true`, { scroll: false })
@@ -294,6 +314,19 @@ export default function HomePageClient({
           maxWidth="max-w-6xl"
         >
           <StatsContent />
+        </Drawer>
+
+        <Drawer
+          isOpen={isSignInOpen}
+          onClose={handleSignInClose}
+          breadcrumbs={[
+            { label: 'Home', onClick: handleSignInClose },
+            { label: 'Sign in', current: true },
+          ]}
+          contentPadding="p-0"
+          maxWidth="max-w-none"
+        >
+          <SignInContent coverImages={signInCoverImages} />
         </Drawer>
       </div>
     </div>

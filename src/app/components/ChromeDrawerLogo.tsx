@@ -11,7 +11,6 @@ export default function ChromeDrawerLogo() {
       type="button"
       className="chrome-drawer-logo"
       aria-label="Home"
-      tabIndex={-1}
       onClick={() => router.push('/', { scroll: false })}
     >
       <LevinMediaLogo size={36} fillBackground className="chrome-drawer-logo__mark" />
