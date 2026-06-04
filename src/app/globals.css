@@ -3373,12 +3373,8 @@ body > div[style*="position: fixed"] * {
 }
 
 #c64-site-root .drawer-container.drawer-chrome .chrome-guestbook-leave-btn--revealing {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   opacity: 0;
   animation: chrome-guestbook-leave-btn-reveal var(--chrome-motion-fast) var(--chrome-ease) forwards;
-  animation-delay: var(--chrome-motion-fast);
 }
 
 @keyframes chrome-guestbook-leave-btn-reveal {
