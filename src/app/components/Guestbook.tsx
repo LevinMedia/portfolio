@@ -58,6 +58,7 @@ export default function Guestbook() {
   const [composePhase, setComposePhase] = useState<ComposePhase>('idle')
   const [contentVisible, setContentVisible] = useState(false)
   const [panelHeight, setPanelHeight] = useState<number | null>(null)
+  const [revealLeaveBtn, setRevealLeaveBtn] = useState(false)
   const composeTimersRef = useRef<number[]>([])
   const leaveBtnRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -129,6 +130,7 @@ export default function Guestbook() {
 
     setComposePhase('expanding')
     setContentVisible(false)
+    setRevealLeaveBtn(false)
     setPanelHeight(collapsed)
 
     scheduleCompose(() => {
@@ -167,6 +169,7 @@ export default function Guestbook() {
       setComposePhase('idle')
       setPanelHeight(null)
       setContentVisible(false)
+      setRevealLeaveBtn(false)
       setError('')
       return
     }
@@ -176,7 +179,7 @@ export default function Guestbook() {
 
     scheduleCompose(() => {
       const panel = panelRef.current
-      const collapsed = leaveBtnRef.current?.offsetHeight ?? collapsedHeightRef.current
+      const collapsed = collapsedHeightRef.current
       const expandedHeight = panel?.offsetHeight ?? panel?.scrollHeight ?? collapsed
       setPanelHeight(expandedHeight)
       requestAnimationFrame(() => {
@@ -190,6 +193,8 @@ export default function Guestbook() {
       setComposePhase('idle')
       setPanelHeight(null)
       setError('')
+      setRevealLeaveBtn(true)
+      scheduleCompose(() => setRevealLeaveBtn(false), FADE_MS)
     }, FADE_MS + CARD_MS)
   }, [clearComposeTimers, prefersReducedMotion, scheduleCompose])
 
@@ -258,16 +263,13 @@ export default function Guestbook() {
         ariaLabel={isComposeActive ? 'New guestbook entry' : 'Leave a message'}
         className="chrome-guestbook-compose"
       >
-        {(composePhase === 'idle' || composePhase === 'collapsing') && (
+        {composePhase === 'idle' && (
           <button
             ref={leaveBtnRef}
             type="button"
             onClick={openCompose}
-            disabled={composePhase === 'collapsing'}
-            tabIndex={composePhase === 'collapsing' ? -1 : 0}
-            aria-hidden={composePhase === 'collapsing'}
             className={`${c64DrawerBtnClass} chrome-guestbook-leave-btn${
-              composePhase === 'collapsing' ? ' chrome-guestbook-leave-btn--revealing' : ''
+              revealLeaveBtn ? ' chrome-guestbook-leave-btn--revealing' : ''
             }`}
           >
             <PencilSquareIcon className="h-5 w-5 shrink-0" aria-hidden />
