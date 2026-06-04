@@ -114,11 +114,10 @@ const Drawer: React.FC<DrawerProps> = ({
     if (!isOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
-      const body = contentRef.current
       const drawer = scrollRef.current
-      if (!body || !drawer) return
+      if (!drawer) return
 
-      const focusables = getFocusableElements(body)
+      const focusables = getFocusableElements(drawer)
       if (focusables.length === 0) return
 
       const first = focusables[0]
@@ -126,7 +125,7 @@ const Drawer: React.FC<DrawerProps> = ({
       const active = document.activeElement
 
       if (e.shiftKey) {
-        if (active === first || (active instanceof Node && !body.contains(active))) {
+        if (active === first || (active instanceof Node && !drawer.contains(active))) {
           e.preventDefault()
           last.focus({ preventScroll: true })
         }
@@ -225,7 +224,7 @@ const Drawer: React.FC<DrawerProps> = ({
             headerScrolled ? 'c64-drawer-header--scrolled' : ''
           }`}
         >
-          <div className="flex items-center gap-3 overflow-hidden min-w-0">
+          <div className="flex min-w-0 flex-1 items-center justify-start gap-3 overflow-hidden">
             {icon ? (
               <div className="flex items-center flex-shrink-0 [&_svg]:text-current [&_svg]:h-5 [&_svg]:w-5">
                 {icon}
@@ -241,11 +240,10 @@ const Drawer: React.FC<DrawerProps> = ({
               </h2>
             ) : null}
             {showLinkedInButton && linkedInUrl && (
-              <div className="hidden sm:block">
+              <div className="hidden shrink-0 sm:block">
                 <button
                   type="button"
                   className="c64-drawer-btn"
-                  tabIndex={-1}
                   onClick={() => window.open(linkedInUrl, '_blank')}
                 >
                   View on LinkedIn
@@ -258,7 +256,6 @@ const Drawer: React.FC<DrawerProps> = ({
             <button
               type="button"
               className="chrome-drawer-close"
-              tabIndex={-1}
               onClick={onClose}
               aria-label="Close"
             >
@@ -272,7 +269,7 @@ const Drawer: React.FC<DrawerProps> = ({
           ref={contentRef}
           className={`c64-drawer-page ${contentPadding}${isFlushPage ? ' c64-drawer-page--flush' : ' c64-drawer-page--stacked'} flex justify-center`}
         >
-          <div className={`w-full ${maxWidth} pb-24`}>{children}</div>
+          <div className={`w-full ${maxWidth}${isFlushPage ? '' : ' pb-24'}`}>{children}</div>
         </div>
       </div>
     </>

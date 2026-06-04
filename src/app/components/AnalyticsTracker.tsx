@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { isDrawerParamOpen } from '@/lib/drawer-url'
 
 export default function AnalyticsTracker() {
   const pathname = usePathname()
@@ -16,22 +17,18 @@ export default function AnalyticsTracker() {
     
     // For the home page, check which drawer is open and create a virtual path
     if (pathname === '/') {
-      const workHistory = searchParams.get('work-history')
-      const about = searchParams.get('about')
-      const selectedWorks = searchParams.get('selected-works')
-      const guestbook = searchParams.get('guestbook')
-      const stats = searchParams.get('stats')
-      
-      if (workHistory === 'true') {
+      if (isDrawerParamOpen(searchParams, 'work-history')) {
         analyticsPath = '/work-history'
-      } else if (about === 'true') {
+      } else if (isDrawerParamOpen(searchParams, 'about')) {
         analyticsPath = '/about'
-      } else if (selectedWorks === 'true') {
+      } else if (isDrawerParamOpen(searchParams, 'selected-works')) {
         analyticsPath = '/selected-works'
-      } else if (guestbook === 'true') {
+      } else if (isDrawerParamOpen(searchParams, 'guestbook')) {
         analyticsPath = '/guestbook'
-      } else if (stats === 'true') {
+      } else if (isDrawerParamOpen(searchParams, 'stats')) {
         analyticsPath = '/stats'
+      } else if (isDrawerParamOpen(searchParams, 'sign-in')) {
+        analyticsPath = '/sign-in'
       }
       // If no drawer is open, keep it as '/' (home page)
     }
