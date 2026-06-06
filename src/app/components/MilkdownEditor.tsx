@@ -3,29 +3,139 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Crepe } from '@milkdown/crepe'
+import { commandsCtx } from '@milkdown/kit/core'
+import { clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark'
+import { insert, replaceAll } from '@milkdown/utils'
 import { ADMIN_VIDEO_MAX_BYTES } from '@/lib/admin-video-upload'
+import {
+  buildGalleryMarkdown,
+  findAllGalleriesInContent,
+  type GalleryImage,
+} from '@/lib/gallery-markdown'
+import GalleryUploadModal from './GalleryUploadModal'
 import '@milkdown/crepe/theme/common/style.css'
-// Don't import frame.css - we'll use our own theme
+
+const galleryIcon = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <path d="M19 5V19H5V5H19ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM4 8h4V12H4V8ZM10 8h10v2H10V8ZM10 11h10v2H10v-2ZM4 14h4v3H4v-3ZM10 14h10v3H10v-3Z"/>
+  </svg>
+`
 
 interface MilkdownEditorProps {
   value: string
   onChange: (value: string) => void
   className?: string
   allowVideo?: boolean
+  allowGallery?: boolean
+  uploadFolder?: string
 }
 
-export default function MilkdownEditor({ value, onChange, className, allowVideo = true }: MilkdownEditorProps) {
+export default function MilkdownEditor({
+  value,
+  onChange,
+  className,
+  allowVideo = true,
+  allowGallery = true,
+  uploadFolder = 'selected-works',
+}: MilkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const crepeRef = useRef<Crepe | null>(null)
   const creatingRef = useRef(false)
   const onChangeRef = useRef(onChange)
   const videoInputRef = useRef<HTMLInputElement>(null)
+  const openGalleryModalRef = useRef<() => void>(() => {})
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [galleryModalOpen, setGalleryModalOpen] = useState(false)
+  const [galleryModalMode, setGalleryModalMode] = useState<'create' | 'edit'>('create')
+  const [editingGallery, setEditingGallery] = useState<{
+    raw: string
+    caption: string
+    images: GalleryImage[]
+  } | null>(null)
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false)
+  const [galleryCandidates, setGalleryCandidates] = useState<
+    ReturnType<typeof findAllGalleriesInContent>
+  >([])
+
+  const openCreateGalleryModal = () => {
+    setGalleryModalMode('create')
+    setEditingGallery(null)
+    setGalleryModalOpen(true)
+  }
+
+  openGalleryModalRef.current = openCreateGalleryModal
 
   // Keep onChange ref up to date
   useEffect(() => {
     onChangeRef.current = onChange
   }, [onChange])
+
+  const uploadImage = async (file: File, folder: string) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+
+    const response = await fetch('/api/admin/upload-image', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('❌ Upload failed:', errorData)
+      throw new Error(errorData.error || 'Upload failed')
+    }
+
+    const data = await response.json()
+    return data.url as string
+  }
+
+  const handleGalleryConfirm = (images: GalleryImage[], caption: string) => {
+    const newMarkdown = buildGalleryMarkdown(caption, images)
+
+    if (galleryModalMode === 'edit' && editingGallery) {
+      const current = crepeRef.current?.getMarkdown() ?? value
+      const updated = current.includes(editingGallery.raw)
+        ? current.replace(editingGallery.raw, newMarkdown)
+        : `${current}\n\n${newMarkdown}`
+
+      crepeRef.current?.editor.action(replaceAll(updated))
+      onChange(updated)
+    } else {
+      crepeRef.current?.editor.action(insert(newMarkdown))
+    }
+
+    setGalleryModalOpen(false)
+    setEditingGallery(null)
+    setGalleryModalMode('create')
+  }
+
+  const startEditGallery = () => {
+    const markdown = crepeRef.current?.getMarkdown() ?? value
+    const galleries = findAllGalleriesInContent(markdown)
+
+    if (galleries.length === 0) {
+      alert('No galleries found in this content. Insert one with / → Image Gallery first.')
+      return
+    }
+
+    if (galleries.length === 1) {
+      setGalleryModalMode('edit')
+      setEditingGallery(galleries[0])
+      setGalleryModalOpen(true)
+      return
+    }
+
+    setGalleryCandidates(galleries)
+    setGalleryPickerOpen(true)
+  }
+
+  const selectGalleryToEdit = (gallery: (typeof galleryCandidates)[number]) => {
+    setGalleryPickerOpen(false)
+    setGalleryModalMode('edit')
+    setEditingGallery(gallery)
+    setGalleryModalOpen(true)
+  }
 
   // Handle video file upload
   const handleVideoUpload = async (file: File) => {
@@ -110,7 +220,6 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
         await navigator.clipboard.writeText(videoMarkdown)
         alert(`Video uploaded successfully!\n\nThe video markdown has been copied to your clipboard. Paste it in the editor where you want the video to appear:\n\n${videoMarkdown}`)
       } catch {
-        // Fallback if clipboard API is not available
         alert(`Video uploaded successfully!\n\nCopy and paste this into the editor:\n\n${videoMarkdown}`)
       }
     } catch (error) {
@@ -148,10 +257,8 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
         return
       }
       
-      // Ensure the mount root is clean to avoid duplicate editors in StrictMode/dev
       editorRef.current.innerHTML = ''
 
-      // Small delay to ensure DOM is ready and avoid race conditions
       await new Promise(resolve => setTimeout(resolve, 50))
       
       if (!mounted || !editorRef.current) {
@@ -167,29 +274,30 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
             [Crepe.Feature.ImageBlock]: {
               onUpload: async (file: File) => {
                 try {
-                  const formData = new FormData()
-                  formData.append('file', file)
-                  formData.append('folder', 'selected-works')
-
-                  const response = await fetch('/api/admin/upload-image', {
-                    method: 'POST',
-                    body: formData,
-                  })
-
-                  if (!response.ok) {
-                    const errorData = await response.json()
-                    console.error('❌ Upload failed:', errorData)
-                    throw new Error(errorData.error || 'Upload failed')
-                  }
-
-                  const data = await response.json()
-                  return data.url
+                  return await uploadImage(file, uploadFolder)
                 } catch (error) {
                   console.error('❌ Image upload failed:', error)
                   throw error
                 }
               },
             },
+            ...(allowGallery
+              ? {
+                  [Crepe.Feature.BlockEdit]: {
+                    buildMenu: (builder) => {
+                      builder.getGroup('advanced').addItem('image-gallery', {
+                        label: 'Image Gallery',
+                        icon: galleryIcon,
+                        onRun: (ctx) => {
+                          const commands = ctx.get(commandsCtx)
+                          commands.call(clearTextInCurrentBlockCommand.key)
+                          openGalleryModalRef.current()
+                        },
+                      })
+                    },
+                  },
+                }
+              : {}),
           },
         })
 
@@ -199,7 +307,6 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
           return
         }
 
-        // Set up listener BEFORE creating the editor
         crepe.on((listener) => {
           listener.markdownUpdated((ctx, markdown) => {
             if (onChangeRef.current) {
@@ -237,11 +344,10 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
       creatingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only initialize once on mount
+  }, [])
 
   return (
     <div className="relative">
-      {/* Video Upload Button - Only show if allowVideo is true */}
       {allowVideo && (
         <>
           <div className="mb-2 flex items-center gap-2">
@@ -269,11 +375,10 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
               )}
             </button>
             <span className="text-xs text-muted-foreground">
-              Tip: Use the image button (/) in the editor for images
+              Tip: Use / in the editor for images and galleries
             </span>
           </div>
 
-          {/* Hidden file input */}
           <input
             ref={videoInputRef}
             type="file"
@@ -284,10 +389,75 @@ export default function MilkdownEditor({ value, onChange, className, allowVideo 
         </>
       )}
 
-      {/* Editor */}
+      {allowGallery && (
+        <div className="mb-2 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={startEditGallery}
+            className="inline-flex items-center px-3 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-background hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          >
+            Edit Gallery
+          </button>
+          <span className="text-xs text-muted-foreground">
+            Reorder images, captions, or add more to an existing gallery
+          </span>
+        </div>
+      )}
+
       <div className={`crepe-editor border border-border rounded-md bg-background ${className}`} style={{ overflow: 'visible', position: 'relative', zIndex: 1 }}>
         <div ref={editorRef} style={{ overflow: 'visible' }} />
       </div>
+
+      {allowGallery && (
+        <>
+          <GalleryUploadModal
+            open={galleryModalOpen}
+            folder={uploadFolder}
+            mode={galleryModalMode}
+            initialGalleryCaption={editingGallery?.caption}
+            initialImages={editingGallery?.images}
+            onClose={() => {
+              setGalleryModalOpen(false)
+              setEditingGallery(null)
+              setGalleryModalMode('create')
+            }}
+            onConfirm={handleGalleryConfirm}
+          />
+
+          {galleryPickerOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="bg-background border border-border rounded-lg max-w-md w-full shadow-lg">
+                <div className="border-b border-border px-4 py-3">
+                  <h2 className="text-lg font-semibold">Choose a gallery to edit</h2>
+                </div>
+                <ul className="max-h-64 overflow-auto p-2">
+                  {galleryCandidates.map((gallery, index) => (
+                    <li key={gallery.raw}>
+                      <button
+                        type="button"
+                        onClick={() => selectGalleryToEdit(gallery)}
+                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                      >
+                        Gallery {index + 1}: {gallery.caption || 'Untitled'} ({gallery.images.length}{' '}
+                        images)
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex justify-end border-t border-border px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setGalleryPickerOpen(false)}
+                    className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

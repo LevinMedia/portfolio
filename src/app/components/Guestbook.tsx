@@ -311,6 +311,7 @@ export default function Guestbook() {
                         onChange={(value) => setFormData((prev) => ({ ...prev, message: value }))}
                         className="min-h-[160px] md:min-h-[200px]"
                         allowVideo={false}
+                        allowGallery={false}
                       />
                     </div>
                   </div>
