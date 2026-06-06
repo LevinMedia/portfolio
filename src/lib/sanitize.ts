@@ -3,12 +3,12 @@ import DOMPurify from 'isomorphic-dompurify'
 /**
  * Sanitizes markdown/HTML content to prevent XSS attacks
  * Allows safe markdown elements but strips dangerous HTML/scripts
- * Preserves custom markdown syntax like !video[alt](url)
+ * Preserves custom markdown syntax like !video[alt](url) and !gallery[caption](urls)
  */
 export function sanitizeMarkdown(content: string): string {
   if (!content) return ''
   
-  // Check if content contains raw markdown (like !video[], !image[], etc.)
+  // Check if content contains raw markdown (like !video[], !gallery[], etc.)
   // If it's pure markdown without HTML tags, return it as-is after basic safety checks
   const hasHtmlTags = /<[^>]+>/g.test(content)
   

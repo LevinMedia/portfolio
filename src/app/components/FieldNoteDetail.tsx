@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
+import { parseContentWithEmbeds } from '@/lib/gallery-markdown'
 import VideoPlayer from './VideoPlayer'
+import ImageGallery from './ImageGallery'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { useDrawerHeroTitleVisibility } from '@/app/hooks/useDrawerHeroTitleVisibility'
 
@@ -23,43 +25,6 @@ interface FieldNote {
   published_at: string
   author: string
   og_vertical_align?: 'top' | 'center' | 'bottom'
-}
-
-// Helper function to parse content and extract video embeds
-function parseContentWithVideos(content: string) {
-  const videoRegex = /!video\[([^\]]*)\]\(([^)]+)\)/g
-  const parts: Array<{ type: 'markdown' | 'video'; content: string; alt?: string }> = []
-  let lastIndex = 0
-  let match
-
-  while ((match = videoRegex.exec(content)) !== null) {
-    // Add markdown content before the video
-    if (match.index > lastIndex) {
-      parts.push({
-        type: 'markdown',
-        content: content.substring(lastIndex, match.index)
-      })
-    }
-
-    // Add video
-    parts.push({
-      type: 'video',
-      content: match[2], // URL
-      alt: match[1] // Alt text
-    })
-
-    lastIndex = match.index + match[0].length
-  }
-
-  // Add remaining markdown content
-  if (lastIndex < content.length) {
-    parts.push({
-      type: 'markdown',
-      content: content.substring(lastIndex)
-    })
-  }
-
-  return parts.length > 0 ? parts : [{ type: 'markdown', content }]
 }
 
 export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityChange }: FieldNoteDetailProps) {
@@ -134,7 +99,7 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
 
       <div className="c64-prose c64-media space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
         <div className="max-w-none md:px-32">
-          {parseContentWithVideos(note.content).map((part, index) => {
+          {parseContentWithEmbeds(note.content).map((part, index) => {
             if (part.type === 'video') {
               return (
                 <div key={index} className="my-6 md:-mx-32">
@@ -142,7 +107,15 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
                 </div>
               )
             }
-            
+
+            if (part.type === 'gallery') {
+              return (
+                <div key={index} className="my-6 md:-mx-32">
+                  <ImageGallery images={part.images} caption={part.caption} />
+                </div>
+              )
+            }
+
             return (
               <div key={index}>
                 <ReactMarkdown

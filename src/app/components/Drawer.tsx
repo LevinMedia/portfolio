@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import {
-  focusFirstWhenReady,
   getFocusableElements,
 } from '@/lib/focus'
 import ChromeDrawerBreadcrumbs, {
@@ -40,6 +39,7 @@ const Drawer: React.FC<DrawerProps> = ({
   const [headerScrolled, setHeaderScrolled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const scrollShadowThresholdRef = useRef(16)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
@@ -154,14 +154,12 @@ const Drawer: React.FC<DrawerProps> = ({
     previousFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
 
-    let cancelFocusReady = () => {}
     const timer = window.setTimeout(() => {
-      cancelFocusReady = focusFirstWhenReady(contentRef.current)
+      closeButtonRef.current?.focus({ preventScroll: true })
     }, 50)
 
     return () => {
       window.clearTimeout(timer)
-      cancelFocusReady()
     }
   }, [isOpen, children])
 
@@ -254,6 +252,7 @@ const Drawer: React.FC<DrawerProps> = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <button
+              ref={closeButtonRef}
               type="button"
               className="chrome-drawer-close"
               onClick={onClose}

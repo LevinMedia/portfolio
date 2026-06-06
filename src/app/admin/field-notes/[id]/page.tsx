@@ -361,6 +361,7 @@ export default function EditFieldNote({ params }: { params: Promise<{ id: string
               value={formData.content}
               onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
               className="min-h-[500px]"
+              uploadFolder="field-notes"
             />
           </div>
         </div>
