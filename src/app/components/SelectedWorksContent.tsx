@@ -7,8 +7,6 @@ import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { getSelectedWorksCache, type SelectedWorkListItem } from '@/lib/selected-works-cache'
 import C64GridTile from './C64GridTile'
 
-interface SelectedWork extends SelectedWorkListItem {}
-
 interface SelectedWorksContentProps {
   /** When provided (e.g. from server), no client fetch — list was resolved server-side */
   initialWorks?: SelectedWorkServer[] | null
@@ -16,7 +14,7 @@ interface SelectedWorksContentProps {
 
 const selectedWorksCache = getSelectedWorksCache()
 
-function sortSelectedWorks(works: SelectedWork[]): SelectedWork[] {
+function sortSelectedWorks(works: SelectedWorkListItem[]): SelectedWorkListItem[] {
   return [...works].sort((a, b) => b.display_order - a.display_order)
 }
 
@@ -24,14 +22,14 @@ const SelectedWorksContent: React.FC<SelectedWorksContentProps> = ({ initialWork
   const router = useRouter()
   const fromServer = initialWorks !== null
   const fromCache = selectedWorksCache.has()
-  const [works, setWorks] = useState<SelectedWork[]>(
+  const [works, setWorks] = useState<SelectedWorkListItem[]>(
     () => initialWorks ?? selectedWorksCache.get() ?? [],
   )
   const [isLoading, setIsLoading] = useState(!fromServer && !fromCache)
 
   useEffect(() => {
     if (initialWorks !== null) {
-      const ordered = sortSelectedWorks(initialWorks as SelectedWork[])
+      const ordered = sortSelectedWorks(initialWorks as SelectedWorkListItem[])
       selectedWorksCache.set(ordered)
       setWorks(ordered)
       setIsLoading(false)

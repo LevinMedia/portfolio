@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import { getAuthCookiePayload } from '@/lib/auth-cookie'
@@ -11,7 +11,7 @@ async function requireAdmin() {
 }
 
 async function passwordInUse(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   password: string,
   excludeUserId?: string,
 ): Promise<boolean> {
