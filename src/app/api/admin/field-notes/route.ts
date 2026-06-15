@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sanitizeText, sanitizeMarkdown } from '@/lib/sanitize'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
+import { requireAdminApi } from '@/lib/require-admin-api'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,8 @@ const supabase = createClient(
 
 // GET - Fetch all field notes (admin)
 export async function GET() {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { data, error } = await supabase.rpc('prod_get_all_field_notes')
 
@@ -33,6 +36,8 @@ export async function GET() {
 
 // POST - Create or update field note
 export async function POST(request: Request) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const body = await request.json()
     const {
@@ -101,6 +106,8 @@ export async function POST(request: Request) {
 
 // DELETE - Delete field note
 export async function DELETE(request: Request) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -136,6 +143,8 @@ export async function DELETE(request: Request) {
 
 // PUT - Update display order for notes
 export async function PUT(request: Request) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const body = await request.json()
     const { notes } = body as { notes?: { id: string; display_order: number }[] }
@@ -191,6 +200,8 @@ export async function PUT(request: Request) {
 
 // PATCH - Update thumbnail crop only
 export async function PATCH(request: Request) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const body = await request.json()
     const { id, thumbnail_crop } = body

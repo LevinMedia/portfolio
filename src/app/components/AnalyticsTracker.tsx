@@ -37,11 +37,12 @@ export default function AnalyticsTracker() {
     void fetch('/api/analytics/collect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        path: analyticsPath, 
-        currentUrl: window.location.href, 
-        isAdmin: false 
-      })
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        path: analyticsPath,
+        currentUrl: window.location.href,
+        isAdmin: false,
+      }),
     }).catch(() => {})
   }, [pathname, searchParams])
 

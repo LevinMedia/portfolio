@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { clearSelectedWorksCache } from '@/lib/selected-works-cache'
 import { useRouter } from 'next/navigation'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import {
@@ -95,6 +96,7 @@ export default function SiteSettingsContent() {
     } catch {
       // ignore
     }
+    clearSelectedWorksCache()
     sessionStorage.removeItem('admin_user')
     router.push('/')
   }

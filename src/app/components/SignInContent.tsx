@@ -7,7 +7,7 @@ import type { PortfolioCoverImage } from '@/lib/portfolio-cover-images-server'
 import SignInCoverGrid from './SignInCoverGrid'
 import { clsx } from 'clsx'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
-import { C64SpriteLoader } from './C64SpriteLoader'
+import ButtonSpinner from './ButtonSpinner'
 import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
 import {
   c64DrawerBtnSelectedClass,
@@ -219,9 +219,7 @@ export default function SignInContent({ coverImages }: SignInContentProps) {
           >
             {isLoading ? (
               <>
-                <span className="inline-flex h-5 w-8 items-center justify-center overflow-hidden">
-                  <C64SpriteLoader className="scale-[0.06] origin-center" />
-                </span>
+                <ButtonSpinner />
                 Signing in…
               </>
             ) : (

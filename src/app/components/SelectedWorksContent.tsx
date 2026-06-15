@@ -4,30 +4,17 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SelectedWorkServer } from '@/lib/selected-works-server'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
-import { createDrawerListCache } from '@/lib/drawer-list-cache'
+import { getSelectedWorksCache, type SelectedWorkListItem } from '@/lib/selected-works-cache'
 import C64GridTile from './C64GridTile'
 
-interface SelectedWork {
-  id: string
-  title: string
-  slug: string
-  feature_image_url: string
-  thumbnail_crop: {
-    x: number
-    y: number
-    width: number
-    height: number
-    unit: string
-  }
-  display_order: number
-}
+interface SelectedWork extends SelectedWorkListItem {}
 
 interface SelectedWorksContentProps {
   /** When provided (e.g. from server), no client fetch — list was resolved server-side */
   initialWorks?: SelectedWorkServer[] | null
 }
 
-const selectedWorksCache = createDrawerListCache<SelectedWork[]>()
+const selectedWorksCache = getSelectedWorksCache()
 
 function sortSelectedWorks(works: SelectedWork[]): SelectedWork[] {
   return [...works].sort((a, b) => b.display_order - a.display_order)

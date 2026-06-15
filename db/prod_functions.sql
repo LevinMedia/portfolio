@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS admin_users (
     last_login TIMESTAMPTZ
 );
 
+-- Human-readable label for password-only private access accounts
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS label TEXT;
+
 -- Setup state tracking table
 CREATE TABLE IF NOT EXISTS setup_state (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -245,124 +248,7 @@ CREATE POLICY "Service role only - analytics_pageviews" ON analytics_pageviews
     FOR ALL USING (auth.role() = 'service_role');
 
 -- =====================================================
--- SAMPLE DATA (for reference)
--- =====================================================
-/*
--- Insert companies first
-INSERT INTO work_companies (company_name, company_logo_url, employment_type, display_order) VALUES 
-('TechCorp Inc.', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/techcorp_logo.png', 'Full-time Remote', 1),
-('Digital Solutions LLC', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/digitalsolutions_logo.jpg', 'Full-time Hybrid', 2),
-('Innovation Labs', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/innovationlabs_logo.png', 'Full-time Remote', 3),
-('StartupXYZ', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/startupxyz_logo.jpg', 'Full-time On-site', 4),
-('Enterprise Systems', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/enterprisesystems_logo.png', 'Full-time Hybrid', 5),
-('Creative Agency', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/creativeagency_logo.jpg', 'Contract Remote', 6),
-('Global Tech', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/globaltech_logo.png', 'Full-time On-site', 7);
-
--- Then insert positions (using company IDs from above)
-INSERT INTO work_positions (company_id, position_title, position_description, start_date, end_date, position_order) VALUES 
--- TechCorp Inc. positions (multiple positions example)
-((SELECT id FROM work_companies WHERE company_name = 'TechCorp Inc.'), 'Senior Product Manager', 'Led product strategy and development for enterprise software platform.', '2023-01-01', NULL, 1),
-((SELECT id FROM work_companies WHERE company_name = 'TechCorp Inc.'), 'Product Manager', 'Managed product roadmap and feature development for SaaS applications.', '2021-03-01', '2022-12-31', 2),
-
--- Digital Solutions LLC positions
-((SELECT id FROM work_companies WHERE company_name = 'Digital Solutions LLC'), 'Lead Developer', 'Architected and developed scalable web applications using modern technologies.', '2020-06-01', '2022-11-30', 1),
-((SELECT id FROM work_companies WHERE company_name = 'Digital Solutions LLC'), 'Senior Developer', 'Built full-stack applications and mentored junior developers.', '2018-09-01', '2020-05-31', 2),
-
--- Innovation Labs positions
-((SELECT id FROM work_companies WHERE company_name = 'Innovation Labs'), 'Product Manager', 'Drove product vision and execution for innovative tech solutions.', '2019-01-01', '2021-02-28', 1),
-
--- StartupXYZ positions
-((SELECT id FROM work_companies WHERE company_name = 'StartupXYZ'), 'Full Stack Developer', 'Developed MVP and core features for early-stage startup.', '2017-03-01', '2018-12-31', 1),
-
--- Enterprise Systems positions
-((SELECT id FROM work_companies WHERE company_name = 'Enterprise Systems'), 'Software Engineer', 'Built enterprise-grade applications and integrations.', '2016-01-01', '2017-02-28', 1),
-
--- Creative Agency positions
-((SELECT id FROM work_companies WHERE company_name = 'Creative Agency'), 'Frontend Developer', 'Created responsive web interfaces and interactive experiences.', '2014-06-01', '2015-11-30', 1),
-
--- Global Tech positions
-((SELECT id FROM work_companies WHERE company_name = 'Global Tech'), 'Junior Developer', 'Contributed to web development projects and learned modern frameworks.', '2013-01-01', '2014-05-31', 1);
-
--- Howdy component content
-INSERT INTO howdy_content (image_src, image_alt, greeting, li_1, li_2) VALUES 
-('https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/images/profile.jpg', 'David Levin', 'Hi, I''m David 👋', '👷 I orchestrate software architecture & design.', '🚀 Fancy that, right? Lets make awesome happen.');
-*/
-
--- =====================================================
 -- PRODUCTION FUNCTIONS
--- =====================================================
-
--- Function to create default admin user
-CREATE OR REPLACE FUNCTION prod_create_default_admin()
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    -- Check if admin user already exists
-    IF NOT EXISTS (SELECT 1 FROM admin_users WHERE username = 'Admin') THEN
-        -- Insert default admin user with placeholder credentials
-        -- Note: The actual credentials will be set by the setup API using environment variables
-        -- This function is mainly for reference - use the setup API instead
-        INSERT INTO admin_users (username, password_hash, email, is_active) 
-        VALUES (
-            'Admin', 
-            '$2a$10$placeholder.hash.that.will.be.replaced.by.setup.api', -- This will be replaced by the setup API
-            'admin@example.com',
-            true
-        );
-    END IF;
-END;
-$$;
-
--- Function to authenticate admin user
-CREATE OR REPLACE FUNCTION prod_authenticate_admin(
-    p_username TEXT,
-    p_password TEXT
-)
-RETURNS TABLE(
-    user_id UUID,
-    username TEXT,
-    email TEXT,
-    is_authenticated BOOLEAN
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    user_record admin_users%ROWTYPE;
-BEGIN
-    -- Get user record
-    SELECT * INTO user_record 
-    FROM admin_users 
-    WHERE username = p_username AND is_active = true;
-    
-    -- Check if user exists and password matches
-    -- Note: You'll need to implement proper password verification with bcrypt
-    -- For now, this is a placeholder - replace with actual bcrypt verification
-    IF user_record.id IS NOT NULL THEN
-        -- Update last login
-        UPDATE admin_users 
-        SET last_login = NOW() 
-        WHERE id = user_record.id;
-        
-        RETURN QUERY SELECT 
-            user_record.id,
-            user_record.username,
-            user_record.email,
-            true;
-    ELSE
-        RETURN QUERY SELECT 
-            NULL::UUID,
-            NULL::TEXT,
-            NULL::TEXT,
-            false;
-    END IF;
-END;
-$$;
-
--- =====================================================
--- SECURE SETUP FUNCTIONS
 -- =====================================================
 
 -- Function to check if setup is completed
@@ -579,110 +465,6 @@ END;
 $$;
 
 -- =====================================================
--- ADMIN SETUP INSTRUCTIONS:
--- =====================================================
---
--- 1. Deploy this schema to your Supabase database
--- 2. Visit /admin/setup to initialize the admin user
--- 3. Sign in at /sign-in with credentials:
---    - Username: Admin
---    - Password: TheLetterA!
--- 4. Start managing your site content!
---
--- =====================================================
--- NOTES:
--- =====================================================
--- 
--- 1. Two-table design: companies and positions for proper grouping
--- 2. Companies can have multiple positions over time
--- 3. Gaps at same company are handled naturally (separate position entries)
--- 4. display_order controls company order in timeline
--- 5. position_order controls position order within a company
--- 6. end_date NULL indicates current position
--- 7. company_logo_url references images in public folder
--- 8. Proper indexes for efficient querying
--- 9. Foreign key constraints ensure data integrity
--- 10. Admin authentication uses bcrypt password hashing
---
--- To add new work history entries:
--- 1. Insert company into work_companies (if new)
--- 2. Insert position into work_positions
--- 3. Set appropriate display_order for company timeline positioning
--- 4. Set appropriate position_order for position ordering within company
--- 5. Upload company logo to public folder
--- 6. Update logo_url to match public folder path
---
--- Example scenarios this handles:
--- - Multiple positions at same company (promotions, role changes)
--- - Gaps at same company (leave and return)
--- - Company name changes (separate company entries)
--- - Proper timeline ordering with gaps
---
--- DEPLOYMENT:
--- 1. Copy entire file content
--- 2. Paste into Supabase SQL Editor
--- 3. Execute to update all schema and functions
--- 4. Verify objects are created successfully
---
--- =====================================================
--- SAMPLE WORK HISTORY DATA
--- =====================================================
--- 
--- NOTE: This sample data is commented out to prevent overwriting existing work history.
--- Uncomment and modify if you need to seed a fresh database.
---
-/*
--- Insert real work history companies
-INSERT INTO work_companies (id, company_name, company_logo_url, employment_type, display_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440001', 'CaptivateIQ', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/captivateiq_logo.jpeg', 'Remote / Full-time', 1),
-  ('550e8400-e29b-41d4-a716-446655440002', 'FloSports', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/flosports_logo.jpeg', 'Remote / Full-time', 2),
-  ('550e8400-e29b-41d4-a716-446655440003', 'Automattic', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/automattic_logo.jpeg', 'Remote / Full-time', 3),
-  ('550e8400-e29b-41d4-a716-446655440004', 'ShareThis', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/sharethis_logo.jpeg', 'Remote / Full-time', 4),
-  ('550e8400-e29b-41d4-a716-446655440005', 'USA TODAY Sports', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/usatsportts_logo.jpeg', 'Hybrid / Full-time', 5),
-  ('550e8400-e29b-41d4-a716-446655440006', 'Levin Media', '', 'Self-employed / Freelance', 6),
-  ('550e8400-e29b-41d4-a716-446655440007', 'Armada Skis', 'https://jnbfzkqidfvhsvqwbfij.supabase.co/storage/v1/object/public/media/armada_logo.jpg', 'Costa Mesa, CA / Full-time', 7)
-ON CONFLICT (company_name) DO NOTHING;
-
--- Insert real positions for CaptivateIQ
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440011', '550e8400-e29b-41d4-a716-446655440001', 'Principle Designer', 'Designing system architecture for intuitive and scalable product experiences.', '2025-05-01', NULL, 1),
-  ('550e8400-e29b-41d4-a716-446655440012', '550e8400-e29b-41d4-a716-446655440001', 'Sr. Manager Product Design', 'Leading product design initiatives and managing design team operations.', '2023-06-01', '2025-05-01', 2)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert real positions for FloSports
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440021', '550e8400-e29b-41d4-a716-446655440002', 'Head of Product Design', 'Leading product design. Connecting people with the sports they love.', '2022-05-01', '2023-06-01', 1)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert real positions for Automattic
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440031', '550e8400-e29b-41d4-a716-446655440003', 'Product & Design Lead (WooCommerce)', 'Leading product and design for payment solutions at WooCommerce.', '2021-05-01', '2022-05-01', 1),
-  ('550e8400-e29b-41d4-a716-446655440032', '550e8400-e29b-41d4-a716-446655440003', 'Product Design', 'Designing product experiences across the WordPress ecosystem.', '2018-02-01', '2021-05-01', 2)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert real positions for ShareThis
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440041', '550e8400-e29b-41d4-a716-446655440004', 'Director of UX and Design', 'Vision + execution. Conceptualized and designed a platform of tools to help millions of digital publishers grow their audiences. Led the re-design of share button tools and associated plugins, resulting in a 200% improvement in new user registration, and reduced 24 hour churn from over 50% to less than 10%.', '2016-09-01', '2018-01-01', 1)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert real positions for USA TODAY Sports
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440051', '550e8400-e29b-41d4-a716-446655440005', 'Design Director', 'Lead all design initiatives at USA TODAY Sports. Worked in conjunction with senior executives at USA TODAY and Gannett to develop and deliver digital product, advertising, and brand marketing solutions. Lead and managed a nationally distributed team of UX / UI designers, art directors and third party vendors. Managed USA TODAY Sports Creative Solutions, a full service in house creative agency producing print and digital advertising for clients of USA TODAY Sports. Led an assessment and reorganization of a nationally distributed design team, resulting in dramatic improvement of group productivity, morale, and overall quality of output. Led design rollout of 16 website launches, or re-launches, between April 2014 and April 2015, including USA TODAY Ad Meter, USA TODAY Bracket Challenge, and the 2016 Olympics Experience. In 2015 the sites accounted for 18% of USA TODAY''s digital advertising revenue.', '2014-01-01', '2016-09-01', 1),
-  ('550e8400-e29b-41d4-a716-446655440052', '550e8400-e29b-41d4-a716-446655440005', 'Design Director - Sports Digital Properties', 'Responsible for all creative initiatives at USA TODAY Sports Digital Properties, a sports focused digital advertising network consisting of 12 USA TODAY owned and operated websites (including For The Win, The Big Lead, HoopsHype, and MMA Junkie) plus over 100 affiliate advertising partners. Assumed responsibility of digital product strategy and development in conjunction with Director of Engineering. Responsible for brand marketing of owned and operated properties. Conceptualized and designed a highly customized, device responsive WordPress based publishing solution to consolidate the majority of owned and operated websites onto a single, shared CMS. (The platform is named Lawrence, after our friendly in-office caterer.) The consolidation slashed operational overhead, significantly reduced design and product development time, and radically improved user experiences for visitors and editors. The consolidation contributed to significant increases in revenue and audience. Proposed and launched USA TODAY Sports Creative Solutions, an in-house, full service creative agency for advertising clients of USA TODAY Sports. Produced both print and digital advertising for clients such as Oakley, Under Armor, Asics, ESPN, NBC Sports, UFC, Harley Davidson, State Farm, Mountain Dew, Pacifico, and more.', '2011-01-01', '2013-12-01', 2)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert real positions for Levin Media
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440061', '550e8400-e29b-41d4-a716-446655440006', 'Design Director', 'Specializing in all manner of design, digital product direction and design, photography, film, motion graphics and video production for primarily outdoor and action sports industry clients. Notable clients include Oakley, Red Bull, Storm Mountain Publishing, publishers of Freeskier and Snowboard Magazine, BNQT Media Group owned by USA TODAY Sports, Poor Boyz Productions, Exile Skimboards, Happy Magazine, and DaKine.', '2006-01-01', '2011-02-01', 1)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert real positions for Armada Skis
-INSERT INTO work_positions (id, company_id, position_title, position_description, start_date, end_date, position_order) VALUES
-  ('550e8400-e29b-41d4-a716-446655440071', '550e8400-e29b-41d4-a716-446655440007', 'Art Director', 'Established the brand identity and creative direction for the most successful start up ski company in history. Responsible for all creative deliverables including hard goods graphics, soft goods graphics, and web development. Responsible for all sales and marketing materials including advertising, catalogs, posters, experiential trade show elements, and point of purchase graphics.', '2002-10-01', '2006-01-01', 1)
-ON CONFLICT (id) DO NOTHING;
-*/
-
--- =====================================================
 -- SELECTED WORKS TABLE AND FUNCTIONS
 -- =====================================================
 
@@ -732,7 +514,7 @@ DROP POLICY IF EXISTS "Service role full access - selected_works" ON selected_wo
 
 -- Create RLS policies
 CREATE POLICY "Public read access - selected_works" ON selected_works
-    FOR SELECT USING (is_published = true);
+    FOR SELECT USING (is_published = true AND is_private = false);
 
 CREATE POLICY "Service role full access - selected_works" ON selected_works
     FOR ALL USING (auth.role() = 'service_role');
@@ -1075,7 +857,7 @@ DROP POLICY IF EXISTS "Service role full access - field_notes" ON field_notes;
 
 -- Create RLS policies
 CREATE POLICY "Public read access - field_notes" ON field_notes
-    FOR SELECT USING (is_published = true);
+    FOR SELECT USING (is_published = true AND is_private = false);
 
 CREATE POLICY "Service role full access - field_notes" ON field_notes
     FOR ALL USING (auth.role() = 'service_role');
@@ -1118,8 +900,7 @@ BEGIN
 END;
 $$;
 
--- Function to get single field note by slug (public)
--- This allows access to private notes via direct URL
+-- Function to get single field note by slug; returns is_private so API can enforce access
 CREATE OR REPLACE FUNCTION prod_get_field_note_by_slug(p_slug TEXT)
 RETURNS TABLE (
     id UUID,
@@ -1131,14 +912,13 @@ RETURNS TABLE (
     thumbnail_crop JSONB,
     og_vertical_align TEXT,
     display_order INTEGER,
-    published_at TIMESTAMPTZ
+    published_at TIMESTAMPTZ,
+    is_private BOOLEAN
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-    -- Returns note if published, regardless of is_private status
-    -- This enables direct URL access to private notes
     RETURN QUERY
     SELECT 
         fn.id,
@@ -1150,7 +930,8 @@ BEGIN
         fn.thumbnail_crop,
         fn.og_vertical_align,
         fn.display_order,
-        fn.published_at
+        fn.published_at,
+        COALESCE(fn.is_private, false)
     FROM field_notes fn
     WHERE fn.slug = p_slug AND fn.is_published = true
     LIMIT 1;
@@ -1466,5 +1247,38 @@ BEGIN
     RETURN FOUND;
 END;
 $$;
+
+-- =====================================================
+-- FUNCTION PERMISSIONS (prevent anon direct access to private/admin RPCs)
+-- =====================================================
+
+-- Public read-only RPCs (safe for anon key)
+GRANT EXECUTE ON FUNCTION prod_get_selected_works() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION prod_get_field_notes() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION prod_get_work_history() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION prod_get_guestbook_entries() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION prod_create_guestbook_entry(TEXT, TEXT, JSONB) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION prod_is_setup_completed() TO anon, authenticated;
+
+-- Admin / private-content RPCs — service role only (Next.js API routes)
+REVOKE ALL ON FUNCTION prod_get_selected_work_by_slug(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_get_selected_works_include_private() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_get_all_selected_works() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_upsert_selected_work(TEXT, TEXT, TEXT, TEXT, JSONB, BOOLEAN, BOOLEAN, INTEGER, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_delete_selected_work(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_update_thumbnail_crop(UUID, JSONB) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_get_field_note_by_slug(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_get_all_field_notes() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_upsert_field_note(TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, BOOLEAN, BOOLEAN, INTEGER, TEXT, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_delete_field_note(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_update_field_note_thumbnail_crop(UUID, JSONB) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_upsert_work_company(TEXT, TEXT, TEXT, INTEGER, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_upsert_work_position(UUID, TEXT, DATE, TEXT, DATE, INTEGER, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_delete_work_position(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_delete_work_company(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_get_all_guestbook_entries() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_update_guestbook_entry_status(UUID, BOOLEAN) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_delete_guestbook_entry(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION prod_mark_setup_completed() FROM PUBLIC, anon, authenticated;
 
 -- =====================================================

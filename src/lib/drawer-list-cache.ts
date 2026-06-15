@@ -12,5 +12,8 @@ export function createDrawerListCache<T>() {
     has(): boolean {
       return value !== null
     },
+    clear(): void {
+      value = null
+    },
   }
 }

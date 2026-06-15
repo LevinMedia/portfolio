@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getAuthCookiePayload, hasPrivateAccess } from '@/lib/auth-cookie'
+import { requireAdminApi } from '@/lib/require-admin-api'
 import {
   ADMIN_VIDEO_MAX_BYTES,
   isAllowedVideoMime,
@@ -19,10 +19,8 @@ const supabase = createClient(
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthCookiePayload()
-    if (!auth || !hasPrivateAccess(auth.access_role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const admin = await requireAdminApi()
+    if (admin instanceof NextResponse) return admin
 
     const body = (await request.json()) as {
       folder?: string

@@ -34,7 +34,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
   useEffect(() => {
     const fetchWork = async () => {
       try {
-        const response = await fetch(`/api/selected-works/${slug}`)
+        const response = await fetch(`/api/selected-works/${slug}`, { credentials: 'same-origin' })
         if (response.ok) {
           const data = await response.json()
           setWork(data.work)

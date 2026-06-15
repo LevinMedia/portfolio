@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isAllowedVideoMime, sanitizeVideoUploadFolder } from '@/lib/admin-video-upload'
+import { requireAdminApi } from '@/lib/require-admin-api'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,6 +16,8 @@ const MAX_INLINE_BYTES = 8 * 1024 * 1024
  * Prefer `/api/admin/upload-video/init` + browser `uploadToSignedUrl` for files over a few MB.
  */
 export async function POST(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const len = request.headers.get('content-length')
     if (len) {

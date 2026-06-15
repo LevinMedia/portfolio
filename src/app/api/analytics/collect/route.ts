@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isbot } from 'isbot'
+import { isKnownAnalyticsSiteSegment } from '@/lib/analytics-paths'
 import { getAuthCookiePayload } from '@/lib/auth-cookie'
 
 type Geo = {
@@ -158,9 +159,11 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
+  const recordPrivateWorkViews = Boolean(privateUserId)
+
   // Normalize and guard Selected Works paths and privacy
   let normalizedPath = path
-  // Case 1: Proper Selected Works path – enforce privacy
+  // Case 1: Proper Selected Works path – enforce privacy for anonymous viewers
   if (normalizedPath.startsWith('/selected-works/')) {
     const slug = normalizedPath.split('/')[2]
     if (slug) {
@@ -169,23 +172,21 @@ export async function POST(request: NextRequest) {
         .select('is_private, is_published')
         .eq('slug', slug)
         .single()
-      if (sw && sw.is_private === true) {
+      if (sw && sw.is_private === true && !recordPrivateWorkViews) {
         return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
       }
     }
   } else {
     // Case 2: Bare slug without prefix (e.g., /my-work) – detect and normalize
-    // Only slugs with safe characters are considered
     const bare = normalizedPath.startsWith('/') ? normalizedPath.slice(1) : normalizedPath
-    if (/^[a-z0-9-]{3,}$/.test(bare)) {
+    if (/^[a-z0-9-]{3,}$/.test(bare) && !isKnownAnalyticsSiteSegment(bare)) {
       const { data: sw } = await supabase
         .from('selected_works')
         .select('is_private, is_published, slug')
         .eq('slug', bare)
         .single()
       if (sw) {
-        // If private, skip entirely. If public, rewrite path with proper prefix
-        if (sw.is_private === true) {
+        if (sw.is_private === true && !recordPrivateWorkViews) {
           return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
         }
         normalizedPath = `/selected-works/${sw.slug}`

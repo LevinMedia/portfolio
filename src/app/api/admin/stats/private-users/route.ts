@@ -1,20 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthCookiePayload } from '@/lib/auth-cookie'
+import { displayPrivateAccessLabel } from '@/lib/private-access'
+import { normalizeAnalyticsPathForDisplay } from '@/lib/analytics-paths'
+import { toFullSiteUrl } from '@/lib/site-url'
 
 export type PrivateUserActivity = {
   id: string
-  email: string
+  label: string
   signInCount: number
   pageViewCount: number
   lastSignInAt: string | null
   lastPageViewAt: string | null
   lastPageViewPath: string | null
-  /** Recent page views (path + time), newest first, capped per user */
-  pageViews: { path: string; occurred_at: string }[]
+  /** Recent page views (full URL + time), newest first, capped per user */
+  pageViews: { path: string; url: string; occurred_at: string }[]
 }
 
-/** Returns private users with sign-in and page-view counts (admin only). */
+/** Returns password access entries with sign-in and page-view counts (admin only). */
 export async function GET() {
   const payload = await getAuthCookiePayload()
   if (payload?.access_role !== 'admin') {
@@ -23,27 +26,33 @@ export async function GET() {
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
   const { data: users, error: usersErr } = await supabase
     .from('admin_users')
-    .select('id, email')
+    .select('id, email, username, label')
     .eq('access_role', 'private')
-    .order('email')
+    .order('created_at', { ascending: false })
 
   if (usersErr) return NextResponse.json({ error: usersErr.message }, { status: 500 })
   if (!users?.length) return NextResponse.json({ users: [] })
 
   const ids = users.map((u) => u.id)
 
+  const { data: works } = await supabase.from('selected_works').select('slug')
+  const workSlugs = new Set((works ?? []).map((work) => work.slug))
+
   const [signInsRes, pageViewsRes] = await Promise.all([
-    supabase.from('analytics_private_sign_ins').select('private_user_id, occurred_at').in('private_user_id', ids),
+    supabase
+      .from('analytics_private_sign_ins')
+      .select('private_user_id, occurred_at')
+      .in('private_user_id', ids),
     supabase
       .from('analytics_pageviews')
       .select('private_user_id, path, occurred_at')
       .not('private_user_id', 'is', null)
-      .in('private_user_id', ids)
+      .in('private_user_id', ids),
   ])
 
   const signInsByUser = new Map<string, { count: number; lastAt: string | null }>()
@@ -54,19 +63,35 @@ export async function GET() {
     if (!cur.lastAt || row.occurred_at > cur.lastAt) cur.lastAt = row.occurred_at
   }
 
-  const pageViewsByUser = new Map<string, { count: number; lastAt: string | null; lastPath: string | null; list: { path: string; occurred_at: string }[] }>()
-  for (const uid of ids) pageViewsByUser.set(uid, { count: 0, lastAt: null, lastPath: null, list: [] })
+  const pageViewsByUser = new Map<
+    string,
+    {
+      count: number
+      lastAt: string | null
+      lastPath: string | null
+      list: { path: string; url: string; occurred_at: string }[]
+    }
+  >()
+  for (const uid of ids) {
+    pageViewsByUser.set(uid, { count: 0, lastAt: null, lastPath: null, list: [] })
+  }
   for (const row of pageViewsRes.data || []) {
     const uid = row.private_user_id as string
     const cur = pageViewsByUser.get(uid)!
+    const normalizedPath = normalizeAnalyticsPathForDisplay(row.path, workSlugs)
+    const entry = {
+      path: normalizedPath,
+      url: toFullSiteUrl(normalizedPath),
+      occurred_at: row.occurred_at,
+    }
     cur.count += 1
     if (!cur.lastAt || row.occurred_at > cur.lastAt) {
       cur.lastAt = row.occurred_at
-      cur.lastPath = row.path
+      cur.lastPath = normalizedPath
     }
-    cur.list.push({ path: row.path, occurred_at: row.occurred_at })
+    cur.list.push(entry)
   }
-  // Sort each user's list by newest first and cap at 100
+
   const maxPerUser = 100
   for (const cur of pageViewsByUser.values()) {
     cur.list.sort((a, b) => (b.occurred_at > a.occurred_at ? 1 : -1))
@@ -78,13 +103,13 @@ export async function GET() {
     const pv = pageViewsByUser.get(u.id)!
     return {
       id: u.id,
-      email: u.email ?? '',
+      label: displayPrivateAccessLabel(u),
       signInCount: si.count,
       pageViewCount: pv.count,
       lastSignInAt: si.lastAt,
       lastPageViewAt: pv.lastAt,
       lastPageViewPath: pv.lastPath,
-      pageViews: pv.list
+      pageViews: pv.list,
     }
   })
 

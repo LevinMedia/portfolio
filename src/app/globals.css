@@ -1704,6 +1704,7 @@ body > div[style*="position: fixed"] * {
   --chrome-radius-sheet: 0;
   --chrome-radius-card: 16px;
   --chrome-radius-media: 14px;
+  --chrome-radius-field: 10px;
   --chrome-blur: blur(40px) saturate(180%);
   --chrome-map-ocean: #e5e5ea;
   --chrome-map-land: #ffffff;
@@ -1729,6 +1730,7 @@ body > div[style*="position: fixed"] * {
   --chrome-radius-sheet: 0;
   --chrome-radius-card: 16px;
   --chrome-radius-media: 14px;
+  --chrome-radius-field: 10px;
   --chrome-blur: blur(40px) saturate(180%);
   --chrome-map-ocean: #1c1c1e;
   --chrome-map-land: #3a3a3c;
@@ -1754,6 +1756,7 @@ body > div[style*="position: fixed"] * {
   --chrome-radius-sheet: 0;
   --chrome-radius-card: 16px;
   --chrome-radius-media: 14px;
+  --chrome-radius-field: 10px;
   --chrome-blur: blur(40px) saturate(180%);
 }
 
@@ -1975,7 +1978,7 @@ body > div[style*="position: fixed"] * {
     min-height: 36px;
     min-width: 36px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: var(--chrome-radius-field);
     gap: 0;
   }
 
@@ -2057,7 +2060,7 @@ body > div[style*="position: fixed"] * {
   color: var(--chrome-accent);
   background: transparent;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--chrome-radius-field);
   cursor: pointer;
   transition:
     color var(--chrome-motion-fast) var(--chrome-ease),
@@ -2593,7 +2596,7 @@ body > div[style*="position: fixed"] * {
   }
 }
 
-/* Buttons & choices — outline pill (default) */
+/* Buttons & choices — match form field corner radius */
 #c64-site-root .drawer-container.drawer-chrome .c64-drawer-btn {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
@@ -2603,7 +2606,7 @@ body > div[style*="position: fixed"] * {
   color: var(--chrome-text);
   border: 1px solid var(--chrome-border);
   background: var(--chrome-card-bg);
-  border-radius: 999px;
+  border-radius: var(--chrome-radius-field);
   padding: 0.375rem 0.875rem;
   min-height: 36px;
   cursor: pointer;
@@ -2642,13 +2645,43 @@ body > div[style*="position: fixed"] * {
   color: #fff;
 }
 
+#c64-site-root .drawer-container.drawer-chrome .c64-drawer-btn .chrome-btn-spinner {
+  color: inherit;
+}
+
+.chrome-btn-spinner {
+  box-sizing: border-box;
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: chrome-btn-spinner 0.75s linear infinite;
+}
+
+@keyframes chrome-btn-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chrome-btn-spinner {
+    animation: none;
+    border-bottom-color: currentColor;
+    opacity: 0.85;
+  }
+}
+
 /* Apple-style segmented toggles (sliding pill, chrome accent) */
 #c64-site-root .drawer-container.drawer-chrome .chrome-segmented {
   display: inline-block;
   width: max-content;
   max-width: 100%;
   padding: 3px;
-  border-radius: 999px;
+  border-radius: var(--chrome-radius-field);
   background: color-mix(in srgb, var(--chrome-text) 7%, var(--chrome-card-bg));
   box-sizing: border-box;
   overflow: visible;
@@ -2689,7 +2722,7 @@ body > div[style*="position: fixed"] * {
   bottom: 0;
   left: 0;
   z-index: 0;
-  border-radius: 999px;
+  border-radius: calc(var(--chrome-radius-field) - 3px);
   background: var(--chrome-accent);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--chrome-accent) 35%, transparent);
   pointer-events: none;
@@ -2708,7 +2741,7 @@ body > div[style*="position: fixed"] * {
   padding: 0.4375rem 1rem;
   min-height: 34px;
   border: none;
-  border-radius: 999px;
+  border-radius: calc(var(--chrome-radius-field) - 3px);
   background: transparent;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
@@ -3382,7 +3415,7 @@ body > div[style*="position: fixed"] * {
 #c64-site-root .drawer-container.drawer-chrome .c64-form-field,
 #c64-site-root .drawer-container.drawer-chrome input.c64-form-field {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  border-radius: 10px;
+  border-radius: var(--chrome-radius-field);
   border: 1px solid var(--chrome-border);
   background: var(--chrome-card-bg);
   color: var(--chrome-text);
@@ -3532,7 +3565,7 @@ body > div[style*="position: fixed"] * {
 
 #c64-site-root .drawer-container.drawer-chrome .chrome-guestbook-alert {
   padding: 0.75rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--chrome-radius-field);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
   line-height: 1.45;
@@ -3552,7 +3585,7 @@ body > div[style*="position: fixed"] * {
 
 #c64-site-root .drawer-container.drawer-chrome .gb-editor .crepe-editor {
   border: 1px solid var(--chrome-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--chrome-radius-field) !important;
   background: var(--chrome-card-bg) !important;
   overflow: hidden;
 }
@@ -3600,7 +3633,7 @@ body > div[style*="position: fixed"] * {
   font-weight: 500;
   width: 100%;
   text-align: left;
-  border-radius: 10px;
+  border-radius: var(--chrome-radius-field);
   border: 1px solid var(--chrome-border);
   background: var(--chrome-card-bg);
   color: var(--chrome-text);

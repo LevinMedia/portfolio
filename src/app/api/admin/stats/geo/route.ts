@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdminApi } from '@/lib/require-admin-api'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 
@@ -17,6 +18,8 @@ function getWindow(range: RangeKey) {
 }
 
 export async function GET(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   const url = new URL(request.url)
   const range = (url.searchParams.get('range') as RangeKey) || '7d'
   const { start, end } = getWindow(range)
