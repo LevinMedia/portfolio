@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireAdminApi } from '@/lib/require-admin-api'
+import { isExcludedFromStatsReporting } from '@/lib/analytics-paths'
+import { fetchPublicAnalyticsPageviews } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 const TZ = 'America/Los_Angeles'
@@ -47,19 +49,16 @@ export async function GET(request: NextRequest) {
   const { start, end } = getWindow(range)
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-  let q = supabase.from('analytics_pageviews')
-    .select('path, visitor_id, occurred_at')
-    .eq('is_bot', false)
-    .eq('is_admin', false)
-    .eq('is_private', false)
-  if (start) q = q.gte('occurred_at', start.toISOString()).lte('occurred_at', end.toISOString())
-
-  const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const data = await fetchPublicAnalyticsPageviews(supabase, {
+    start,
+    end,
+    select: 'path, visitor_id, occurred_at',
+  })
 
   const counts = new Map<string, number>()
   const uniques = new Map<string, Set<string>>()
-  for (const r of data || []) {
+  for (const r of data) {
+    if (!r.path || !r.visitor_id || isExcludedFromStatsReporting(r.path)) continue
     counts.set(r.path, (counts.get(r.path) || 0) + 1)
     if (!uniques.has(r.path)) uniques.set(r.path, new Set<string>())
     uniques.get(r.path)!.add(r.visitor_id)

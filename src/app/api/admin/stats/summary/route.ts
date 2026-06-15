@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireAdminApi } from '@/lib/require-admin-api'
+import { isExcludedFromStatsReporting } from '@/lib/analytics-paths'
+import { fetchPublicAnalyticsPageviews } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 const TZ = 'America/Los_Angeles'
@@ -69,41 +71,43 @@ export async function GET(request: NextRequest) {
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-  // Create separate query builders to avoid mutation issues
-  const baseQuery = () => supabase.from('analytics_pageviews').select('path, visitor_id, country, occurred_at', { count: 'exact', head: false })
-    .eq('is_bot', false)
-    .eq('is_admin', false)
-    .eq('is_private', false)
-
-  const curr = start ? baseQuery().gte('occurred_at', start.toISOString()).lte('occurred_at', end.toISOString()) : baseQuery()
-  const prev = (prevStart && prevEnd) ? baseQuery().gte('occurred_at', prevStart.toISOString()).lte('occurred_at', prevEnd.toISOString()) : null
-
-  const [{ data: currData, error: currErr }, prevRes] = await Promise.all([
-    curr,
-    prev ? prev : Promise.resolve({ data: null, error: null })
+  const [currData, prevData] = await Promise.all([
+    fetchPublicAnalyticsPageviews(supabase, {
+      start,
+      end,
+      select: 'path, visitor_id, country, occurred_at',
+    }),
+    prevStart && prevEnd
+      ? fetchPublicAnalyticsPageviews(supabase, {
+          start: prevStart,
+          end: prevEnd,
+          select: 'visitor_id, occurred_at',
+        })
+      : Promise.resolve([]),
   ])
 
-
-  if (currErr) return NextResponse.json({ error: currErr.message }, { status: 500 })
-
-  const currViews = currData?.length || 0
-  const currUnique = new Set((currData || []).map(r => r.visitor_id)).size
-  const currCountries = new Set((currData || []).map(r => r.country).filter(Boolean)).size
+  const currViews = currData.length
+  const currUnique = new Set(currData.map((r) => r.visitor_id)).size
+  const currCountries = new Set(currData.map((r) => r.country).filter(Boolean)).size
   const topPage = (() => {
     const counts = new Map<string, number>()
-    for (const r of currData || []) counts.set(r.path, (counts.get(r.path) || 0) + 1)
-    let best: string | null = null, bestCount = -1
+    for (const r of currData) {
+      if (!r.path || isExcludedFromStatsReporting(r.path)) continue
+      counts.set(r.path, (counts.get(r.path) || 0) + 1)
+    }
+    let best: string | null = null
+    let bestCount = -1
     for (const [p, c] of counts.entries()) if (c > bestCount) { best = p; bestCount = c }
-    // Display "Home" instead of "/" for the root path
+    if (!best) return { path: null, views: 0 }
     const displayPath = best === '/' ? 'Home' : best
     return { path: displayPath, views: bestCount }
   })()
 
-  let prevViews = 0, prevUnique = 0
-  if (prevRes && 'data' in prevRes && prevRes.data) {
-    const prevData = prevRes.data as { visitor_id: string }[]
+  let prevViews = 0
+  let prevUnique = 0
+  if (prevData.length > 0) {
     prevViews = prevData.length
-    prevUnique = new Set(prevData.map(r => r.visitor_id)).size
+    prevUnique = new Set(prevData.map((r) => r.visitor_id)).size
   }
 
   function pct(curr: number, prev: number) {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeAnalyticsPathForDisplay } from './analytics-paths'
+import {
+  isExcludedFromStatsReporting,
+  normalizeAnalyticsPathForDisplay,
+} from './analytics-paths'
 
 const workSlugs = new Set(['betterlist', 'designing-a-new-modeling-paradigm'])
 
@@ -30,5 +33,14 @@ describe('normalizeAnalyticsPathForDisplay', () => {
     expect(normalizeAnalyticsPathForDisplay('betterlist', workSlugs)).toBe(
       '/selected-works/betterlist',
     )
+  })
+})
+
+describe('isExcludedFromStatsReporting', () => {
+  it('excludes auth routes from top-pages stats', () => {
+    expect(isExcludedFromStatsReporting('/sign-in')).toBe(true)
+    expect(isExcludedFromStatsReporting('/access')).toBe(true)
+    expect(isExcludedFromStatsReporting('/about')).toBe(false)
+    expect(isExcludedFromStatsReporting('/selected-works')).toBe(false)
   })
 })

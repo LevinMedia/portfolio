@@ -42,6 +42,13 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     return () => window.removeEventListener('c64-settings-changed', onTheme)
   }, [])
 
+  useEffect(() => {
+    if (range === '24h') setAgg('hour')
+    else if (range === '7d' || range === '30d') setAgg('day')
+    else if (range === '1y') setAgg('week')
+    else setAgg('month')
+  }, [range])
+
   // Fetch data whenever range or aggregation changes
   useEffect(() => {
     const controller = new AbortController()

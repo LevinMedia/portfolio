@@ -18,6 +18,9 @@ const ANALYTICS_SITE_SEGMENTS = new Set(
     .map((path) => path.slice(1)),
 )
 
+/** Auth routes omitted from admin top-pages reporting. */
+const ANALYTICS_STATS_EXCLUDED_PATHS = new Set(['/sign-in', '/access'])
+
 function ensureLeadingSlash(path: string): string {
   if (!path) return '/'
   return path.startsWith('/') ? path : `/${path}`
@@ -59,4 +62,10 @@ export function normalizeAnalyticsPathForDisplay(
 /** Returns true when a bare path segment should not be treated as a selected-work slug. */
 export function isKnownAnalyticsSiteSegment(segment: string): boolean {
   return ANALYTICS_SITE_SEGMENTS.has(segment)
+}
+
+/** Auth/setup paths excluded from public admin analytics (top pages, summary top page). */
+export function isExcludedFromStatsReporting(path: string): boolean {
+  const p = ensureLeadingSlash(path)
+  return ANALYTICS_STATS_EXCLUDED_PATHS.has(p)
 }
