@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getAuthCookiePayload, hasPrivateAccess } from '@/lib/auth-cookie'
 
 export interface FieldNote {
   id: string
@@ -34,7 +35,15 @@ export async function getFieldNoteBySlug(slug: string): Promise<FieldNote | null
     return null
   }
 
-  return data[0] as FieldNote
+  const note = data[0] as FieldNote & { is_private?: boolean }
+  if (note.is_private) {
+    const payload = await getAuthCookiePayload()
+    if (!payload || !hasPrivateAccess(payload.access_role)) {
+      return null
+    }
+  }
+
+  const { is_private, ...noteForClient } = note
+  void is_private
+  return noteForClient
 }
-
-

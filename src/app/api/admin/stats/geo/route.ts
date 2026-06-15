@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdminApi } from '@/lib/require-admin-api'
+import { fetchPublicAnalyticsPageviews, type PublicAnalyticsPageview } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 
@@ -17,24 +19,21 @@ function getWindow(range: RangeKey) {
 }
 
 export async function GET(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   const url = new URL(request.url)
   const range = (url.searchParams.get('range') as RangeKey) || '7d'
   const { start, end } = getWindow(range)
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-  let q = supabase.from('analytics_pageviews')
-    .select('visitor_id, country, region, city, latitude, longitude, occurred_at')
-    .eq('is_bot', false)
-    .eq('is_admin', false)
-    .eq('is_private', false)
-  // Note: In development, geo data might be null, so we don't filter it out
-  if (start) q = q.gte('occurred_at', start.toISOString()).lte('occurred_at', end.toISOString())
-
-  const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const data = await fetchPublicAnalyticsPageviews(supabase, {
+    start,
+    end,
+    select: 'visitor_id, country, region, city, latitude, longitude, occurred_at',
+  })
 
   // Filter out records with no geo data, then deduplicate
-  const recordsWithGeo = (data || []).filter(r => r.country || r.region || r.city || r.latitude || r.longitude)
+  const recordsWithGeo = data.filter((r) => r.country || r.region || r.city || r.latitude || r.longitude)
   
   if (recordsWithGeo.length === 0) {
     // In development or when no geo data is available, return empty array
@@ -42,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Group by location and count unique visitors per location
-  const key = (r: { country: string | null; region?: string | null; city?: string | null; latitude?: number | null; longitude?: number | null }) => 
+  const key = (r: PublicAnalyticsPageview) =>
     [r.country || 'Unknown', r.region || '', r.city || '', r.latitude || '', r.longitude || ''].join('|')
   
   const byKey = new Map<string, { 
@@ -55,6 +54,7 @@ export async function GET(request: NextRequest) {
   }>()
   
   for (const r of recordsWithGeo) {
+    if (!r.visitor_id) continue
     const k = key(r)
     const curr = byKey.get(k)
     if (!curr) {

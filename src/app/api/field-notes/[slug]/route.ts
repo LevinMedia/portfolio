@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getAuthCookiePayload, hasPrivateAccess } from '@/lib/auth-cookie'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +32,20 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ note: data[0] })
+    const note = data[0] as typeof data[0] & { is_private?: boolean }
+    if (note.is_private) {
+      const payload = await getAuthCookiePayload()
+      if (!payload || !hasPrivateAccess(payload.access_role)) {
+        return NextResponse.json(
+          { error: 'Note not found' },
+          { status: 404 }
+        )
+      }
+    }
+
+    const { is_private, ...noteForClient } = note
+    void is_private
+    return NextResponse.json({ note: noteForClient })
   } catch (error) {
     console.error('Error in field note API:', error)
     return NextResponse.json(
@@ -40,4 +54,3 @@ export async function GET(
     )
   }
 }
-

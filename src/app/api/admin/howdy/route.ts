@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sanitizeText } from '@/lib/sanitize'
+import { requireAdminApi } from '@/lib/require-admin-api'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,8 @@ const supabase = createClient(
 )
 
 export async function GET() {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { data, error } = await supabase
       .from('howdy_content')
@@ -27,6 +30,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const body = await request.json()
     const { id, image_src, image_alt, greeting, li_1, li_2 } = body

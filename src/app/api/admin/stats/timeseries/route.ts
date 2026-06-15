@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { requireAdminApi } from '@/lib/require-admin-api'
+import { fetchPublicAnalyticsPageviews } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 type AggKey = 'hour' | 'day' | 'week' | 'month' | 'quarter'
@@ -75,23 +77,18 @@ function allowedAggs(range: RangeKey): AggKey[] {
 async function getAllPageviewsInWindow(
   supabase: SupabaseClient,
   start: Date | null,
-  end: Date
+  end: Date,
 ) {
-  let q = supabase
-    .from('analytics_pageviews')
-    .select('occurred_at, visitor_id', { head: false })
-    .eq('is_bot', false)
-    .eq('is_admin', false)
-    .eq('is_private', false)
-
-  if (start) q = q.gte('occurred_at', start.toISOString())
-  q = q.lte('occurred_at', end.toISOString())
-  const { data, error } = await q
-  if (error) throw new Error(error.message)
-  return data as { occurred_at: string; visitor_id: string }[]
+  return fetchPublicAnalyticsPageviews(supabase, {
+    start,
+    end,
+    select: 'occurred_at, visitor_id',
+  })
 }
 
 export async function GET(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const url = new URL(request.url)
     const range = (url.searchParams.get('range') as RangeKey) || '30d'

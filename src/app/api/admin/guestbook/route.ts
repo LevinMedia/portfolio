@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdminApi } from '@/lib/require-admin-api'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,8 @@ const supabase = createClient(
 
 // GET - Fetch all guestbook entries (admin)
 export async function GET() {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { data: entries, error } = await supabase.rpc('prod_get_all_guestbook_entries')
 
@@ -25,6 +28,8 @@ export async function GET() {
 
 // PUT - Update guestbook entry approval status
 export async function PUT(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { entryId, isApproved } = await request.json()
 
@@ -59,6 +64,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete guestbook entry
 export async function DELETE(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { searchParams } = new URL(request.url)
     const entryId = searchParams.get('entryId')

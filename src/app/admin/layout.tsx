@@ -27,7 +27,7 @@ const navigation = [
   { name: 'Selected Work', href: '/admin/selected-work', icon: DocumentTextIcon },
   { name: 'Work History', href: '/admin/work-history', icon: BriefcaseIcon },
   { name: 'About', href: '/admin/about', icon: BookOpenIcon },
-  { name: 'Private Users', href: '/admin/private-users', icon: KeyIcon },
+  { name: 'Password Access', href: '/admin/private-users', icon: KeyIcon },
   { name: 'Manage Stats', href: '/admin/stats', icon: ChartBarIcon },
   { name: 'Manage Guestbook', href: '/admin/guestbook', icon: HomeIcon },
 ]

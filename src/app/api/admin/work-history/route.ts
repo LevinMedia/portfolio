@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeText, sanitizeUrl, sanitizeMarkdown } from '@/lib/sanitize'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
+import { requireAdminApi } from '@/lib/require-admin-api'
 
 function sanitizePositionDescription(description: string | undefined | null): string | null {
   if (!description?.trim()) return null
@@ -9,6 +10,8 @@ function sanitizePositionDescription(description: string | undefined | null): st
 }
 
 export async function GET() {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     console.log('GET /api/admin/work-history called')
     
@@ -38,6 +41,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { type, data } = await request.json()
 
@@ -92,6 +97,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { type, id, data } = await request.json()
 
@@ -146,6 +153,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const admin = await requireAdminApi()
+  if (admin instanceof NextResponse) return admin
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')

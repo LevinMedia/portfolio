@@ -18,7 +18,8 @@ import {
   c64DrawerSectionHeadingClass,
   c64DrawerStackClass,
 } from '@/lib/c64-drawer-classes'
-import { C64LoadingScreen, C64SpriteLoader, useC64LoaderVisible } from './C64SpriteLoader'
+import ButtonSpinner from './ButtonSpinner'
+import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 
 interface SocialLinks {
   linkedin?: string
@@ -382,9 +383,7 @@ export default function Guestbook() {
                     >
                       {isSubmitting ? (
                         <>
-                          <span className="inline-flex h-5 w-8 items-center justify-center overflow-hidden">
-                            <C64SpriteLoader className="scale-[0.06] origin-center" />
-                          </span>
+                          <ButtonSpinner />
                           Adding…
                         </>
                       ) : (
