@@ -176,6 +176,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
       }
     }
+  } else if (normalizedPath.startsWith('/field-notes/')) {
+    const slug = normalizedPath.split('/')[2]
+    if (slug) {
+      const { data: note } = await supabase
+        .from('field_notes')
+        .select('is_private')
+        .eq('slug', slug)
+        .single()
+      if (note && note.is_private === true && !recordPrivateWorkViews) {
+        return NextResponse.json({ skipped: true, reason: 'private' }, { status: 200 })
+      }
+    }
   } else {
     // Case 2: Bare slug without prefix (e.g., /my-work) – detect and normalize
     const bare = normalizedPath.startsWith('/') ? normalizedPath.slice(1) : normalizedPath

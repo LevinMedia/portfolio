@@ -13,6 +13,23 @@ export type PublicAnalyticsPageview = {
   longitude?: number | null
 }
 
+/** Published public featured-work and field-note slugs used to allowlist top pages. */
+export async function fetchPublicStatsSlugs(supabase: SupabaseClient): Promise<{
+  workSlugs: Set<string>
+  noteSlugs: Set<string>
+}> {
+  const [works, notes] = await Promise.all([
+    supabase.from('selected_works').select('slug').eq('is_private', false).eq('is_published', true),
+    supabase.from('field_notes').select('slug').eq('is_private', false).eq('is_published', true),
+  ])
+  if (works.error) throw new Error(works.error.message)
+  if (notes.error) throw new Error(notes.error.message)
+  return {
+    workSlugs: new Set((works.data ?? []).map((row) => row.slug).filter(Boolean)),
+    noteSlugs: new Set((notes.data ?? []).map((row) => row.slug).filter(Boolean)),
+  }
+}
+
 /** Fetch all matching public analytics rows (Supabase caps each request at 1000). */
 export async function fetchPublicAnalyticsPageviews(
   supabase: SupabaseClient,

@@ -18,12 +18,20 @@ const ANALYTICS_SITE_SEGMENTS = new Set(
     .map((path) => path.slice(1)),
 )
 
-/** Auth routes omitted from admin top-pages reporting. */
+/** Auth routes omitted from public top-pages reporting. */
 const ANALYTICS_STATS_EXCLUDED_PATHS = new Set(['/sign-in', '/access'])
+
+/** Published, non-private featured-work and field-note slugs that exist on this site. */
+export type PublicStatsSlugs = {
+  workSlugs: ReadonlySet<string>
+  noteSlugs: ReadonlySet<string>
+}
 
 function ensureLeadingSlash(path: string): string {
   if (!path) return '/'
-  return path.startsWith('/') ? path : `/${path}`
+  const withSlash = path.startsWith('/') ? path : `/${path}`
+  if (withSlash.length > 1 && withSlash.endsWith('/')) return withSlash.slice(0, -1)
+  return withSlash
 }
 
 /**
@@ -64,8 +72,30 @@ export function isKnownAnalyticsSiteSegment(segment: string): boolean {
   return ANALYTICS_SITE_SEGMENTS.has(segment)
 }
 
-/** Auth/setup paths excluded from public admin analytics (top pages, summary top page). */
-export function isExcludedFromStatsReporting(path: string): boolean {
+function exactSlugAfter(path: string, prefix: string): string | null {
+  if (!path.startsWith(prefix)) return null
+  const rest = path.slice(prefix.length)
+  if (!rest || rest.includes('/')) return null
+  return rest
+}
+
+/**
+ * Top pages only includes current public routes.
+ * Auth pages, private content, and leftover old-site URLs are omitted.
+ */
+export function isExcludedFromStatsReporting(
+  path: string,
+  publicSlugs: PublicStatsSlugs = { workSlugs: new Set(), noteSlugs: new Set() },
+): boolean {
   const p = ensureLeadingSlash(path)
-  return ANALYTICS_STATS_EXCLUDED_PATHS.has(p)
+  if (ANALYTICS_STATS_EXCLUDED_PATHS.has(p)) return true
+  if (ANALYTICS_SITE_PATHS.has(p)) return false
+
+  const workSlug = exactSlugAfter(p, '/selected-works/')
+  if (workSlug) return !publicSlugs.workSlugs.has(workSlug)
+
+  const noteSlug = exactSlugAfter(p, '/field-notes/')
+  if (noteSlug) return !publicSlugs.noteSlugs.has(noteSlug)
+
+  return true
 }
