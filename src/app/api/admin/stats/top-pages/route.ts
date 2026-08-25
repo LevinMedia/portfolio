@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireAdminApi } from '@/lib/require-admin-api'
 import { isExcludedFromStatsReporting } from '@/lib/analytics-paths'
-import { fetchPublicAnalyticsPageviews } from '@/lib/analytics-pageviews-query'
+import { fetchPrivateStatsSlugs, fetchPublicAnalyticsPageviews } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 const TZ = 'America/Los_Angeles'
@@ -41,24 +40,26 @@ function getWindow(range: RangeKey) {
   }
 }
 
+/** Public top pages. Private featured work and field notes are omitted. */
 export async function GET(request: NextRequest) {
-  const admin = await requireAdminApi()
-  if (admin instanceof NextResponse) return admin
   const url = new URL(request.url)
   const range = (url.searchParams.get('range') as RangeKey) || '7d'
   const { start, end } = getWindow(range)
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-  const data = await fetchPublicAnalyticsPageviews(supabase, {
-    start,
-    end,
-    select: 'path, visitor_id, occurred_at',
-  })
+  const [data, privateSlugs] = await Promise.all([
+    fetchPublicAnalyticsPageviews(supabase, {
+      start,
+      end,
+      select: 'path, visitor_id, occurred_at',
+    }),
+    fetchPrivateStatsSlugs(supabase),
+  ])
 
   const counts = new Map<string, number>()
   const uniques = new Map<string, Set<string>>()
   for (const r of data) {
-    if (!r.path || !r.visitor_id || isExcludedFromStatsReporting(r.path)) continue
+    if (!r.path || !r.visitor_id || isExcludedFromStatsReporting(r.path, privateSlugs)) continue
     counts.set(r.path, (counts.get(r.path) || 0) + 1)
     if (!uniques.has(r.path)) uniques.set(r.path, new Set<string>())
     uniques.get(r.path)!.add(r.visitor_id)

@@ -18,8 +18,13 @@ const ANALYTICS_SITE_SEGMENTS = new Set(
     .map((path) => path.slice(1)),
 )
 
-/** Auth routes omitted from admin top-pages reporting. */
+/** Auth routes omitted from public top-pages reporting. */
 const ANALYTICS_STATS_EXCLUDED_PATHS = new Set(['/sign-in', '/access'])
+
+export type PrivateStatsSlugs = {
+  workSlugs: ReadonlySet<string>
+  noteSlugs: ReadonlySet<string>
+}
 
 function ensureLeadingSlash(path: string): string {
   if (!path) return '/'
@@ -64,8 +69,29 @@ export function isKnownAnalyticsSiteSegment(segment: string): boolean {
   return ANALYTICS_SITE_SEGMENTS.has(segment)
 }
 
-/** Auth/setup paths excluded from public admin analytics (top pages, summary top page). */
-export function isExcludedFromStatsReporting(path: string): boolean {
+function firstSegmentAfter(path: string, prefix: string): string | null {
+  if (!path.startsWith(prefix)) return null
+  const segment = path.slice(prefix.length).split('/')[0]
+  return segment || null
+}
+
+/** Auth routes and private featured work / field notes omitted from public top-pages reporting. */
+export function isExcludedFromStatsReporting(
+  path: string,
+  privateSlugs: PrivateStatsSlugs = { workSlugs: new Set(), noteSlugs: new Set() },
+): boolean {
   const p = ensureLeadingSlash(path)
-  return ANALYTICS_STATS_EXCLUDED_PATHS.has(p)
+  if (ANALYTICS_STATS_EXCLUDED_PATHS.has(p)) return true
+
+  const workSlug = firstSegmentAfter(p, '/selected-works/')
+  if (workSlug && privateSlugs.workSlugs.has(workSlug)) return true
+
+  const noteSlug = firstSegmentAfter(p, '/field-notes/')
+  if (noteSlug && privateSlugs.noteSlugs.has(noteSlug)) return true
+
+  if (ANALYTICS_SITE_PATHS.has(p)) return false
+  const bare = p.slice(1)
+  if (privateSlugs.workSlugs.has(bare) || privateSlugs.noteSlugs.has(bare)) return true
+
+  return false
 }

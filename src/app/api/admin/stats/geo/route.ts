@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireAdminApi } from '@/lib/require-admin-api'
 import { fetchPublicAnalyticsPageviews, type PublicAnalyticsPageview } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
@@ -18,9 +17,8 @@ function getWindow(range: RangeKey) {
   }
 }
 
+/** Public visitor locations. Private-user pageviews are already excluded from the query. */
 export async function GET(request: NextRequest) {
-  const admin = await requireAdminApi()
-  if (admin instanceof NextResponse) return admin
   const url = new URL(request.url)
   const range = (url.searchParams.get('range') as RangeKey) || '7d'
   const { start, end } = getWindow(range)

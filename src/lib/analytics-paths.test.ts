@@ -43,4 +43,17 @@ describe('isExcludedFromStatsReporting', () => {
     expect(isExcludedFromStatsReporting('/about')).toBe(false)
     expect(isExcludedFromStatsReporting('/selected-works')).toBe(false)
   })
+
+  it('excludes private featured work and field notes from top-pages stats', () => {
+    const privateSlugs = {
+      workSlugs: new Set(['secret-client']),
+      noteSlugs: new Set(['hiring-notes']),
+    }
+    expect(isExcludedFromStatsReporting('/selected-works/secret-client', privateSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/field-notes/hiring-notes', privateSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('secret-client', privateSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/selected-works/betterlist', privateSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/field-notes', privateSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/selected-works', privateSlugs)).toBe(false)
+  })
 })
