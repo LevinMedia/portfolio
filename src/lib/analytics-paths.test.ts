@@ -37,23 +37,38 @@ describe('normalizeAnalyticsPathForDisplay', () => {
 })
 
 describe('isExcludedFromStatsReporting', () => {
+  const publicSlugs = {
+    workSlugs: new Set(['betterlist', 'woocommerce-analytics']),
+    noteSlugs: new Set(['c64-homepage']),
+  }
+
   it('excludes auth routes from top-pages stats', () => {
-    expect(isExcludedFromStatsReporting('/sign-in')).toBe(true)
-    expect(isExcludedFromStatsReporting('/access')).toBe(true)
-    expect(isExcludedFromStatsReporting('/about')).toBe(false)
-    expect(isExcludedFromStatsReporting('/selected-works')).toBe(false)
+    expect(isExcludedFromStatsReporting('/sign-in', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/access', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/about', publicSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/selected-works', publicSlugs)).toBe(false)
   })
 
   it('excludes private featured work and field notes from top-pages stats', () => {
-    const privateSlugs = {
-      workSlugs: new Set(['secret-client']),
-      noteSlugs: new Set(['hiring-notes']),
-    }
-    expect(isExcludedFromStatsReporting('/selected-works/secret-client', privateSlugs)).toBe(true)
-    expect(isExcludedFromStatsReporting('/field-notes/hiring-notes', privateSlugs)).toBe(true)
-    expect(isExcludedFromStatsReporting('secret-client', privateSlugs)).toBe(true)
-    expect(isExcludedFromStatsReporting('/selected-works/betterlist', privateSlugs)).toBe(false)
-    expect(isExcludedFromStatsReporting('/field-notes', privateSlugs)).toBe(false)
-    expect(isExcludedFromStatsReporting('/selected-works', privateSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/selected-works/secret-client', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/field-notes/hiring-notes', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('secret-client', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/selected-works/betterlist', publicSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/field-notes/c64-homepage', publicSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/field-notes', publicSlugs)).toBe(false)
+    expect(isExcludedFromStatsReporting('/selected-works', publicSlugs)).toBe(false)
+  })
+
+  it('excludes leftover old-site URLs from top-pages stats', () => {
+    expect(isExcludedFromStatsReporting('/shop', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/fb', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/portfolio/sharethis-audience-builder', publicSlugs)).toBe(
+      true,
+    )
+    expect(isExcludedFromStatsReporting('/portfolio/coastline-android-app', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/portfolio/woocommerce-analytics', publicSlugs)).toBe(true)
+    expect(isExcludedFromStatsReporting('/selected-works/woocommerce-analytics', publicSlugs)).toBe(
+      false,
+    )
   })
 })

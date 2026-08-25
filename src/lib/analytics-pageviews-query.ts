@@ -13,14 +13,14 @@ export type PublicAnalyticsPageview = {
   longitude?: number | null
 }
 
-/** Private featured-work and field-note slugs omitted from public top-pages reporting. */
-export async function fetchPrivateStatsSlugs(supabase: SupabaseClient): Promise<{
+/** Published public featured-work and field-note slugs used to allowlist top pages. */
+export async function fetchPublicStatsSlugs(supabase: SupabaseClient): Promise<{
   workSlugs: Set<string>
   noteSlugs: Set<string>
 }> {
   const [works, notes] = await Promise.all([
-    supabase.from('selected_works').select('slug').eq('is_private', true),
-    supabase.from('field_notes').select('slug').eq('is_private', true),
+    supabase.from('selected_works').select('slug').eq('is_private', false).eq('is_published', true),
+    supabase.from('field_notes').select('slug').eq('is_private', false).eq('is_published', true),
   ])
   if (works.error) throw new Error(works.error.message)
   if (notes.error) throw new Error(notes.error.message)

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isExcludedFromStatsReporting } from '@/lib/analytics-paths'
-import { fetchPrivateStatsSlugs, fetchPublicAnalyticsPageviews } from '@/lib/analytics-pageviews-query'
+import { fetchPublicAnalyticsPageviews, fetchPublicStatsSlugs } from '@/lib/analytics-pageviews-query'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 const TZ = 'America/Los_Angeles'
@@ -61,7 +61,7 @@ function getWindow(range: RangeKey) {
   return { start, end, prevStart, prevEnd: start }
 }
 
-/** Public aggregate stats. Private featured work and field notes are omitted from the top-page card. */
+/** Public aggregate stats. Top page is chosen from current public routes only. */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const range = (url.searchParams.get('range') as RangeKey) || '7d'
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-  const [currData, prevData, privateSlugs] = await Promise.all([
+  const [currData, prevData, publicSlugs] = await Promise.all([
     fetchPublicAnalyticsPageviews(supabase, {
       start,
       end,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
           select: 'visitor_id, occurred_at',
         })
       : Promise.resolve([]),
-    fetchPrivateStatsSlugs(supabase),
+    fetchPublicStatsSlugs(supabase),
   ])
 
   const currViews = currData.length
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   const topPage = (() => {
     const counts = new Map<string, number>()
     for (const r of currData) {
-      if (!r.path || isExcludedFromStatsReporting(r.path, privateSlugs)) continue
+      if (!r.path || isExcludedFromStatsReporting(r.path, publicSlugs)) continue
       counts.set(r.path, (counts.get(r.path) || 0) + 1)
     }
     let best: string | null = null

@@ -21,14 +21,17 @@ const ANALYTICS_SITE_SEGMENTS = new Set(
 /** Auth routes omitted from public top-pages reporting. */
 const ANALYTICS_STATS_EXCLUDED_PATHS = new Set(['/sign-in', '/access'])
 
-export type PrivateStatsSlugs = {
+/** Published, non-private featured-work and field-note slugs that exist on this site. */
+export type PublicStatsSlugs = {
   workSlugs: ReadonlySet<string>
   noteSlugs: ReadonlySet<string>
 }
 
 function ensureLeadingSlash(path: string): string {
   if (!path) return '/'
-  return path.startsWith('/') ? path : `/${path}`
+  const withSlash = path.startsWith('/') ? path : `/${path}`
+  if (withSlash.length > 1 && withSlash.endsWith('/')) return withSlash.slice(0, -1)
+  return withSlash
 }
 
 /**
@@ -69,29 +72,30 @@ export function isKnownAnalyticsSiteSegment(segment: string): boolean {
   return ANALYTICS_SITE_SEGMENTS.has(segment)
 }
 
-function firstSegmentAfter(path: string, prefix: string): string | null {
+function exactSlugAfter(path: string, prefix: string): string | null {
   if (!path.startsWith(prefix)) return null
-  const segment = path.slice(prefix.length).split('/')[0]
-  return segment || null
+  const rest = path.slice(prefix.length)
+  if (!rest || rest.includes('/')) return null
+  return rest
 }
 
-/** Auth routes and private featured work / field notes omitted from public top-pages reporting. */
+/**
+ * Top pages only includes current public routes.
+ * Auth pages, private content, and leftover old-site URLs are omitted.
+ */
 export function isExcludedFromStatsReporting(
   path: string,
-  privateSlugs: PrivateStatsSlugs = { workSlugs: new Set(), noteSlugs: new Set() },
+  publicSlugs: PublicStatsSlugs = { workSlugs: new Set(), noteSlugs: new Set() },
 ): boolean {
   const p = ensureLeadingSlash(path)
   if (ANALYTICS_STATS_EXCLUDED_PATHS.has(p)) return true
-
-  const workSlug = firstSegmentAfter(p, '/selected-works/')
-  if (workSlug && privateSlugs.workSlugs.has(workSlug)) return true
-
-  const noteSlug = firstSegmentAfter(p, '/field-notes/')
-  if (noteSlug && privateSlugs.noteSlugs.has(noteSlug)) return true
-
   if (ANALYTICS_SITE_PATHS.has(p)) return false
-  const bare = p.slice(1)
-  if (privateSlugs.workSlugs.has(bare) || privateSlugs.noteSlugs.has(bare)) return true
 
-  return false
+  const workSlug = exactSlugAfter(p, '/selected-works/')
+  if (workSlug) return !publicSlugs.workSlugs.has(workSlug)
+
+  const noteSlug = exactSlugAfter(p, '/field-notes/')
+  if (noteSlug) return !publicSlugs.noteSlugs.has(noteSlug)
+
+  return true
 }
