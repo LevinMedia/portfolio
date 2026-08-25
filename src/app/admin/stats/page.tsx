@@ -49,6 +49,8 @@ export default function StatsAdmin() {
     return () => { cancelled = true }
   }, [range])
 
+  const maxViews = pages.length > 0 ? Math.max(...pages.map(page => page.views)) : 0
+
   return (
     <div className="space-y-6">
       <div className="flex justify-start items-center">
@@ -116,13 +118,13 @@ export default function StatsAdmin() {
               <div>
                 {pages.length === 0 && <div className="text-muted-foreground">No data</div>}
                 {pages.map((p, i) => {
-                  const maxViews = Math.max(...pages.map(page => page.views))
                   const calculatedPercent = maxViews > 0 ? (p.views / maxViews) * 100 : 0
                   // Ensure minimum 2% width for visibility (much smaller, more proportional)
                   const scaledPercent = Math.max(calculatedPercent, 2)
                   // Scale to fit within available space (leaving room for stats)
                   const availableWidth = 75 // Use 75% of container width, leaving 25% for stats
                   const finalWidth = (scaledPercent / 100) * availableWidth
+                  const displayPath = formatPath(p.path)
 
                   return (
                     <div key={i} className="relative py-2">
@@ -135,9 +137,9 @@ export default function StatsAdmin() {
                         }}
                       />
                       {/* Content */}
-                      <div className="relative flex items-center justify-between">
-                        <div className="truncate max-w-[70%] text-foreground font-medium pl-3">{p.path}</div>
-                        <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm">
+                      <div className="relative flex items-center justify-between gap-3 min-w-0">
+                        <div className="truncate text-foreground font-medium pl-3 flex-1 min-w-0">{displayPath}</div>
+                        <div className="text-muted-foreground text-sm bg-background/80 px-2 py-1 rounded-sm whitespace-nowrap flex-shrink-0">
                           {formatCount(p.uniques, 'visitor')} • {formatCount(p.views, 'view')}
                         </div>
                       </div>
@@ -162,6 +164,16 @@ function pct(n?: number) {
 function formatCount(count: number, singular: string, plural?: string) {
   const label = count === 1 ? singular : (plural ?? `${singular}s`)
   return `${count} ${label}`
+}
+
+function formatPath(path: string) {
+  if (!path) return '—'
+  if (path.startsWith('/selected-works/')) {
+    const segments = path.split('/').filter(Boolean)
+    const slug = segments[segments.length - 1]
+    return slug ? `/${slug}` : '/selected-works'
+  }
+  return path
 }
 
 function Card({ title, value, sub, delta }: { title: string, value: string | number, sub?: string, delta?: string }) {
