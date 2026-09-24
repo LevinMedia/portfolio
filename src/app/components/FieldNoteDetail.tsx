@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import { parseContentWithEmbeds } from '@/lib/gallery-markdown'
 import VideoPlayer from './VideoPlayer'
+import YouTubeEmbed from './YouTubeEmbed'
 import ImageGallery from './ImageGallery'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { useDrawerHeroTitleVisibility } from '@/app/hooks/useDrawerHeroTitleVisibility'
@@ -104,6 +105,14 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
               return (
                 <div key={index} className="my-6 md:-mx-32">
                   <VideoPlayer src={part.content} />
+                </div>
+              )
+            }
+
+            if (part.type === 'youtube') {
+              return (
+                <div key={index} className="my-6 md:-mx-32">
+                  <YouTubeEmbed videoId={part.videoId} />
                 </div>
               )
             }

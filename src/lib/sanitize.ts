@@ -1,24 +1,29 @@
 import DOMPurify from 'isomorphic-dompurify'
+import { normalizeYouTubeEmbedsInMarkdown } from './youtube'
 
 /**
  * Sanitizes markdown/HTML content to prevent XSS attacks
  * Allows safe markdown elements but strips dangerous HTML/scripts
- * Preserves custom markdown syntax like !video[alt](url) and !gallery[caption](urls)
+ * Preserves custom markdown syntax like !video[alt](url), !gallery[caption](urls),
+ * and !youtube[title](url)
  */
 export function sanitizeMarkdown(content: string): string {
   if (!content) return ''
+
+  // Turn YouTube pastes/iframes into stable !youtube markdown before any HTML strip
+  const withYouTube = normalizeYouTubeEmbedsInMarkdown(content)
   
   // Check if content contains raw markdown (like !video[], !gallery[], etc.)
   // If it's pure markdown without HTML tags, return it as-is after basic safety checks
-  const hasHtmlTags = /<[^>]+>/g.test(content)
+  const hasHtmlTags = /<[^>]+>/g.test(withYouTube)
   
   if (!hasHtmlTags) {
     // It's plain markdown - just check for dangerous protocols
-    if (content.toLowerCase().includes('javascript:') || 
-        content.toLowerCase().includes('data:text/html') ||
-        content.toLowerCase().includes('vbscript:')) {
+    if (withYouTube.toLowerCase().includes('javascript:') || 
+        withYouTube.toLowerCase().includes('data:text/html') ||
+        withYouTube.toLowerCase().includes('vbscript:')) {
       // Remove lines with dangerous protocols
-      return content
+      return withYouTube
         .split('\n')
         .filter(line => {
           const lower = line.toLowerCase()
@@ -29,11 +34,11 @@ export function sanitizeMarkdown(content: string): string {
         .join('\n')
     }
     // Safe plain markdown, return as-is
-    return content
+    return withYouTube
   }
   
   // Contains HTML tags - sanitize with DOMPurify
-  const clean = DOMPurify.sanitize(content, {
+  const clean = DOMPurify.sanitize(withYouTube, {
     ALLOWED_TAGS: [
       // Text formatting
       'p', 'br', 'strong', 'em', 'u', 's', 'del', 'ins', 'mark', 'code', 'pre',
@@ -64,7 +69,8 @@ export function sanitizeMarkdown(content: string): string {
     KEEP_CONTENT: true, // Keep text content even if tags are removed
   })
   
-  return clean
+  // DOMPurify may leave structure that still needs YouTube normalization
+  return normalizeYouTubeEmbedsInMarkdown(clean)
 }
 
 /**

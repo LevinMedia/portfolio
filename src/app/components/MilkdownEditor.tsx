@@ -12,6 +12,7 @@ import {
   findAllGalleriesInContent,
   type GalleryImage,
 } from '@/lib/gallery-markdown'
+import { buildYouTubeMarkdown, extractYouTubeVideoId } from '@/lib/youtube'
 import GalleryUploadModal from './GalleryUploadModal'
 import '@milkdown/crepe/theme/common/style.css'
 
@@ -69,6 +70,29 @@ export default function MilkdownEditor({
   useEffect(() => {
     onChangeRef.current = onChange
   }, [onChange])
+
+  // Paste a bare YouTube URL → insert stable !youtube markdown (Crepe otherwise may drop it)
+  useEffect(() => {
+    const root = editorRef.current
+    if (!root) return
+
+    const onPaste = (event: ClipboardEvent) => {
+      const text = event.clipboardData?.getData('text/plain')?.trim()
+      if (!text) return
+      // Only intercept when the clipboard is a single YouTube URL
+      if (/\s/.test(text)) return
+      const videoId = extractYouTubeVideoId(text)
+      if (!videoId || !crepeRef.current) return
+
+      event.preventDefault()
+      event.stopPropagation()
+      const markdown = buildYouTubeMarkdown(videoId)
+      crepeRef.current.editor.action(insert(`\n\n${markdown}\n\n`))
+    }
+
+    root.addEventListener('paste', onPaste, true)
+    return () => root.removeEventListener('paste', onPaste, true)
+  }, [])
 
   const uploadImage = async (file: File, folder: string) => {
     const formData = new FormData()
@@ -375,7 +399,7 @@ export default function MilkdownEditor({
               )}
             </button>
             <span className="text-xs text-muted-foreground">
-              Tip: Use / in the editor for images and galleries
+              Tip: paste a YouTube link on its own for an embed; use / for images and galleries
             </span>
           </div>
 
