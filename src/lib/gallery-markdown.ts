@@ -1,3 +1,9 @@
+import {
+  extractYouTubeVideoId,
+  findStandaloneYouTubeUrls,
+  YOUTUBE_MARKDOWN_RE,
+} from './youtube'
+
 export type GalleryImage = {
   url: string
   caption?: string
@@ -6,6 +12,7 @@ export type GalleryImage = {
 export type ContentPart =
   | { type: 'markdown'; content: string }
   | { type: 'video'; content: string; alt?: string }
+  | { type: 'youtube'; videoId: string }
   | { type: 'gallery'; images: GalleryImage[]; caption?: string }
 
 /** Legacy: separates URL from per-image caption within a pipe-delimited segment. */
@@ -148,7 +155,8 @@ export function parseContentWithEmbeds(content: string): ContentPart[] {
   const matches: Array<{ index: number; length: number; part: ContentPart }> = []
 
   let videoMatch: RegExpExecArray | null
-  while ((videoMatch = VIDEO_REGEX.exec(content)) !== null) {
+  const videoRegex = new RegExp(VIDEO_REGEX.source, 'g')
+  while ((videoMatch = videoRegex.exec(content)) !== null) {
     matches.push({
       index: videoMatch.index,
       length: videoMatch[0].length,
@@ -156,6 +164,21 @@ export function parseContentWithEmbeds(content: string): ContentPart[] {
         type: 'video',
         content: videoMatch[2],
         alt: videoMatch[1],
+      },
+    })
+  }
+
+  let youtubeEmbedMatch: RegExpExecArray | null
+  const youtubeRegex = new RegExp(YOUTUBE_MARKDOWN_RE.source, 'g')
+  while ((youtubeEmbedMatch = youtubeRegex.exec(content)) !== null) {
+    const videoId = extractYouTubeVideoId(youtubeEmbedMatch[2])
+    if (!videoId) continue
+    matches.push({
+      index: youtubeEmbedMatch.index,
+      length: youtubeEmbedMatch[0].length,
+      part: {
+        type: 'youtube',
+        videoId,
       },
     })
   }
@@ -172,12 +195,29 @@ export function parseContentWithEmbeds(content: string): ContentPart[] {
     })
   }
 
+  for (const yt of findStandaloneYouTubeUrls(content)) {
+    // Skip if this range already covered by !youtube[...](...)
+    const overlaps = matches.some(
+      (m) => yt.index < m.index + m.length && yt.index + yt.length > m.index,
+    )
+    if (overlaps) continue
+    matches.push({
+      index: yt.index,
+      length: yt.length,
+      part: {
+        type: 'youtube',
+        videoId: yt.videoId,
+      },
+    })
+  }
+
   matches.sort((a, b) => a.index - b.index)
 
   const parts: ContentPart[] = []
   let lastIndex = 0
 
   for (const item of matches) {
+    if (item.index < lastIndex) continue
     if (item.index > lastIndex) {
       parts.push({ type: 'markdown', content: content.substring(lastIndex, item.index) })
     }

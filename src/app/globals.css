@@ -3203,6 +3203,31 @@ body > div[style*="position: fixed"] * {
   box-shadow: var(--chrome-shadow-media);
 }
 
+/* YouTube embeds — match chrome media framing */
+.youtube-embed {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+  border-radius: var(--chrome-radius-media, 12px);
+  box-shadow: var(--chrome-shadow-media, none);
+}
+
+.youtube-embed__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-media .youtube-embed {
+  border-radius: var(--chrome-radius-media) !important;
+  box-shadow: var(--chrome-shadow-media) !important;
+}
+
 #c64-site-root .drawer-container.drawer-chrome .video-js {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif !important;
 }
