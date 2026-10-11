@@ -28,6 +28,7 @@ import {
   c64DrawerHintClass,
   c64DrawerStackClass,
 } from '@/lib/c64-drawer-classes'
+import { usePrivateIndex } from './PrivateIndexProvider'
 
 const ACCENT_OPTIONS: { id: C64Accent; label: string }[] = [
   { id: 'classic', label: 'Classic' },
@@ -53,6 +54,7 @@ const BOOT_OPTIONS: { id: C64BootMode; label: string; hint: string }[] = [
 
 export default function SiteSettingsContent() {
   const router = useRouter()
+  const { clear: clearPrivateIndex } = usePrivateIndex()
   const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [showSignOut, setShowSignOut] = useState(false)
@@ -98,6 +100,7 @@ export default function SiteSettingsContent() {
     }
     clearSelectedWorksCache()
     sessionStorage.removeItem('admin_user')
+    clearPrivateIndex()
     router.push('/')
   }
 

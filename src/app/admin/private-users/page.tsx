@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { KeyIcon, PlusIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+import { KeyIcon, PlusIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import Button from '@/app/components/Button'
 import Input from '@/app/components/ui/Input'
 
@@ -25,6 +26,7 @@ interface PasswordAccessEntry {
   is_active: boolean
   created_at: string
   last_login: string | null
+  index_enabled?: boolean
   signInCount?: number
   pageViewCount?: number
   lastSignInAt?: string | null
@@ -34,6 +36,7 @@ interface PasswordAccessEntry {
 }
 
 export default function PasswordAccessAdmin() {
+  const router = useRouter()
   const [entries, setEntries] = useState<PasswordAccessEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -186,7 +189,8 @@ export default function PasswordAccessAdmin() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Create labeled passwords for private featured work. Share{' '}
-          <span className="font-mono">/access</span> with viewers — they only need the password.
+          <span className="font-mono">/access</span> with viewers — they only need the password. Each
+          password can optionally have its own Index page.
         </p>
       </div>
 
@@ -243,6 +247,7 @@ export default function PasswordAccessAdmin() {
                     <p className="text-xs text-muted-foreground">
                       Added {formatDate(entry.created_at)}
                       {entry.last_login ? ` · Last sign-in ${formatDate(entry.last_login)}` : ''}
+                      {entry.index_enabled ? ' · Index on' : ''}
                       {(entry.signInCount ?? 0) > 0 && (
                         <>
                           {' '}
@@ -257,6 +262,16 @@ export default function PasswordAccessAdmin() {
                     {!entry.is_active && (
                       <span className="text-xs text-muted-foreground">Inactive</span>
                     )}
+                    <Button
+                      type="button"
+                      style="outline"
+                      color="primary"
+                      size="small"
+                      onClick={() => router.push(`/admin/private-users/${entry.id}`)}
+                      iconLeft={<DocumentTextIcon className="w-4 h-4" />}
+                    >
+                      {entry.index_enabled ? 'Edit Index' : 'Add Index'}
+                    </Button>
                     <Button
                       type="button"
                       style="outline"

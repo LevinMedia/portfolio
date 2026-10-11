@@ -1,18 +1,18 @@
 'use client'
 
 import { use, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import FieldNoteDetail from '@/app/components/FieldNoteDetail'
 import Drawer from '@/app/components/Drawer'
 import Navigation from '@/app/components/Navigation'
 import { usePageTitle } from '@/app/hooks/usePageTitle'
+import { useStandaloneDrawer } from '@/app/components/PrivateIndexProvider'
 
 /** Legacy bottom bar; off on full-bleed note pages for now. Flip to true to restore. */
 const SHOW_LEGACY_FOOTER_NAV = false
 
 export default function FieldNotePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  const router = useRouter()
+  const { isOpen, goToList, handleClose, goHome } = useStandaloneDrawer('/?field-notes=true')
   const [noteTitle, setNoteTitle] = useState<string>('')
   const [isTitleVisible, setIsTitleVisible] = useState(true)
 
@@ -24,22 +24,14 @@ export default function FieldNotePage({ params }: { params: Promise<{ slug: stri
     setIsTitleVisible(true)
   }, [slug])
 
-  const handleClose = () => {
-    router.push('/?field-notes=true')
-  }
-
-  const goHome = () => {
-    router.push('/')
-  }
-
   return (
     <div className="chrome-standalone-page relative min-h-screen min-h-[100dvh] bg-[var(--chrome-bg-solid,#f5f5f7)]">
       <Drawer
-        isOpen={true}
+        isOpen={isOpen}
         onClose={handleClose}
         breadcrumbs={[
           { label: 'Home', onClick: goHome },
-          { label: 'Field notes', onClick: handleClose },
+          { label: 'Field notes', onClick: goToList },
           {
             label: noteTitle,
             current: true,

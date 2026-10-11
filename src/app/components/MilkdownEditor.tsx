@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Crepe } from '@milkdown/crepe'
-import { commandsCtx } from '@milkdown/kit/core'
+import { commandsCtx, editorViewCtx } from '@milkdown/kit/core'
 import { clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark'
 import { insert, replaceAll } from '@milkdown/utils'
 import { ADMIN_VIDEO_MAX_BYTES } from '@/lib/admin-video-upload'
@@ -71,23 +71,50 @@ export default function MilkdownEditor({
     onChangeRef.current = onChange
   }, [onChange])
 
-  // Paste a bare YouTube URL → insert stable !youtube markdown (Crepe otherwise may drop it)
+  // Paste a bare YouTube URL → insert stable !youtube markdown (Crepe otherwise may drop it).
+  // Only on an empty top-level paragraph. Inside a list, heading, or existing text, leave the paste
+  // alone so it becomes a normal link. Forcing a block embed there crashes ProseMirror.
   useEffect(() => {
     const root = editorRef.current
     if (!root) return
 
     const onPaste = (event: ClipboardEvent) => {
       const text = event.clipboardData?.getData('text/plain')?.trim()
-      if (!text) return
-      // Only intercept when the clipboard is a single YouTube URL
-      if (/\s/.test(text)) return
+      if (!text || /\s/.test(text)) return
       const videoId = extractYouTubeVideoId(text)
-      if (!videoId || !crepeRef.current) return
+      const crepe = crepeRef.current
+      if (!videoId || !crepe) return
+
+      let canEmbed = false
+      try {
+        canEmbed = crepe.editor.action((ctx) => {
+          const view = ctx.get(editorViewCtx)
+          const { $from, empty } = view.state.selection
+          if (!empty) return false
+          if ($from.depth !== 1) return false
+          if ($from.parent.type.name !== 'paragraph') return false
+          return $from.parent.textContent.length === 0
+        })
+      } catch {
+        canEmbed = false
+      }
+      if (!canEmbed) return
 
       event.preventDefault()
       event.stopPropagation()
-      const markdown = buildYouTubeMarkdown(videoId)
-      crepeRef.current.editor.action(insert(`\n\n${markdown}\n\n`))
+      try {
+        crepe.editor.action(insert(buildYouTubeMarkdown(videoId)))
+      } catch (err) {
+        console.error('YouTube embed insert failed:', err)
+        try {
+          crepe.editor.action((ctx) => {
+            const view = ctx.get(editorViewCtx)
+            view.dispatch(view.state.tr.insertText(text))
+          })
+        } catch (fallbackErr) {
+          console.error('YouTube URL paste fallback failed:', fallbackErr)
+        }
+      }
     }
 
     root.addEventListener('paste', onPaste, true)

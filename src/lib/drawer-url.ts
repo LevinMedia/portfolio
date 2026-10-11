@@ -24,3 +24,19 @@ export function canonicalDrawerSearch(params: ReadonlyURLSearchParams): string |
 
   return changed ? next.toString() : null
 }
+
+/** Query keys that open a drawer over the home screen. */
+export const HOME_DRAWER_PARAMS = [
+  'work-history',
+  'about',
+  'selected-works',
+  'field-notes',
+  'site-settings',
+  'guestbook',
+  'stats',
+  'sign-in',
+] as const
+
+export function hasOpenHomeDrawer(params: ReadonlyURLSearchParams): boolean {
+  return HOME_DRAWER_PARAMS.some((key) => isDrawerParamOpen(params, key))
+}

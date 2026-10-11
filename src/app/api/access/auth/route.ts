@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import { createAuthCookie } from '@/lib/auth-cookie'
 import { displayPrivateAccessLabel } from '@/lib/private-access'
+import { hasPrivateIndex, type PrivateIndexRow } from '@/lib/private-index'
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       const res = NextResponse.json({
         label,
         access_role: 'private',
+        has_index: hasPrivateIndex(matched as PrivateIndexRow),
       })
       res.headers.set('Set-Cookie', cookie)
       return res

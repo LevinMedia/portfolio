@@ -55,6 +55,13 @@ CREATE TABLE IF NOT EXISTS admin_users (
 -- Human-readable label for password-only private access accounts
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS label TEXT;
 
+-- Optional bespoke "Index" page per password-access entry (see migrations/2026_10_10_private_access_index.sql)
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_title TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_content TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_logo_url TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_header_title TEXT;
+
 -- Setup state tracking table
 CREATE TABLE IF NOT EXISTS setup_state (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

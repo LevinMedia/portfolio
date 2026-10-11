@@ -19,6 +19,7 @@ import type { SelectedWorkServer } from '@/lib/selected-works-server'
 import type { PortfolioCoverImage } from '@/lib/portfolio-cover-images-server'
 import { defaultC64Settings, loadC64Settings } from '@/lib/c64-settings'
 import { canonicalDrawerSearch, isDrawerParamOpen } from '@/lib/drawer-url'
+import { usePrivateIndex } from './PrivateIndexProvider'
 
 interface HomePageClientProps {
   initialSelectedWorks: SelectedWorkServer[]
@@ -32,6 +33,7 @@ export default function HomePageClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const c64Ref = useRef<C64AuthenticHomeScreenHandle>(null)
+  const privateIndex = usePrivateIndex()
   const [isWorkHistoryOpen, setIsWorkHistoryOpen] = useState(() =>
     isDrawerParamOpen(searchParams, 'work-history'),
   )
@@ -77,6 +79,7 @@ export default function HomePageClient({
     : isGuestbookOpen ? 'Guestbook'
     : isStatsOpen ? 'Stats'
     : isSignInOpen ? 'Sign In'
+    : privateIndex.isOnTop ? privateIndex.index?.title ?? null
     : null
 
   usePageTitle(pageTitle)
@@ -172,6 +175,9 @@ export default function HomePageClient({
     isStatsOpen ||
     isSignInOpen
 
+  /** Home screen is hidden behind a drawer or the password-access Index. */
+  const homeCovered = siteDrawerOpen || privateIndex.isOpen
+
   const openSection = (key: string) => {
     switch (key) {
       case 'about':
@@ -209,14 +215,15 @@ export default function HomePageClient({
       data-c64-scanlines={scanlinesAttr}
       suppressHydrationWarning
     >
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+      {/* No z-index here: drawers must share a stacking context with the Index overlay in the site layout. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <div
-          inert={siteDrawerOpen ? true : undefined}
-          className="flex min-h-0 min-w-0 flex-1 flex-col"
+          inert={homeCovered || privateIndex.isPending ? true : undefined}
+          className="isolate flex min-h-0 min-w-0 flex-1 flex-col"
         >
           <C64AuthenticHomeScreen
             ref={c64Ref}
-            siteDrawerOpen={siteDrawerOpen}
+            siteDrawerOpen={homeCovered}
             onOpenAbout={() => openSection('about')}
             onOpenWorkHistory={() => openSection('work-history')}
             onOpenSelectedWorks={() => openSection('selected-works')}
