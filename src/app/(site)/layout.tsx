@@ -1,6 +1,7 @@
 import { VT323 } from 'next/font/google'
 import localFont from 'next/font/local'
 import C64SettingsApplier from '@/app/components/C64SettingsApplier'
+import PrivateIndexProvider from '@/app/components/PrivateIndexProvider'
 import { C64_INLINE_THEME_VARS_JSON } from '@/lib/c64-settings'
 
 const vt323 = VT323({
@@ -81,7 +82,7 @@ export default function SiteLayout({
     >
       <script dangerouslySetInnerHTML={{ __html: C64_INLINE_INIT }} />
       <C64SettingsApplier />
-      {children}
+      <PrivateIndexProvider>{children}</PrivateIndexProvider>
     </div>
     </>
   )

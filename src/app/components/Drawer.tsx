@@ -20,6 +20,13 @@ interface DrawerProps {
   linkedInUrl?: string
   contentPadding?: string
   maxWidth?: string
+  /**
+   * Another overlay is stacked on top (e.g. the password-access Index under a work page).
+   * The drawer stays open and painted, but gives up focus, Escape and Tab handling.
+   */
+  covered?: boolean
+  /** Overrides the header logo's default "go home" navigation. */
+  onLogoClick?: () => void
   children: React.ReactNode
 }
 
@@ -33,9 +40,13 @@ const Drawer: React.FC<DrawerProps> = ({
   linkedInUrl,
   contentPadding = 'p-4',
   maxWidth = 'max-w-2xl',
+  covered = false,
+  onLogoClick,
   children,
 }) => {
   const isFlushPage = contentPadding === 'p-0'
+  /** Open and topmost — owns keyboard + focus. */
+  const isActive = isOpen && !covered
   const [headerScrolled, setHeaderScrolled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -111,7 +122,7 @@ const Drawer: React.FC<DrawerProps> = ({
   }, [isOpen, syncHeaderShadow, measureScrollShadowThreshold, children])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isActive) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
       const drawer = scrollRef.current
@@ -139,9 +150,10 @@ const Drawer: React.FC<DrawerProps> = ({
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [isOpen])
+  }, [isActive])
 
   useEffect(() => {
+    if (covered) return undefined
     if (!isOpen) {
       const restore = previousFocusRef.current
       previousFocusRef.current = null
@@ -161,7 +173,7 @@ const Drawer: React.FC<DrawerProps> = ({
     return () => {
       window.clearTimeout(timer)
     }
-  }, [isOpen, children])
+  }, [isOpen, covered, children])
 
   useEffect(() => {
     if (isOpen) {
@@ -176,7 +188,7 @@ const Drawer: React.FC<DrawerProps> = ({
   }, [isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isActive) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' && e.key !== 'Esc') return
       const el = e.target
@@ -191,7 +203,7 @@ const Drawer: React.FC<DrawerProps> = ({
     }
     document.addEventListener('keydown', onKeyDown, true)
     return () => document.removeEventListener('keydown', onKeyDown, true)
-  }, [isOpen, onClose])
+  }, [isActive, onClose])
 
   return (
     <>
@@ -212,10 +224,10 @@ const Drawer: React.FC<DrawerProps> = ({
           overflowY: 'auto',
           zIndex: 10,
         }}
-        inert={!isOpen ? true : undefined}
-        aria-hidden={!isOpen}
+        inert={!isActive ? true : undefined}
+        aria-hidden={!isActive}
         role="dialog"
-        aria-modal={isOpen ? true : undefined}
+        aria-modal={isActive ? true : undefined}
       >
         <div
           className={`c64-drawer-header flex items-center justify-between sticky top-0 z-40 ${
@@ -228,7 +240,7 @@ const Drawer: React.FC<DrawerProps> = ({
                 {icon}
               </div>
             ) : (
-              <ChromeDrawerLogo />
+              <ChromeDrawerLogo onClick={onLogoClick} />
             )}
             {breadcrumbs ? (
               <ChromeDrawerBreadcrumbs items={breadcrumbs} />

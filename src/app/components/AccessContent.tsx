@@ -8,6 +8,7 @@ import SignInCoverGrid from './SignInCoverGrid'
 import { clsx } from 'clsx'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import ButtonSpinner from './ButtonSpinner'
+import { usePrivateIndex } from './PrivateIndexProvider'
 import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
 import {
   c64DrawerBtnSelectedClass,
@@ -26,6 +27,7 @@ export default function AccessContent({ coverImages }: AccessContentProps) {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ password?: string }>({})
   const router = useRouter()
+  const { refresh: refreshPrivateIndex } = usePrivateIndex()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,7 +72,9 @@ export default function AccessContent({ coverImages }: AccessContentProps) {
         'admin_user',
         JSON.stringify({ label: data.label, access_role: data.access_role }),
       )
-      router.push('/?selected-works=true')
+      // Entries with a bespoke Index land on it; everyone else goes to featured work as before.
+      const index = data.has_index ? await refreshPrivateIndex({ open: true }) : null
+      router.push(index ? '/' : '/?selected-works=true')
     } catch {
       setError('An error occurred. Please try again.')
     } finally {

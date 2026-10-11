@@ -3,7 +3,12 @@
 import { useRouter } from 'next/navigation'
 import LevinMediaLogo from './LevinMediaLogo'
 
-export default function ChromeDrawerLogo() {
+interface ChromeDrawerLogoProps {
+  /** Replaces the default "go to /" behavior. */
+  onClick?: () => void
+}
+
+export default function ChromeDrawerLogo({ onClick }: ChromeDrawerLogoProps) {
   const router = useRouter()
 
   return (
@@ -11,7 +16,7 @@ export default function ChromeDrawerLogo() {
       type="button"
       className="chrome-drawer-logo"
       aria-label="Home"
-      onClick={() => router.push('/', { scroll: false })}
+      onClick={onClick ?? (() => router.push('/', { scroll: false }))}
     >
       <LevinMediaLogo size={36} fillBackground className="chrome-drawer-logo__mark" />
     </button>

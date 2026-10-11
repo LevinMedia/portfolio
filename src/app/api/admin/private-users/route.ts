@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import { getAuthCookiePayload } from '@/lib/auth-cookie'
 import { displayPrivateAccessLabel, makePrivateAccessIdentity } from '@/lib/private-access'
+import { sanitizeMarkdown, sanitizeText, sanitizeUrl } from '@/lib/sanitize'
+import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 
 /** Returns auth payload if the request is from an admin; otherwise null. */
 async function requireAdmin() {
@@ -30,7 +32,35 @@ async function passwordInUse(
   return false
 }
 
-export async function GET() {
+type PrivateUserRow = {
+  id: string
+  email?: string | null
+  username?: string | null
+  label?: string | null
+  is_active?: boolean | null
+  created_at?: string | null
+  last_login?: string | null
+  index_enabled?: boolean | null
+  index_title?: string | null
+  index_content?: string | null
+  index_logo_url?: string | null
+}
+
+/** List shape; never includes password_hash. Index columns may be absent before the migration runs. */
+function toListEntry(user: PrivateUserRow) {
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    username: user.username ?? '',
+    label: displayPrivateAccessLabel(user),
+    is_active: user.is_active ?? true,
+    created_at: user.created_at ?? null,
+    last_login: user.last_login ?? null,
+    index_enabled: user.index_enabled === true,
+  }
+}
+
+export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdmin()
     if (!admin) {
@@ -42,9 +72,35 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
 
+    const id = new URL(request.url).searchParams.get('id')
+    if (id) {
+      const { data: user, error: userError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('id', id)
+        .eq('access_role', 'private')
+        .maybeSingle()
+
+      if (userError) {
+        console.error('Error fetching password access entry:', userError)
+        return NextResponse.json({ error: userError.message }, { status: 500 })
+      }
+      if (!user) {
+        return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
+      }
+
+      const row = user as PrivateUserRow
+      return NextResponse.json({
+        ...toListEntry(row),
+        index_title: row.index_title ?? '',
+        index_content: row.index_content ?? '',
+        index_logo_url: row.index_logo_url ?? '',
+      })
+    }
+
     const { data, error } = await supabase
       .from('admin_users')
-      .select('id, email, username, label, is_active, created_at, last_login')
+      .select('*')
       .eq('access_role', 'private')
       .order('created_at', { ascending: false })
 
@@ -53,12 +109,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const users = (data ?? []).map((user) => ({
-      ...user,
-      label: displayPrivateAccessLabel(user),
-    }))
-
-    return NextResponse.json(users)
+    return NextResponse.json(((data ?? []) as PrivateUserRow[]).map(toListEntry))
   } catch (err) {
     console.error('Error in private-users GET:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -123,14 +174,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({
-      ...user,
-      label: displayPrivateAccessLabel(user),
-    })
+    return NextResponse.json(toListEntry(user as PrivateUserRow))
   } catch (err) {
     console.error('Error in private-users POST:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+/** Save the optional bespoke Index page for a password-access entry. */
+async function updateIndex(id: string, index: Record<string, unknown>) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+
+  const { data: user, error: fetchError } = await supabase
+    .from('admin_users')
+    .select('id, access_role')
+    .eq('id', id)
+    .single()
+
+  if (fetchError || !user || (user as { access_role?: string }).access_role !== 'private') {
+    return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
+  }
+
+  const enabled = index.enabled === true
+  const title = sanitizeText(typeof index.title === 'string' ? index.title : '')
+  const content = sanitizeMarkdown(
+    normalizeLiteralHtmlBreaksInMarkdown(typeof index.content === 'string' ? index.content : ''),
+  )
+  const logoUrl = sanitizeUrl(typeof index.logo_url === 'string' ? index.logo_url : '')
+
+  if (enabled && !content.trim()) {
+    return NextResponse.json(
+      { error: 'Add some content before turning the Index on' },
+      { status: 400 },
+    )
+  }
+
+  const { error: updateError } = await supabase
+    .from('admin_users')
+    .update({
+      index_enabled: enabled,
+      index_title: title || null,
+      index_content: content || null,
+      index_logo_url: logoUrl || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (updateError) {
+    console.error('Error updating password access index:', updateError)
+    const missingColumn = /index_(enabled|title|content|logo_url)/.test(updateError.message)
+    return NextResponse.json(
+      {
+        error: missingColumn
+          ? 'Index columns are missing. Run db/migrations/2026_10_10_private_access_index.sql in Supabase first.'
+          : updateError.message,
+      },
+      { status: 500 },
+    )
+  }
+
+  return NextResponse.json({ success: true })
 }
 
 export async function PATCH(request: NextRequest) {
@@ -140,7 +246,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id, newPassword } = await request.json()
+    const body = await request.json()
+    const { id, newPassword } = body
+    if (id && body.index && typeof body.index === 'object') {
+      return updateIndex(String(id), body.index as Record<string, unknown>)
+    }
     if (!id || !newPassword) {
       return NextResponse.json(
         { error: 'Entry id and new password are required' },
