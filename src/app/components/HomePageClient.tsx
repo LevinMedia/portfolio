@@ -218,7 +218,7 @@ export default function HomePageClient({
       {/* No z-index here: drawers must share a stacking context with the Index overlay in the site layout. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
-          inert={homeCovered ? true : undefined}
+          inert={homeCovered || privateIndex.isPending ? true : undefined}
           className="isolate flex min-h-0 min-w-0 flex-1 flex-col"
         >
           <C64AuthenticHomeScreen

@@ -30,6 +30,9 @@ interface DrawerProps {
   children: React.ReactNode
 }
 
+/** Drawers can stack (page over the password-access Index); the body unlocks when the last one closes. */
+let openDrawerCount = 0
+
 const Drawer: React.FC<DrawerProps> = ({
   isOpen,
   onClose,
@@ -176,14 +179,13 @@ const Drawer: React.FC<DrawerProps> = ({
   }, [isOpen, covered, children])
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
+    if (!isOpen) return undefined
+    openDrawerCount += 1
+    document.body.style.overflow = 'hidden'
 
     return () => {
-      document.body.style.overflow = 'unset'
+      openDrawerCount -= 1
+      if (openDrawerCount === 0) document.body.style.overflow = 'unset'
     }
   }, [isOpen])
 

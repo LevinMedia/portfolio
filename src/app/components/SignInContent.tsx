@@ -8,6 +8,7 @@ import SignInCoverGrid from './SignInCoverGrid'
 import { clsx } from 'clsx'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import ButtonSpinner from './ButtonSpinner'
+import { usePrivateIndex } from './PrivateIndexProvider'
 import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
 import {
   c64DrawerBtnSelectedClass,
@@ -33,6 +34,7 @@ export default function SignInContent({ coverImages }: SignInContentProps) {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const router = useRouter()
+  const { refresh: refreshPrivateIndex } = usePrivateIndex()
 
   useEffect(() => {
     const checkAdminExists = async () => {
@@ -108,6 +110,8 @@ export default function SignInContent({ coverImages }: SignInContentProps) {
       }
 
       sessionStorage.setItem('admin_user', JSON.stringify(data))
+      // The cookie now belongs to this account; drop any previous viewer's Index.
+      await refreshPrivateIndex()
       if (data.access_role === 'admin') {
         router.push('/admin')
       } else {

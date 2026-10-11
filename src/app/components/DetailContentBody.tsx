@@ -30,6 +30,8 @@ function toInternalHref(href: string | undefined): string | null {
     const host = url.hostname.replace(/^www\./, '')
     if (url.origin !== window.location.origin && host !== 'levinmedia.com') return null
     if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/api')) return null
+    // Files (PDFs, images) are not app routes; let them open in a new tab like external links.
+    if (/\.[a-z0-9]+$/i.test(url.pathname)) return null
     return `${url.pathname}${url.search}${url.hash}`
   } catch {
     return null

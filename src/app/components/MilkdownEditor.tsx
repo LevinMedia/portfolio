@@ -106,10 +106,14 @@ export default function MilkdownEditor({
         crepe.editor.action(insert(buildYouTubeMarkdown(videoId)))
       } catch (err) {
         console.error('YouTube embed insert failed:', err)
-        crepe.editor.action((ctx) => {
-          const view = ctx.get(editorViewCtx)
-          view.dispatch(view.state.tr.insertText(text))
-        })
+        try {
+          crepe.editor.action((ctx) => {
+            const view = ctx.get(editorViewCtx)
+            view.dispatch(view.state.tr.insertText(text))
+          })
+        } catch (fallbackErr) {
+          console.error('YouTube URL paste fallback failed:', fallbackErr)
+        }
       }
     }
 

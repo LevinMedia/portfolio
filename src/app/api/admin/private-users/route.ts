@@ -47,6 +47,8 @@ type PrivateUserRow = {
   index_header_title?: string | null
 }
 
+const LIST_COLUMNS = 'id, email, username, label, is_active, created_at, last_login'
+
 /** List shape; never includes password_hash. Index columns may be absent before the migration runs. */
 function toListEntry(user: PrivateUserRow) {
   return {
@@ -100,18 +102,25 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('access_role', 'private')
-      .order('created_at', { ascending: false })
+    const list = (columns: string) =>
+      supabase
+        .from('admin_users')
+        .select(columns)
+        .eq('access_role', 'private')
+        .order('created_at', { ascending: false })
+
+    let { data, error } = await list(`${LIST_COLUMNS}, index_enabled`)
+    // Before the Index migration runs the column is missing; list without it.
+    if (error && /index_enabled/.test(error.message)) {
+      ;({ data, error } = await list(LIST_COLUMNS))
+    }
 
     if (error) {
       console.error('Error fetching password access entries:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(((data ?? []) as PrivateUserRow[]).map(toListEntry))
+    return NextResponse.json(((data ?? []) as unknown as PrivateUserRow[]).map(toListEntry))
   } catch (err) {
     console.error('Error in private-users GET:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -253,6 +262,12 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { id, newPassword } = body
     if (id && body.index && typeof body.index === 'object') {
+      if (newPassword) {
+        return NextResponse.json(
+          { error: 'Update the Index and the password in separate requests' },
+          { status: 400 },
+        )
+      }
       return updateIndex(String(id), body.index as Record<string, unknown>)
     }
     if (!id || !newPassword) {

@@ -28,6 +28,8 @@ interface PrivateIndexContextValue {
   isOpen: boolean
   /** Index overlay is open and nothing is stacked over it. */
   isOnTop: boolean
+  /** A password-access viewer's Index is still loading; the home screen waits for it. */
+  isPending: boolean
   /** A standalone page is sliding away to reveal the Index. */
   isLeaving: boolean
   /** Whether the Index was the visible page just before the current navigation. */
@@ -46,6 +48,7 @@ const PrivateIndexContext = createContext<PrivateIndexContextValue>({
   index: null,
   isOpen: false,
   isOnTop: false,
+  isPending: false,
   isLeaving: false,
   wasOnTop: () => false,
   getReturnHref: () => '/',
@@ -63,7 +66,8 @@ export function usePrivateIndex(): PrivateIndexContextValue {
  * With no Index underneath it is simply open, as before. When the viewer came straight
  * from their Index, the drawer slides up over it and slides back down on the way out.
  */
-export function useStandaloneDrawer() {
+export function useStandaloneDrawer(listHref: string) {
+  const router = useRouter()
   const { isOpen: indexOpen, isLeaving, wasOnTop, getReturnHref, leaveTo } = usePrivateIndex()
   const [entered, setEntered] = useState(() => !wasOnTop())
 
@@ -81,10 +85,13 @@ export function useStandaloneDrawer() {
 
   return {
     isOpen: entered && !isLeaving,
-    /** Index is open underneath this page. */
-    indexOpen,
-    getReturnHref,
-    leaveTo,
+    goToList: () => router.push(listHref),
+    /** Opened from a password-access Index: close back to it (or to whichever home drawer led here). */
+    handleClose: () => {
+      if (indexOpen) leaveTo(getReturnHref())
+      else router.push(listHref)
+    },
+    goHome: () => leaveTo('/'),
   }
 }
 
@@ -101,6 +108,15 @@ function readStoredOpen(): boolean {
     return sessionStorage.getItem(OPEN_STORAGE_KEY) !== '0'
   } catch {
     return true
+  }
+}
+
+/** Sign-in leaves a password-access marker in sessionStorage; only those viewers can have an Index. */
+function hasPrivateSession(): boolean {
+  try {
+    return JSON.parse(sessionStorage.getItem('admin_user') ?? 'null')?.access_role === 'private'
+  } catch {
+    return false
   }
 }
 
@@ -134,6 +150,7 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
   const [wantOpen, setWantOpen] = useState(true)
   const [location, setLocation] = useState({ search: '', drawerOpen: false })
   const [isLeaving, setIsLeaving] = useState(false)
+  const [isPending, setIsPending] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const leaveTimerRef = useRef<number | null>(null)
 
@@ -148,8 +165,9 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
 
   useEffect(() => {
     isOpenRef.current = isOpen
-    wasOnTopRef.current = isOnTop
-  }, [isOpen, isOnTop])
+    // Only tracked on home, so a destination page that suspends before its first render still sees it.
+    if (pathname === '/') wasOnTopRef.current = isOnTop
+  }, [isOpen, isOnTop, pathname])
 
   useEffect(() => {
     if (pathname !== '/') return
@@ -186,7 +204,8 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
 
   useEffect(() => {
     setWantOpen(readStoredOpen())
-    void refresh()
+    setIsPending(hasPrivateSession())
+    void refresh().finally(() => setIsPending(false))
   }, [refresh])
 
   const clear = useCallback(() => {
@@ -252,6 +271,7 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
       index,
       isOpen,
       isOnTop,
+      isPending,
       isLeaving,
       wasOnTop: () => wasOnTopRef.current,
       getReturnHref: () => returnHrefRef.current,
@@ -259,7 +279,7 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
       clear,
       leaveTo,
     }),
-    [index, isOpen, isOnTop, isLeaving, refresh, clear, leaveTo],
+    [index, isOpen, isOnTop, isPending, isLeaving, refresh, clear, leaveTo],
   )
 
   return (
