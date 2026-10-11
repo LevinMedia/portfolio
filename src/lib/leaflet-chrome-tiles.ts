@@ -24,25 +24,28 @@ function recolorTerrainByLuma(
   }
 }
 
-/** Dark glyphs / lines → ink (light basemap labels). */
-function recolorDarkLabelPixels(
-  data: Uint8ClampedArray,
-  ink: { r: number; g: number; b: number },
-  minAlpha: number,
-  lumaCutoff: number,
-) {
+type Rgb = { r: number; g: number; b: number }
+
+// Carto light_only_labels: glyphs sit around luma 70–145, their halo is near-white.
+const LABEL_GLYPH_LUMA = 150
+const LABEL_HALO_LUMA = 236
+
+/**
+ * Dark glyphs → ink, white halo → transparent (labels cross both land and ocean, so no
+ * single halo colour works). Fades by luma instead of thresholding so glyph antialiasing
+ * survives and no white fringe is left.
+ */
+function recolorLabelPixels(data: Uint8ClampedArray, ink: Rgb) {
+  const range = LABEL_HALO_LUMA - LABEL_GLYPH_LUMA
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3]
-    if (a < minAlpha) continue
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-    const y = 0.299 * r + 0.587 * g + 0.114 * b
-    if (y < lumaCutoff) {
-      data[i] = ink.r
-      data[i + 1] = ink.g
-      data[i + 2] = ink.b
-    }
+    if (a === 0) continue
+    const y = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+    const t = Math.min(1, Math.max(0, (LABEL_HALO_LUMA - y) / range))
+    data[i] = ink.r
+    data[i + 1] = ink.g
+    data[i + 2] = ink.b
+    data[i + 3] = a * t
   }
 }
 
@@ -66,12 +69,18 @@ function createThemedRasterLayer(
       const img = new Image()
       img.crossOrigin = 'anonymous'
       img.onload = () => {
+        // Match the backing store to the source (@2x on retina) so tiles aren't downsampled;
+        // Leaflet sizes the element in CSS.
+        const w = img.naturalWidth || size.x
+        const h = img.naturalHeight || size.y
+        tile.width = w
+        tile.height = h
         try {
-          ctx.drawImage(img, 0, 0, size.x, size.y)
-          recolor(ctx, size.x, size.y)
+          ctx.drawImage(img, 0, 0, w, h)
+          recolor(ctx, w, h)
         } catch {
-          ctx.clearRect(0, 0, size.x, size.y)
-          ctx.drawImage(img, 0, 0, size.x, size.y)
+          ctx.clearRect(0, 0, w, h)
+          ctx.drawImage(img, 0, 0, w, h)
         }
         finish(undefined, tile)
       }
@@ -127,31 +136,16 @@ export function createChromeBasemapLayer(
 export function createChromeLabelLayer(mode: ChromeMapMode, inkCss: string): L.TileLayer {
   const ink = parseCssColorToRgb(inkCss)
 
-  if (mode === 'light') {
-    const layer = createThemedRasterLayer(
-      cartoTileUrl('light_only_labels'),
-      'leaflet-chrome-label-tiles',
-      (ctx, w, h) => {
-        const imageData = ctx.getImageData(0, 0, w, h)
-        recolorDarkLabelPixels(imageData.data, ink, 18, 130)
-        ctx.putImageData(imageData, 0, 0)
-      },
-    )
-    layer.options.attribution = ''
-    layer.options.opacity = 0.92
-    return layer
-  }
-
   const layer = createThemedRasterLayer(
     cartoTileUrl('light_only_labels'),
     'leaflet-chrome-label-tiles',
     (ctx, w, h) => {
       const imageData = ctx.getImageData(0, 0, w, h)
-      recolorDarkLabelPixels(imageData.data, ink, 18, 130)
+      recolorLabelPixels(imageData.data, ink)
       ctx.putImageData(imageData, 0, 0)
     },
   )
   layer.options.attribution = ''
-  layer.options.opacity = 0.9
+  layer.options.opacity = mode === 'light' ? 0.92 : 1
   return layer
 }

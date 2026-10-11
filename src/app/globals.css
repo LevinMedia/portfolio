@@ -1734,7 +1734,7 @@ body > div[style*="position: fixed"] * {
   --chrome-blur: blur(40px) saturate(180%);
   --chrome-map-ocean: #1c1c1e;
   --chrome-map-land: #3a3a3c;
-  --chrome-map-label: #98989d;
+  --chrome-map-label: #aeaeb2;
   --chrome-chart-views: #64b5ff;
   --chrome-chart-visitors: #30d158;
 }
