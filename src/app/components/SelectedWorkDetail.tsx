@@ -8,6 +8,7 @@ import { parseContentWithEmbeds } from '@/lib/gallery-markdown'
 import VideoPlayer from './VideoPlayer'
 import YouTubeEmbed from './YouTubeEmbed'
 import ImageGallery from './ImageGallery'
+import ZoomableImage from './ZoomableImage'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { useDrawerHeroTitleVisibility } from '@/app/hooks/useDrawerHeroTitleVisibility'
 
@@ -150,13 +151,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
                       if (!src) return null
                       return (
                         <div className="my-6 md:-mx-32">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img 
-                            src={src} 
-                            alt={alt || ''} 
-                            className="w-full h-auto"
-                            loading="lazy"
-                          />
+                          <ZoomableImage src={String(src)} alt={alt || ''} className="w-full h-auto" />
                         </div>
                       )
                     },
