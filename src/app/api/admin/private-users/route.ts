@@ -44,6 +44,7 @@ type PrivateUserRow = {
   index_title?: string | null
   index_content?: string | null
   index_logo_url?: string | null
+  index_header_title?: string | null
 }
 
 /** List shape; never includes password_hash. Index columns may be absent before the migration runs. */
@@ -95,6 +96,7 @@ export async function GET(request: NextRequest) {
         index_title: row.index_title ?? '',
         index_content: row.index_content ?? '',
         index_logo_url: row.index_logo_url ?? '',
+        index_header_title: row.index_header_title ?? '',
       })
     }
 
@@ -203,6 +205,7 @@ async function updateIndex(id: string, index: Record<string, unknown>) {
   const content = sanitizeMarkdown(
     normalizeLiteralHtmlBreaksInMarkdown(typeof index.content === 'string' ? index.content : ''),
   )
+  const headerTitle = sanitizeText(typeof index.header_title === 'string' ? index.header_title : '')
   const logoUrl = sanitizeUrl(typeof index.logo_url === 'string' ? index.logo_url : '')
 
   if (enabled && !content.trim()) {
@@ -219,13 +222,14 @@ async function updateIndex(id: string, index: Record<string, unknown>) {
       index_title: title || null,
       index_content: content || null,
       index_logo_url: logoUrl || null,
+      index_header_title: headerTitle || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
 
   if (updateError) {
     console.error('Error updating password access index:', updateError)
-    const missingColumn = /index_(enabled|title|content|logo_url)/.test(updateError.message)
+    const missingColumn = /index_(enabled|title|content|logo_url|header_title)/.test(updateError.message)
     return NextResponse.json(
       {
         error: missingColumn

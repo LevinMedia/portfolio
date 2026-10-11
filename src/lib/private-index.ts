@@ -6,11 +6,14 @@ export interface PrivateIndexRow {
   index_title?: string | null
   index_content?: string | null
   index_logo_url?: string | null
+  index_header_title?: string | null
 }
 
 /** What the signed-in viewer's browser receives. */
 export interface PrivateIndexData {
   title: string
+  /** Label next to the logo in the overlay header; empty = default "Home" crumb. */
+  headerTitle: string
   content: string
   logoUrl: string
 }
@@ -30,6 +33,7 @@ export function toPrivateIndexData(row: PrivateIndexRow | null | undefined): Pri
   if (!row || !hasPrivateIndex(row)) return null
   return {
     title: row.index_title?.trim() || PRIVATE_INDEX_DEFAULT_TITLE,
+    headerTitle: row.index_header_title?.trim() || '',
     content: row.index_content ?? '',
     logoUrl: row.index_logo_url?.trim() || '',
   }

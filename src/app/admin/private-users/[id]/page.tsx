@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { ChevronLeftIcon, PhotoIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import MilkdownEditor from '@/app/components/MilkdownEditor'
 import Button from '@/app/components/Button'
+import Input from '@/app/components/ui/Input'
 import { PRIVATE_INDEX_DEFAULT_TITLE } from '@/lib/private-index'
 
 /** Edit the optional bespoke Index page for one password-access entry. */
@@ -20,6 +21,7 @@ export default function EditPasswordAccessIndex({ params }: { params: Promise<{ 
   const [formData, setFormData] = useState({
     enabled: false,
     title: '',
+    header_title: '',
     content: '',
     logo_url: '',
   })
@@ -44,6 +46,7 @@ export default function EditPasswordAccessIndex({ params }: { params: Promise<{ 
           setFormData({
             enabled: data.index_enabled === true,
             title: data.index_title ?? '',
+            header_title: data.index_header_title ?? '',
             content: data.index_content ?? '',
             logo_url: data.index_logo_url ?? '',
           })
@@ -235,6 +238,19 @@ export default function EditPasswordAccessIndex({ params }: { params: Promise<{ 
                 accept="image/*"
                 onChange={handleLogoChange}
                 className="hidden"
+              />
+            </div>
+            <div>
+              <label htmlFor="index_header_title" className="text-xs text-muted-foreground">
+                Header title (next to the LM logo)
+              </label>
+              <Input
+                id="index_header_title"
+                type="text"
+                value={formData.header_title}
+                onChange={(e) => setFormData(prev => ({ ...prev, header_title: e.target.value }))}
+                placeholder="Home"
+                className="mt-1 text-sm"
               />
             </div>
             <div className="flex items-center">

@@ -277,7 +277,9 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
           onClose={closeIndex}
           onLogoClick={closeIndex}
           breadcrumbs={[
-            { label: 'Home', onClick: closeIndex },
+            index.headerTitle
+              ? { label: index.headerTitle, current: true }
+              : { label: 'Home', onClick: closeIndex },
             { label: index.title, current: true, visible: !isTitleVisible },
           ]}
           contentPadding="p-0"

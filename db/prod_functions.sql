@@ -60,6 +60,7 @@ ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_enabled BOOLEAN NOT NULL 
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_title TEXT;
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_content TEXT;
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_logo_url TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS index_header_title TEXT;
 
 -- Setup state tracking table
 CREATE TABLE IF NOT EXISTS setup_state (
