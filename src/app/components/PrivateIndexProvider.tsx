@@ -134,7 +134,6 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
   const [wantOpen, setWantOpen] = useState(true)
   const [location, setLocation] = useState({ search: '', drawerOpen: false })
   const [isLeaving, setIsLeaving] = useState(false)
-  const [isTitleVisible, setIsTitleVisible] = useState(true)
   const contentRef = useRef<HTMLDivElement>(null)
   const leaveTimerRef = useRef<number | null>(null)
 
@@ -280,17 +279,12 @@ export default function PrivateIndexProvider({ children }: { children: React.Rea
             index.headerTitle
               ? { label: index.headerTitle, current: true }
               : { label: 'Home', onClick: closeIndex },
-            { label: index.title, current: true, visible: !isTitleVisible },
           ]}
           contentPadding="p-0"
           maxWidth=""
         >
           <div ref={contentRef} className="px-4">
-            <PrivateIndexContent
-              title={index.title}
-              content={index.content}
-              onTitleVisibilityChange={setIsTitleVisible}
-            />
+            <PrivateIndexContent content={index.content} />
           </div>
         </Drawer>
       ) : null}
