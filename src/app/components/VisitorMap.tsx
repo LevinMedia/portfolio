@@ -1,7 +1,7 @@
 'use client'
 // stats-followup: no-op comment to trigger CI/push
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import the entire map component to avoid SSR issues
@@ -26,6 +26,8 @@ type GeoPoint = {
 interface VisitorMapProps {
   points: GeoPoint[]
   showMockData?: boolean
+  /** A new range is loading; passed through so the map can fade its badges out and pop them back in. */
+  refreshing?: boolean
 }
 
 // Mock data for development preview - LOTS of clusterable points!
@@ -96,25 +98,21 @@ const mockGeoData: GeoPoint[] = [
   { country: 'Singapore', region: 'Singapore', city: 'Singapore', latitude: 1.3521, longitude: 103.8198, count: 15 }
 ]
 
-export default function VisitorMap({ points, showMockData = false }: VisitorMapProps) {
-  const [displayPoints, setDisplayPoints] = useState<GeoPoint[]>([])
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && showMockData && points.length === 0) {
-      setDisplayPoints(mockGeoData)
-    } else {
-      // Normalize optional fields to match LeafletMap required types
-      const normalized = points.map(p => ({
-        country: p.country,
-        region: p.region ?? null,
-        city: p.city ?? null,
-        latitude: p.latitude ?? null,
-        longitude: p.longitude ?? null,
-        count: p.count
-      }))
-      setDisplayPoints(normalized)
-    }
+export default function VisitorMap({ points, showMockData = false, refreshing = false }: VisitorMapProps) {
+  // Derived in render, not copied into state by an effect: the map has to receive new points in the same
+  // pass that `refreshing` clears, or it would briefly show the old badges again before the new ones pop in
+  const displayPoints = useMemo<GeoPoint[]>(() => {
+    if (process.env.NODE_ENV === 'development' && showMockData && points.length === 0) return mockGeoData
+    // Normalize optional fields to match LeafletMap required types
+    return points.map((p) => ({
+      country: p.country,
+      region: p.region ?? null,
+      city: p.city ?? null,
+      latitude: p.latitude ?? null,
+      longitude: p.longitude ?? null,
+      count: p.count,
+    }))
   }, [points, showMockData])
 
-  return <LeafletMap points={displayPoints} />
+  return <LeafletMap points={displayPoints} refreshing={refreshing} />
 }

@@ -119,14 +119,9 @@ function geoFromAcceptLanguage(hdrs: HeaderGetter): Geo {
   const region = parts[parts.length - 1]
   if (!region || region.length !== 2) return {}
 
-  try {
-    const displayNames = new Intl.DisplayNames(['en'], { type: 'region' })
-    const country = displayNames.of(region.toUpperCase())
-    if (!country) return {}
-    return { country }
-  } catch {
-    return {}
-  }
+  // Store the code, like the host geo headers do; a display name here splits one country into two rows
+  if (!/^[A-Za-z]{2}$/.test(region)) return {}
+  return { country: region.toUpperCase() }
 }
 
 export async function POST(request: NextRequest) {
@@ -240,11 +235,11 @@ export async function POST(request: NextRequest) {
   // Add mock geo data for local development
   if (process.env.NODE_ENV === 'development' && (!geo.country)) {
     const mockGeoData = [
-      { country: 'United States', region: 'California', city: 'San Francisco', latitude: 37.7749, longitude: -122.4194 },
-      { country: 'United Kingdom', region: 'England', city: 'London', latitude: 51.5074, longitude: -0.1278 },
-      { country: 'Germany', region: 'Berlin', city: 'Berlin', latitude: 52.5200, longitude: 13.4050 },
-      { country: 'Japan', region: 'Tokyo', city: 'Tokyo', latitude: 35.6895, longitude: 139.6917 },
-      { country: 'Canada', region: 'Ontario', city: 'Toronto', latitude: 43.6532, longitude: -79.3832 }
+      { country: 'US', region: 'California', city: 'San Francisco', latitude: 37.7749, longitude: -122.4194 },
+      { country: 'GB', region: 'England', city: 'London', latitude: 51.5074, longitude: -0.1278 },
+      { country: 'DE', region: 'Berlin', city: 'Berlin', latitude: 52.5200, longitude: 13.4050 },
+      { country: 'JP', region: 'Tokyo', city: 'Tokyo', latitude: 35.6895, longitude: 139.6917 },
+      { country: 'CA', region: 'Ontario', city: 'Toronto', latitude: 43.6532, longitude: -79.3832 }
     ]
     // Randomly select mock geo data for variety
     geo = mockGeoData[Math.floor(Math.random() * mockGeoData.length)]
