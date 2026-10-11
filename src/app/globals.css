@@ -2777,6 +2777,9 @@ body > div[style*="position: fixed"] * {
   padding: 3px;
   border-radius: var(--chrome-radius-field);
   background: color-mix(in srgb, var(--chrome-text) 7%, var(--chrome-card-bg));
+  /* Outline a step stronger than --chrome-border, so the track reads on the sheet as well as on a card.
+     Inset shadow rather than a border: the 3px padding and the control's size stay as they were. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chrome-text) 15%, transparent);
   box-sizing: border-box;
   overflow: visible;
 }
@@ -3404,25 +3407,58 @@ body > div[style*="position: fixed"] * {
   color: var(--chrome-muted) !important;
 }
 
-#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a {
-  background: var(--chrome-card-bg);
-  color: var(--chrome-text);
+/* Zoom: one joined control with a hairline divider; glyphs are drawn so they sit dead centre */
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom {
+  overflow: hidden;
   border: 1px solid var(--chrome-border);
-  border-radius: 8px;
+  border-radius: var(--chrome-radius-field);
+  background: var(--chrome-card-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a {
+  position: relative;
+  display: block;
   width: 32px;
   height: 32px;
-  line-height: 30px;
-  font-size: 18px;
-  font-weight: 500;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--chrome-text);
+  font-size: 0;
+  line-height: 0;
+  transition: background var(--chrome-motion-fast) var(--chrome-ease);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a + a {
+  border-top: 1px solid var(--chrome-border);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a::before,
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a.leaflet-control-zoom-in::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a.leaflet-control-zoom-in::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 #c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a:hover {
-  background: color-mix(in srgb, var(--chrome-card-bg) 85%, var(--chrome-accent));
+  background: color-mix(in srgb, var(--chrome-text) 7%, transparent);
 }
 
-#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom {
-  border: none;
-  box-shadow: none;
+#c64-site-root .drawer-container.drawer-chrome .leaflet-control-zoom a.leaflet-disabled {
+  background: transparent;
+  color: color-mix(in srgb, var(--chrome-muted) 55%, transparent);
+  cursor: default;
 }
 
 #c64-site-root .drawer-container.drawer-chrome .leaflet-control-attribution {
@@ -3453,15 +3489,812 @@ body > div[style*="position: fixed"] * {
   letter-spacing: -0.02em;
 }
 
-#c64-site-root .drawer-container.drawer-chrome .stats-top-page-bar {
-  border-radius: 6px;
-  background-color: color-mix(in srgb, var(--chrome-accent) 35%, transparent) !important;
+/* ---------- Stats drawer ---------- */
+/* A dashboard reads denser than the prose drawers: quieter section titles, tighter cards. */
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content {
+  --stats-positive: #1d7f38;
+  --stats-negative: #c9241b;
 }
 
-#c64-site-root .drawer-container.drawer-chrome .stats-top-page-badge {
-  border: 1px solid var(--chrome-border);
+#c64-site-root[data-chrome-theme='dark'] .drawer-container.drawer-chrome .c64-stats-content {
+  --stats-positive: #30d158;
+  --stats-negative: #ff6961;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-card {
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  #c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-card {
+    padding: 1.5rem;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-section-heading {
+  margin: 0 0 1rem;
+  padding: 0;
+  border-bottom: none;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-section-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-section-header .c64-drawer-section-heading {
+  margin: 0;
+}
+
+/* First paint after the loader: the page arrives block by block, top to bottom. `backwards` holds each
+   block hidden through its delay and leaves no transform behind once it has landed. */
+#c64-site-root .drawer-container.drawer-chrome .stats-toolbar,
+#c64-site-root .drawer-container.drawer-chrome .stats-body > * {
+  animation: stats-block-in 0.55s var(--chrome-ease) backwards;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body > :nth-child(1) {
+  animation-delay: 90ms;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body > :nth-child(2) {
+  animation-delay: 180ms;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body > :nth-child(3) {
+  animation-delay: 270ms;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body > :nth-child(4) {
+  animation-delay: 360ms;
+}
+
+@keyframes stats-block-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-toolbar,
+  #c64-site-root .drawer-container.drawer-chrome .stats-body > * {
+    animation: none;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body {
+  transition: opacity var(--chrome-motion-fast) var(--chrome-ease);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body[data-refreshing='true'] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--chrome-muted);
+}
+
+/* KPI tiles: the figure leads, the label and comparison support it */
+#c64-site-root .drawer-container.drawer-chrome .stats-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .stats-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+  padding: 1rem 1.125rem;
+}
+
+@media (min-width: 640px) {
+  #c64-site-root .drawer-container.drawer-chrome .c64-stats-content .stats-kpi {
+    padding: 1.125rem 1.25rem;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-kpi__label {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-kpi__value {
+  font-size: 1.75rem;
+  line-height: 2rem;
+  color: var(--chrome-text);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-kpi__meta {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-kpi__meta--delta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.3125rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-kpi__compare {
+  white-space: nowrap;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-delta {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-delta--up {
+  color: var(--stats-positive);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .c64-drawer-delta--down {
+  color: var(--stats-negative);
+}
+
+/* Three tiles: on a phone the odd one out takes the full row */
+@media (max-width: 767.98px) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Rolling figures (RollingNumber): a window one line tall over each 0–9 strip */
+#c64-site-root .drawer-container.drawer-chrome .stats-roll {
+  display: inline-flex;
+  height: 1.2em;
+  height: 1lh;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-roll__slot {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-width 0.45s var(--chrome-ease),
+    opacity 0.3s var(--chrome-ease);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-roll__slot[data-on] {
+  max-width: 1.5em;
+  opacity: 1;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-roll__strip {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Higher places trail slightly, so the roll ripples leftward from the ones digit */
+  transition-delay: calc(var(--i) * 45ms);
+  will-change: transform;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-roll__strip > span {
+  display: block;
+  height: 1.2em;
+  height: 1lh;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-roll__slot,
+  #c64-site-root .drawer-container.drawer-chrome .stats-roll__strip {
+    transition: none;
+  }
+}
+
+/* Chart */
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+/* Compact, and pulled out of the row's height so the header is the same size with or without it */
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-header__agg {
+  width: 6.5rem;
+  margin-block: -0.25rem;
+  margin-left: auto;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-header__agg .chrome-select__trigger {
+  min-height: 1.75rem;
+  padding: 0.1875rem 1.625rem 0.1875rem 0.625rem;
   border-radius: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-header__agg .chrome-select__chevron {
+  right: 0.5rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-header__agg .chrome-select__option {
+  padding: 0.3125rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-legend__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart {
+  position: relative;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart svg {
+  display: block;
+  overflow: visible;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart .tick text,
+#c64-site-root .drawer-container.drawer-chrome .stats-chart__empty {
+  fill: var(--chrome-muted);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart__empty {
+  font-size: 13px;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart .y-grid line {
+  stroke: var(--chrome-border);
+  shape-rendering: crispEdges;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart .y-grid line.is-baseline {
+  stroke: color-mix(in srgb, var(--chrome-muted) 45%, transparent);
+}
+
+/* Switching range: axes and gridlines step aside while the lines morph (see TimeSeriesChart).
+   The baseline is deliberately left out so the lines always have a floor. */
+#c64-site-root .drawer-container.drawer-chrome .stats-chart .x-axis,
+#c64-site-root .drawer-container.drawer-chrome .stats-chart .y-axis,
+#c64-site-root .drawer-container.drawer-chrome .stats-chart .y-grid line:not(.is-baseline) {
+  transition: opacity 0.2s ease;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart[data-phase] .x-axis,
+#c64-site-root .drawer-container.drawer-chrome .stats-chart[data-phase] .y-axis,
+#c64-site-root .drawer-container.drawer-chrome .stats-chart[data-phase] .y-grid line:not(.is-baseline) {
+  opacity: 0;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart[data-phase] svg {
+  pointer-events: none;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart__rule {
+  stroke: color-mix(in srgb, var(--chrome-muted) 60%, transparent);
+  shape-rendering: crispEdges;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart__hover {
+  pointer-events: none;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  min-width: 8.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-field);
   background: var(--chrome-card-bg);
+  box-shadow: var(--chrome-shadow-card);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--chrome-text);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s var(--chrome-ease-standard);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-tip[data-visible='true'] {
+  opacity: 1;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-tip__date {
+  margin-bottom: 0.125rem;
+  font-weight: 500;
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-tip__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-tip__swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-chart-tip__value {
+  margin-left: auto;
+  padding-left: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Locations + top pages sit side by side once there's room */
+#c64-site-root .drawer-container.drawer-chrome .stats-detail-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-detail-grid {
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-map-card .chrome-map-shell {
+    height: 24rem;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .chrome-map-shell,
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .leaflet-container {
+  border-radius: var(--chrome-radius-field);
+}
+
+/* Map badges: fade out while a new range loads, then bubble back in (delays are set per badge in LeafletMap).
+   Only the fade-out is a transition; the pane has to be fully visible the instant the new badges start popping. */
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .chrome-map-shell[data-refreshing] .leaflet-marker-pane {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-stats-content .map-count-badge {
+  animation: stats-map-badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes stats-map-badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root .drawer-container.drawer-chrome .c64-stats-content .map-count-badge {
+    animation: none;
+  }
+}
+
+/* Top pages */
+#c64-site-root .drawer-container.drawer-chrome .stats-pages {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+  font-size: 0.875rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages th,
+#c64-site-root .drawer-container.drawer-chrome .stats-pages td {
+  padding: 0;
+  font-weight: 400;
+  text-align: left;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages thead th {
+  padding-bottom: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages .stats-pages__num {
+  width: 4.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--chrome-text);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages thead .stats-pages__num {
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages td.stats-pages__num:nth-child(2) {
+  color: var(--chrome-muted);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages__page {
+  position: relative;
+  height: 2.125rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--chrome-accent) 16%, transparent);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages__path {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 0 0.625rem;
+  font-weight: 500;
+  color: var(--chrome-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages__path--flag {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 4:3 flag chip; the inset ring keeps pale flags from dissolving into the card */
+#c64-site-root .drawer-container.drawer-chrome .stats-flag {
+  flex: none;
+  width: 1.375rem;
+  height: 1.03125rem;
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--chrome-text) 12%, transparent);
+  background-size: cover;
+  background-position: center;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+  line-height: 1;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-flag::before {
+  content: none;
+}
+
+/* Range change on the detail tables: the old rows fade out while loading; the new ones step in from the
+   top with their bars growing behind them. StatsDetailGrid eases the cards' height in between. */
+#c64-site-root .drawer-container.drawer-chrome .stats-pages tbody {
+  transition: opacity 0.2s ease;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body[data-refreshing] .stats-pages tbody {
+  opacity: 0;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages tbody tr > * {
+  animation: stats-row-in 0.45s var(--chrome-ease) backwards;
+  /* Stagger the first screenful; a long list shouldn't keep trickling in */
+  animation-delay: calc(min(var(--row, 0), 16) * 24ms);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-pages__bar {
+  transform-origin: left center;
+  animation: stats-bar-grow 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(min(var(--row, 0), 16) * 24ms + 120ms);
+}
+
+@keyframes stats-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes stats-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-pages tbody tr > *,
+  #c64-site-root .drawer-container.drawer-chrome .stats-pages__bar {
+    animation: none;
+  }
+}
+
+/* Easter egg: line art in the dead space under whichever detail table is shorter.
+   The stage has a zero flex basis, so it takes leftover height and never adds any. */
+#c64-site-root .drawer-container.drawer-chrome .stats-detail-grid > .c64-drawer-card {
+  display: flex;
+  flex-direction: column;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* The box is absolutely placed inside the stage so its outline can't add height either;
+   its top offset and padding come from useStatsArtStage, which sizes the drawing to match. */
+#c64-site-root .drawer-container.drawer-chrome .stats-art__frame {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-card);
+  /* Fades with the rows while a range loads, and fades in whenever the box (re)appears */
+  transition: opacity 0.3s ease;
+  animation: stats-art-in 0.45s ease backwards;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-body[data-refreshing] .stats-art__frame {
+  opacity: 0;
+}
+
+/* Parked while the cards ease to a new height (StatsDetailGrid); it is redrawn once they settle */
+#c64-site-root .drawer-container.drawer-chrome .stats-detail-grid[data-resizing] .stats-art {
+  display: none;
+}
+
+@keyframes stats-art-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #c64-site-root .drawer-container.drawer-chrome .stats-art__frame {
+    animation: none;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__svg {
+  position: relative;
+  display: block;
+  overflow: visible;
+}
+
+/* Backdrops: quiet texture behind the line art. Spacing is in fixed px, so a taller box gets more of
+   the pattern rather than a bigger one. */
+
+/* Pages: a dot grid that thins out with distance from the screen */
+#c64-site-root .drawer-container.drawer-chrome .stats-art__frame--pages::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--chrome-muted) 34%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 16px 16px;
+  background-position: center bottom 8px;
+  -webkit-mask-image: radial-gradient(
+    farthest-side at var(--focus-x, 50%) var(--focus-y, 100%),
+    #000 10%,
+    transparent
+  );
+  mask-image: radial-gradient(farthest-side at var(--focus-x, 50%) var(--focus-y, 100%), #000 10%, transparent);
+}
+
+/* Flights: a map graticule (drawn in StatsArtFlights) that fades toward the edges of the box */
+#c64-site-root .drawer-container.drawer-chrome .stats-art__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 92%);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 92%);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__backdrop path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--chrome-muted) 17%, transparent);
+  stroke-width: 1;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__line,
+#c64-site-root .drawer-container.drawer-chrome .stats-art__route,
+#c64-site-root .drawer-container.drawer-chrome .stats-art__trail {
+  fill: none;
+  stroke: color-mix(in srgb, var(--chrome-muted) 62%, transparent);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__line--faint {
+  stroke: color-mix(in srgb, var(--chrome-muted) 38%, transparent);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__line--accent {
+  stroke: color-mix(in srgb, var(--chrome-accent) 85%, transparent);
+}
+
+/* Shapes that should hide the backdrop behind them (the monitor, each page) */
+#c64-site-root .drawer-container.drawer-chrome .stats-art__solid {
+  fill: var(--chrome-card-bg);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__dot {
+  fill: color-mix(in srgb, var(--chrome-muted) 75%, transparent);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__route {
+  stroke: color-mix(in srgb, var(--chrome-muted) 36%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+
+/* Resting values double as the still frame for reduced motion; the animations override them */
+#c64-site-root .drawer-container.drawer-chrome .stats-art__trail {
+  stroke-linecap: butt;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--rest));
+  animation: stats-art-trail var(--dur) linear var(--delay) infinite;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__plane {
+  offset-rotate: auto;
+  offset-distance: calc(var(--rest) * 100%);
+  animation: stats-art-fly var(--dur) linear var(--delay) infinite;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__page {
+  offset-rotate: 0deg;
+  offset-distance: calc(var(--rest) * 100%);
+  opacity: var(--rest-opacity);
+  animation: stats-art-rise var(--dur) linear var(--delay) infinite;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art__sheet {
+  transform-box: fill-box;
+  transform-origin: center;
+  rotate: var(--tilt);
+  animation:
+    stats-art-emerge var(--dur) linear var(--delay) infinite,
+    stats-art-sway var(--sway) ease-in-out var(--sway-delay) infinite alternate;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art[data-state='paused'] * {
+  animation-play-state: paused;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .stats-art[data-state='static'] * {
+  animation: none;
+}
+
+@keyframes stats-art-fly {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  }
+  5%,
+  55% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes stats-art-trail {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  }
+  60%,
+  74% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes stats-art-rise {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  10%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes stats-art-emerge {
+  0% {
+    scale: 0.5;
+  }
+  14%,
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes stats-art-sway {
+  from {
+    rotate: -7deg;
+  }
+  to {
+    rotate: 7deg;
+  }
 }
 
 #c64-site-root .drawer-container.drawer-chrome .c64-about-content > figure.c64-about-hero {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isExcludedFromStatsReporting } from '@/lib/analytics-paths'
 import { fetchPublicAnalyticsPageviews, fetchPublicStatsSlugs } from '@/lib/analytics-pageviews-query'
+import { normalizeCountry } from '@/lib/country-codes'
 
 type RangeKey = '24h' | '7d' | '30d' | '1y' | 'all'
 const TZ = 'America/Los_Angeles'
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
       ? fetchPublicAnalyticsPageviews(supabase, {
           start: prevStart,
           end: prevEnd,
-          select: 'visitor_id, occurred_at',
+          select: 'visitor_id, country, occurred_at',
         })
       : Promise.resolve([]),
     fetchPublicStatsSlugs(supabase),
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
 
   const currViews = currData.length
   const currUnique = new Set(currData.map((r) => r.visitor_id)).size
-  const currCountries = new Set(currData.map((r) => r.country).filter(Boolean)).size
+  const currCountries = new Set(currData.map((r) => normalizeCountry(r.country)).filter(Boolean)).size
   const topPage = (() => {
     const counts = new Map<string, number>()
     for (const r of currData) {
@@ -104,13 +105,16 @@ export async function GET(request: NextRequest) {
 
   let prevViews = 0
   let prevUnique = 0
+  let prevCountries = 0
   if (prevData.length > 0) {
     prevViews = prevData.length
     prevUnique = new Set(prevData.map((r) => r.visitor_id)).size
+    prevCountries = new Set(prevData.map((r) => normalizeCountry(r.country)).filter(Boolean)).size
   }
 
+  /** Percent change on the prior period; null when there is nothing to compare against. */
   function pct(curr: number, prev: number) {
-    if (prev === 0) return curr > 0 ? 100 : 0
+    if (prev === 0) return curr > 0 ? null : 0
     return ((curr - prev) / prev) * 100
   }
 
@@ -124,7 +128,8 @@ export async function GET(request: NextRequest) {
     },
     deltas: {
       pageViewsPct: pct(currViews, prevViews),
-      uniqueVisitorsPct: pct(currUnique, prevUnique)
+      uniqueVisitorsPct: pct(currUnique, prevUnique),
+      countriesPct: pct(currCountries, prevCountries)
     }
   })
 }

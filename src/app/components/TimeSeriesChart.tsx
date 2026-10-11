@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { Listbox } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
@@ -26,12 +26,77 @@ interface Point {
   visitors: number
 }
 
+/** One response, kept whole so the chart never draws one range's points with another's axis logic. */
+type Series = { key: string; agg: AggKey; allowedAggs: AggKey[]; points: Point[] }
+
+/** Line heights above the baseline, sampled at even steps across the plot — the shape that gets morphed. */
+type Profile = { views: number[]; visitors: number[] }
+
+const DEFAULT_AGG: Record<RangeKey, AggKey> = { '24h': 'hour', '7d': 'day', '30d': 'day', '1y': 'week', all: 'month' }
+
+const AXIS_FADE_MS = 200 // keep in step with the .stats-chart axis transition in globals.css
+const MORPH_MS = 650
+
+/** Walk a drawn line and read its height above the baseline at `n` even x steps (0 where it has no data). */
+function sampleHeights(path: SVGPathElement, x0: number, x1: number, baseline: number, n: number) {
+  const out = new Array<number>(n).fill(0)
+  const total = path.getTotalLength()
+  if (!total) return out
+  const xAt = (i: number) => x0 + (i / (n - 1)) * (x1 - x0)
+  const step = Math.max(1, total / 1500)
+  let prev = path.getPointAtLength(0)
+  let k = 0
+  while (k < n && xAt(k) < prev.x) k++
+  for (let l = step; l < total + step; l += step) {
+    const p = path.getPointAtLength(Math.min(l, total))
+    while (k < n && xAt(k) <= p.x) {
+      const t = p.x === prev.x ? 0 : (xAt(k) - prev.x) / (p.x - prev.x)
+      out[k++] = Math.max(0, baseline - (prev.y + (p.y - prev.y) * t))
+    }
+    prev = p
+  }
+  return out
+}
+
+/** Stretch a profile to a different sample count (the plot was resized between draws). */
+function resample(heights: number[] | undefined, n: number) {
+  if (!heights || heights.length < 2) return new Array<number>(n).fill(0)
+  if (heights.length === n) return heights
+  return Array.from({ length: n }, (_, i) => {
+    const pos = (i / (n - 1)) * (heights.length - 1)
+    const lo = Math.floor(pos)
+    const hi = Math.min(heights.length - 1, lo + 1)
+    return heights[lo] + (heights[hi] - heights[lo]) * (pos - lo)
+  })
+}
+
+function profilePath(heights: number[], x0: number, x1: number, baseline: number, closed: boolean) {
+  const n = heights.length
+  let d = ''
+  for (let i = 0; i < n; i++) {
+    d += `${i ? 'L' : 'M'}${(x0 + (i / (n - 1)) * (x1 - x0)).toFixed(1)},${(baseline - heights[i]).toFixed(1)}`
+  }
+  return closed ? `${d}L${x1},${baseline}L${x0},${baseline}Z` : d
+}
+
 export default function TimeSeriesChart({ range }: { range: RangeKey }) {
-  const [agg, setAgg] = useState<AggKey>('day')
-  const [allowedAggs, setAllowedAggs] = useState<AggKey[]>(['day'])
-  const [points, setPoints] = useState<Point[]>([])
+  // The grouping the user picked only holds for the range it was picked on
+  const [aggChoice, setAggChoice] = useState<{ range: RangeKey; agg: AggKey } | null>(null)
+  const requestedAgg = aggChoice?.range === range ? aggChoice.agg : DEFAULT_AGG[range]
+  const requestKey = `${range}:${requestedAgg}`
+  const [series, setSeries] = useState<Series | null>(null)
+  const [failedKey, setFailedKey] = useState<string | null>(null)
+  // A different range/grouping has been asked for and its data hasn't landed yet
+  const pending = series !== null && series.key !== requestKey && failedKey !== requestKey
+  const agg = pending ? requestedAgg : (series?.agg ?? requestedAgg)
+  const allowedAggs = series?.allowedAggs ?? [requestedAgg]
+  const pendingRef = useRef(false)
+  const fadeStartRef = useRef(0)
+  const drawnSeriesRef = useRef<Series | null>(null)
+  const profileRef = useRef<Profile | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const clipPathId = useRef<string>(`ts-clip-${Math.random().toString(36).slice(2)}`)
+  const gradientId = `${clipPathId.current}-fill`
   const [containerWidth, setContainerWidth] = useState<number>(0)
   const [chartHeight, setChartHeight] = useState<number>(240)
   const [themeEpoch, setThemeEpoch] = useState(0)
@@ -42,13 +107,6 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     return () => window.removeEventListener('c64-settings-changed', onTheme)
   }, [])
 
-  useEffect(() => {
-    if (range === '24h') setAgg('hour')
-    else if (range === '7d' || range === '30d') setAgg('day')
-    else if (range === '1y') setAgg('week')
-    else setAgg('month')
-  }, [range])
-
   // Fetch data whenever range or aggregation changes
   useEffect(() => {
     const controller = new AbortController()
@@ -56,19 +114,37 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       allowedAggs?: AggKey[]
       agg?: AggKey
       points?: Point[]
-    }>(`/api/admin/stats/timeseries?range=${range}&agg=${agg}`, controller.signal).then(
+    }>(`/api/admin/stats/timeseries?range=${range}&agg=${requestedAgg}`, controller.signal).then(
       ({ data, error }) => {
-        if (controller.signal.aborted || !data) return
-        if (error) return
-        if (data.allowedAggs) setAllowedAggs(data.allowedAggs)
-        if (data.agg) setAgg(data.agg)
-        setPoints(data.points || [])
+        if (controller.signal.aborted) return
+        if (!data || error) {
+          setFailedKey(requestKey)
+          return
+        }
+        setSeries({
+          key: requestKey,
+          agg: data.agg ?? requestedAgg,
+          allowedAggs: data.allowedAggs ?? [data.agg ?? requestedAgg],
+          points: data.points || [],
+        })
       },
     )
     return () => controller.abort()
-  }, [range, agg])
+  }, [range, requestedAgg, requestKey])
 
-  useMemo(() => allowedAggs.length === 1, [allowedAggs])
+  // While the next series loads, fade the axes and gridlines out; the lines and baseline stay put.
+  // Declared before the draw effect so `pendingRef` is current when a new series is drawn.
+  useEffect(() => {
+    pendingRef.current = pending
+    const el = containerRef.current
+    if (!el) return
+    if (pending) {
+      el.dataset.phase = 'out'
+      fadeStartRef.current = performance.now()
+    } else if (el.dataset.phase === 'out') {
+      delete el.dataset.phase
+    }
+  }, [pending])
 
   // Track container size for responsive redraws
   useEffect(() => {
@@ -95,11 +171,30 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
   useEffect(() => {
     if (!containerRef.current) return
     const el = containerRef.current
+    d3.select(el).selectAll('*').interrupt()
     el.innerHTML = ''
+
+    const loaded = series !== null
+    const points = series?.points ?? []
+    const agg = series?.agg ?? 'day'
+    const settlePhase = () => {
+      if (pendingRef.current) el.dataset.phase = 'out'
+      else delete el.dataset.phase
+    }
+    // Only a new series animates; resizes and theme changes redraw in place
+    const isNewSeries = loaded && series !== drawnSeriesRef.current
+    drawnSeriesRef.current = series
+    const morph =
+      isNewSeries && points.length > 0 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Set before anything is appended, so the new axes start hidden instead of flashing in
+    if (morph) el.dataset.phase = 'morph'
 
     const width = containerWidth || el.clientWidth || 800
     const height = chartHeight
-    const margin = { top: 12, right: 12, bottom: width < 420 ? 36 : 28, left: 40 }
+    const margin = { top: 10, right: 10, bottom: width < 420 ? 36 : 28, left: 34 }
+
+    // Keep the reserved height blank until the first response, rather than flashing "No data".
+    if (!loaded) return
 
     const svg = d3
       .select(el)
@@ -113,8 +208,10 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
         .attr('x', width / 2)
         .attr('y', height / 2)
         .attr('text-anchor', 'middle')
-        .attr('fill', 'currentColor')
-        .text('No data')
+        .attr('class', 'stats-chart__empty')
+        .text('No traffic in this range')
+      profileRef.current = null
+      settlePhase()
       return
     }
 
@@ -169,7 +266,7 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
 
     // Precompute fixed 4 y ticks (0 + 3 steps)
     const yMax = y.domain()[1]
-    const yTicks = d3.ticks(0, yMax, 3)
+    const yTicks = d3.ticks(0, yMax, 3).filter(Number.isInteger)
 
     // Axis ticks: choose intelligently per range/agg
     const domain: [Date, Date] = xDomain
@@ -233,12 +330,13 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
           d3
             .axisBottom<Date>(x)
             .tickValues(tickValues)
-            .tickSizeOuter(0)
+            .tickSize(0)
+            .tickPadding(10)
             .tickFormat((d: Date) => {
               if (agg === 'hour') return d3.timeFormat('%-I%p')(d)
               if (agg === 'day') {
                 if (tickKind === 'month') return d3.timeFormat('%b %Y')(d)
-                return d3.timeFormat('%-m/%-d')(d)
+                return d3.timeFormat('%b %-d')(d)
               }
               if (agg === 'week') {
                 if (tickKind === 'month') return d3.timeFormat('%b %Y')(d)
@@ -275,11 +373,12 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     const yAxis = (g: d3.Selection<SVGGElement, unknown, null, undefined>) => {
       g
         .attr('transform', `translate(${margin.left},0)`) 
-        .call(d3.axisLeft(y).tickValues(yTicks).tickSizeOuter(0))
+        .call(d3.axisLeft(y).tickValues(yTicks).tickSize(0).tickPadding(8).tickFormat(d3.format('~s')))
     }
 
     const xAxisSelection = svg.append('g').attr('class', 'x-axis') as unknown as d3.Selection<SVGGElement, unknown, null, undefined>
     xAxisSelection.call(xAxis)
+    xAxisSelection.select('.domain').remove()
     // Small screens: shrink/tilt x labels for readability
     if (width < 420) {
       svg.select('.x-axis').selectAll('text')
@@ -292,25 +391,20 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     }
     const yAxisSelection = svg.append('g').attr('class', 'y-axis') as unknown as d3.Selection<SVGGElement, unknown, null, undefined>
     yAxisSelection.call(yAxis)
+    yAxisSelection.select('.domain').remove()
 
-    // Horizontal gridlines aligned to y ticks; baseline solid, others dotted
-    const borderColor =
-      getSiteCssVar('--chrome-border', '') ||
-      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() ||
-      '#334155'
-    const grid = svg.append('g').attr('class', 'y-grid')
-    grid
+    // Horizontal gridlines aligned to y ticks; colours come from globals.css so they follow the theme
+    svg
+      .insert('g', '.x-axis')
+      .attr('class', 'y-grid')
       .selectAll('line')
       .data(yTicks)
       .join('line')
+      .attr('class', d => (d === 0 ? 'is-baseline' : null))
       .attr('x1', margin.left)
       .attr('x2', width - margin.right)
-      .attr('y1', d => y(d))
-      .attr('y2', d => y(d))
-      .attr('stroke', borderColor)
-      .attr('stroke-width', d => (d === 0 ? 1.5 : 1))
-      .attr('stroke-dasharray', d => (d === 0 ? null : '2,4'))
-      .attr('opacity', d => (d === 0 ? 1 : 0.8))
+      .attr('y1', d => Math.round(y(d)) + 0.5)
+      .attr('y2', d => Math.round(y(d)) + 0.5)
 
     // Clip region so lines never draw outside the plotting area
     const defs = svg.append('defs')
@@ -318,22 +412,25 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .append('clipPath')
       .attr('id', clipPathId.current)
       .append('rect')
-      .attr('x', margin.left)
-      .attr('y', margin.top)
-      .attr('width', width - margin.left - margin.right)
-      .attr('height', height - margin.top - margin.bottom)
+      // Bleed past the plot so peak and edge strokes aren't shaved in half
+      .attr('x', margin.left - 2)
+      .attr('y', margin.top - 2)
+      .attr('width', width - margin.left - margin.right + 4)
+      .attr('height', height - margin.top - margin.bottom + 4)
 
     const viewsColor = getSiteCssVar('--chrome-chart-views', getSiteCssVar('--chrome-accent', '#0071e3'))
     const visitorsColor = getSiteCssVar('--chrome-chart-visitors', '#34c759')
-    const tipFill = getSiteCssVar('--chrome-card-bg', '') ||
-      getComputedStyle(document.documentElement).getPropertyValue('--background').trim() ||
-      '#ffffff'
-    const tipStroke = getSiteCssVar('--chrome-border', '') ||
-      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() ||
-      '#e5e5ea'
-    const tipTextFill = getSiteCssVar('--chrome-text', '') ||
-      getComputedStyle(document.documentElement).getPropertyValue('--foreground').trim() ||
-      '#1d1d1f'
+    const dotStroke = getSiteCssVar('--chrome-card-bg', '#ffffff')
+
+    const fill = defs
+      .append('linearGradient')
+      .attr('id', gradientId)
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', 1)
+    fill.append('stop').attr('offset', '0%').attr('stop-color', viewsColor).attr('stop-opacity', 0.2)
+    fill.append('stop').attr('offset', '100%').attr('stop-color', viewsColor).attr('stop-opacity', 0)
 
     const line = d3
       .line<{ date: Date; value: number }>()
@@ -344,29 +441,90 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
     const seriesViews = data.map(d => ({ date: d.date, value: d.views }))
     const seriesVisitors = data.map(d => ({ date: d.date, value: d.visitors }))
 
+    const area = d3
+      .area<{ date: Date; value: number }>()
+      .x(d => x(d.date))
+      .y0(y(0))
+      .y1(d => y(d.value))
+      .curve(d3.curveMonotoneX)
+
     const plot = svg.append('g').attr('clip-path', `url(#${clipPathId.current})`)
 
-    plot
+    const areaPath = plot
       .append('path')
-      .attr('fill', 'none')
-      .attr('stroke', viewsColor)
-      .attr('stroke-width', 2)
-      .attr('d', line(seriesViews)!)
+      .attr('fill', `url(#${gradientId})`)
+      .attr('d', area(seriesViews)!)
 
-    plot
-      .append('path')
-      .attr('fill', 'none')
-      .attr('stroke', visitorsColor)
-      .attr('stroke-width', 2)
-      .attr('d', line(seriesVisitors)!)
+    const drawLine = (series: { date: Date; value: number }[], color: string) =>
+      plot
+        .append('path')
+        .attr('fill', 'none')
+        .attr('stroke', color)
+        .attr('stroke-width', 2)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
+        .attr('d', line(series)!)
+
+    const viewsPath = drawLine(seriesViews, viewsColor)
+    const visitorsPath = drawLine(seriesVisitors, visitorsColor)
+
+    // ---------- Morph: axes are hidden, the old shape eases into the new one, then the axes return ----------
+    const x0 = margin.left
+    const x1 = width - margin.right
+    const baseline = y(0)
+    const samples = Math.max(80, Math.min(400, Math.round((x1 - x0) / 3)))
+    const target: Profile = {
+      views: sampleHeights(viewsPath.node() as SVGPathElement, x0, x1, baseline, samples),
+      visitors: sampleHeights(visitorsPath.node() as SVGPathElement, x0, x1, baseline, samples),
+    }
+
+    if (morph) {
+      // Start from whatever is on screen (a flat baseline on first load, a half-finished morph if interrupted)
+      const from: Profile = {
+        views: resample(profileRef.current?.views, samples),
+        visitors: resample(profileRef.current?.visitors, samples),
+      }
+      const exact = { area: areaPath.attr('d'), views: viewsPath.attr('d'), visitors: visitorsPath.attr('d') }
+      const show = (p: Profile) => {
+        areaPath.attr('d', profilePath(p.views, x0, x1, baseline, true))
+        viewsPath.attr('d', profilePath(p.views, x0, x1, baseline, false))
+        visitorsPath.attr('d', profilePath(p.visitors, x0, x1, baseline, false))
+        profileRef.current = p
+      }
+      show(from)
+      // Let the axis fade-out finish first if it is still running
+      const fadeLeft = fadeStartRef.current ? AXIS_FADE_MS - (performance.now() - fadeStartRef.current) : 0
+      fadeStartRef.current = 0
+      svg
+        .transition()
+        .delay(Math.max(0, fadeLeft))
+        .duration(MORPH_MS)
+        .ease(d3.easeCubicInOut)
+        .tween('morph', () => (t: number) =>
+          show({
+            views: from.views.map((h, i) => h + (target.views[i] - h) * t),
+            visitors: from.visitors.map((h, i) => h + (target.visitors[i] - h) * t),
+          }),
+        )
+        .on('end', () => {
+          areaPath.attr('d', exact.area)
+          viewsPath.attr('d', exact.views)
+          visitorsPath.attr('d', exact.visitors)
+          profileRef.current = target
+          settlePhase()
+        })
+    } else {
+      profileRef.current = target
+      settlePhase()
+    }
 
     // SVG legend removed; legend is rendered inline with the title
 
-    // ---------- Tooltip (vertical rule + floating module) ----------
-    const fmtHour = (d: Date) => d3.timeFormat('%b %-d, %-I%p')(d)
-    const fmtDay = (d: Date) => d3.timeFormat('%b %-d, %Y')(d)
-    const fmtWeek = (d: Date) => `W${d3.timeFormat('%V')(d)} ${d.getFullYear()}`
-    const fmtMonth = (d: Date) => d3.timeFormat('%b %Y')(d)
+    // ---------- Hover: rule + series dots in the SVG, readout as an HTML card ----------
+    const fmtHour = (d: Date) => d3.timeFormat('%b %-d, %-I %p')(d)
+    const fmtDay = (d: Date) => d3.timeFormat('%a, %b %-d')(d)
+    const fmtWeek = (d: Date) => `Week of ${d3.timeFormat('%b %-d, %Y')(d)}`
+    const fmtMonth = (d: Date) => d3.timeFormat('%B %Y')(d)
     const fmtQuarter = (d: Date) => `Q${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`
 
     const formatLabel = (d: Date) => {
@@ -376,32 +534,33 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       if (agg === 'month') return fmtMonth(d)
       return fmtQuarter(d)
     }
+    const formatValue = d3.format(',')
 
     const bisect = d3.bisector<{ date: Date } , Date>(d => d.date).left
 
-    const tip = svg.append('g').style('display', 'none')
-    const tipLine = tip.append('line')
+    const hover = svg.append('g').attr('class', 'stats-chart__hover').style('display', 'none')
+    const rule = hover.append('line')
+      .attr('class', 'stats-chart__rule')
       .attr('y1', margin.top)
       .attr('y2', height - margin.bottom)
-      .style('stroke', 'var(--foreground)')
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '4,4')
+    const addDot = (color: string) =>
+      hover.append('circle').attr('r', 4).attr('fill', color).attr('stroke', dotStroke).attr('stroke-width', 2)
+    const viewsDot = addDot(viewsColor)
+    const visitorsDot = addDot(visitorsColor)
 
-    const tipBox = tip.append('g')
-    const tipRect = tipBox.append('rect')
-      .attr('rx', 10)
-      .attr('ry', 10)
-      .attr('fill', tipFill)
-      .attr('stroke', tipStroke)
-    const tipText = tipBox.append('text')
-      .attr('fill', tipTextFill)
-      .attr('font-size', 12)
-      .attr('font-family', 'ui-sans-serif, system-ui, sans-serif')
+    const tip = d3.select(el).append('div').attr('class', 'stats-chart-tip').attr('role', 'presentation')
+    const tipDate = tip.append('div').attr('class', 'stats-chart-tip__date')
+    const addTipRow = (label: string, color: string) => {
+      const row = tip.append('div').attr('class', 'stats-chart-tip__row')
+      row.append('span').attr('class', 'stats-chart-tip__swatch').style('background', color)
+      row.append('span').text(label)
+      return row.append('span').attr('class', 'stats-chart-tip__value')
+    }
+    const tipViews = addTipRow('Views', viewsColor)
+    const tipVisitors = addTipRow('Visitors', visitorsColor)
 
-    const updateTip = (xm: number, ym?: number) => {
-      // clamp to plot area
-      const xClamped = Math.max(margin.left, Math.min(width - margin.right, xm))
-      const xDate = x.invert(xClamped)
+    const showHover = (xm: number, ym: number) => {
+      const xDate = x.invert(Math.max(margin.left, Math.min(width - margin.right, xm)))
       let i = bisect(data, xDate)
       if (i > 0 && i < data.length) {
         const d0 = data[i - 1]
@@ -412,42 +571,33 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       }
       const p = data[i]
       const xPos = x(p.date)
-      tipLine.attr('x1', xPos).attr('x2', xPos)
 
-      // Build tooltip text
-      const lines = [
-        formatLabel(p.date),
-        `Views: ${p.views}`,
-        `Visitors: ${p.visitors}`,
-      ]
-      tipText.selectAll('tspan').remove()
-      const innerPX = 10
-      const innerPY = 8
-      tipText.attr('x', innerPX).attr('y', innerPY + 12)
-      lines.forEach((l, idx) => {
-        tipText
-          .append('tspan')
-          .attr('x', innerPX)
-          .attr('dy', idx === 0 ? 0 : 16)
-          .text(l)
-      })
-      const bbox = (tipText.node() as SVGTextElement).getBBox()
-      tipRect
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', bbox.width + innerPX * 2)
-        .attr('height', bbox.height + innerPY * 2)
+      hover.style('display', null)
+      rule.attr('x1', xPos).attr('x2', xPos)
+      viewsDot.attr('cx', xPos).attr('cy', y(p.views))
+      visitorsDot.attr('cx', xPos).attr('cy', y(p.visitors))
 
-      // Position box left or right of the rule depending on space
-      const boxWidth = bbox.width + innerPX * 2
-      const boxHeight = bbox.height + innerPY * 2
-      const pad = 8
-      let boxX = xPos + pad
-      if (xPos + pad + boxWidth > width - margin.right) boxX = xPos - pad - boxWidth
-      // If mouse y provided, follow it; otherwise default to mid value
-      const targetY = ym !== undefined ? ym : y((p.views + p.visitors) / 2)
-      const boxY = Math.max(margin.top, Math.min(height - margin.bottom - boxHeight, targetY - boxHeight / 2))
-      tipBox.attr('transform', `translate(${boxX}, ${boxY})`)
+      tipDate.text(formatLabel(p.date))
+      tipViews.text(formatValue(p.views))
+      tipVisitors.text(formatValue(p.visitors))
+
+      // Sit beside the rule, flipping sides at the right edge; follow the pointer vertically
+      const node = tip.node() as HTMLDivElement
+      const gap = 12
+      let left = xPos + gap
+      if (left + node.offsetWidth > width - margin.right) left = xPos - gap - node.offsetWidth
+      const top = Math.max(
+        margin.top,
+        Math.min(height - margin.bottom - node.offsetHeight, ym - node.offsetHeight / 2),
+      )
+      tip
+        .style('transform', `translate(${Math.round(Math.max(0, left))}px, ${Math.round(top)}px)`)
+        .attr('data-visible', 'true')
+    }
+
+    const hideHover = () => {
+      hover.style('display', 'none')
+      tip.attr('data-visible', null)
     }
 
     svg.append('rect')
@@ -456,44 +606,36 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
       .attr('width', width - margin.left - margin.right)
       .attr('height', height - margin.top - margin.bottom)
       .attr('fill', 'transparent')
-      .style('cursor', 'crosshair')
-      .on('mouseenter', () => tip.style('display', null))
-      .on('mousemove', function (event: MouseEvent) {
-        // Compute mouse position relative to the SVG using d3.pointer
+      // Let touch users scrub horizontally without trapping the drawer's vertical scroll
+      .style('touch-action', 'pan-y')
+      .on('pointerenter pointermove pointerdown', function (event: PointerEvent) {
         const [mx, my] = d3.pointer(event, this)
-        updateTip(mx, my)
+        showHover(mx, my)
       })
-      .on('mouseleave', () => tip.style('display', 'none'))
+      .on('pointerleave pointercancel', hideHover)
 
-  }, [points, agg, containerWidth, chartHeight, themeEpoch])
+  }, [series, containerWidth, chartHeight, themeEpoch, gradientId])
 
   return (
     <section className={c64DrawerCardClass}>
-        <div className={c64DrawerSectionHeaderClass}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
-            <h2 className={c64DrawerSectionHeadingClass}>
-              Traffic over time
-            </h2>
-            {/* Legend inline with title */}
-            <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="stats-chart-legend-dot--views inline-block h-2.5 w-2.5 rounded-full" />
-                <span>Views</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="stats-chart-legend-dot--visitors inline-block h-2.5 w-2.5 rounded-full" />
-                <span>Visitors</span>
-              </div>
-            </div>
-          </div>
-          <div className="w-full sm:w-48 shrink-0">
-            <Listbox value={agg} onChange={setAgg} disabled={allowedAggs.length === 1}>
+      <div className={`${c64DrawerSectionHeaderClass} stats-chart-header`}>
+        <h2 className={c64DrawerSectionHeadingClass}>Traffic over time</h2>
+        <div className="stats-legend">
+          <span className="stats-legend__item">
+            <span className="stats-legend__dot stats-chart-legend-dot--views" aria-hidden />
+            Views
+          </span>
+          <span className="stats-legend__item">
+            <span className="stats-legend__dot stats-chart-legend-dot--visitors" aria-hidden />
+            Visitors
+          </span>
+        </div>
+        {/* A one-option menu is a dead control; only offer it when there's a real choice */}
+        {allowedAggs.length > 1 && (
+          <div className="stats-chart-header__agg">
+            <Listbox value={agg} onChange={(next: AggKey) => setAggChoice({ range, agg: next })}>
               <div className="relative">
-                <Listbox.Button
-                  className="chrome-select__trigger"
-                  disabled={allowedAggs.length === 1}
-                >
+                <Listbox.Button className="chrome-select__trigger" aria-label="Group traffic by">
                   {formatAggLabel(agg)}
                   <ChevronDownIcon className="chrome-select__chevron" aria-hidden />
                 </Listbox.Button>
@@ -507,11 +649,9 @@ export default function TimeSeriesChart({ range }: { range: RangeKey }) {
               </div>
             </Listbox>
           </div>
-          </div>
-        </div>
-        <div ref={containerRef} className="w-full" style={{ height: chartHeight }} />
+        )}
+      </div>
+      <div ref={containerRef} className="stats-chart w-full" style={{ height: chartHeight }} />
     </section>
   )
 }
-
-

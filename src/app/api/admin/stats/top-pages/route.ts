@@ -71,7 +71,6 @@ export async function GET(request: NextRequest) {
       uniques: (uniques.get(path)?.size || 0) 
     }))
     .sort((a, b) => b.views - a.views)
-    .slice(0, 50)
 
   return NextResponse.json({ range, pages: rows })
 }
