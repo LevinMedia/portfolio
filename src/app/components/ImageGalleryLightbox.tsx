@@ -83,16 +83,20 @@ export default function ImageGalleryLightbox({
     if (!open) return
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        // Close only the lightbox, not the drawer behind it (Drawer listens on document capture).
+        e.stopPropagation()
+        onClose()
+      }
       if (e.key === 'ArrowLeft') goPrev()
       if (e.key === 'ArrowRight') goNext()
     }
 
-    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
     document.body.style.overflow = 'hidden'
 
     return () => {
-      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keydown', onKeyDown, true)
       document.body.style.overflow = ''
     }
   }, [open, onClose, goPrev, goNext])
