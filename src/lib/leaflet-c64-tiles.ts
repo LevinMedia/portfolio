@@ -61,6 +61,13 @@ function recolorLabelPixels(
   }
 }
 
+/** CARTO raster basemaps need an API key (carto.com/basemaps/apikey); keyless requests get a watermark tile. */
+export function cartoTileUrl(style: string): string {
+  const key = process.env.NEXT_PUBLIC_CARTO_BASEMAPS_KEY
+  const url = `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`
+  return key ? `${url}?key=${encodeURIComponent(key)}` : url
+}
+
 const CARTO_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
 
@@ -105,7 +112,7 @@ export function createC64BasemapLayer(oceanCss: string, landCss: string): L.Tile
     },
   }) as unknown as TileLayerClass
 
-  return new Themed('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+  return new Themed(cartoTileUrl('light_nolabels'), {
     attribution: CARTO_ATTR,
     subdomains: 'abcd',
     maxZoom: 20,
@@ -149,7 +156,7 @@ export function createC64LabelLayer(inkCss: string): L.TileLayer {
     },
   }) as unknown as TileLayerClass
 
-  return new Themed('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+  return new Themed(cartoTileUrl('light_only_labels'), {
     attribution: '',
     subdomains: 'abcd',
     maxZoom: 20,

@@ -1,5 +1,5 @@
 import L, { type DoneCallback } from 'leaflet'
-import { parseCssColorToRgb } from '@/lib/leaflet-c64-tiles'
+import { cartoTileUrl, parseCssColorToRgb } from '@/lib/leaflet-c64-tiles'
 
 type TileLayerClass = new (urlTemplate: string, options?: L.TileLayerOptions) => L.TileLayer
 
@@ -101,7 +101,7 @@ export function createChromeBasemapLayer(
 
   if (mode === 'light') {
     return createThemedRasterLayer(
-      'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+      cartoTileUrl('light_nolabels'),
       'leaflet-chrome-base-tiles',
       (ctx, w, h) => {
         const imageData = ctx.getImageData(0, 0, w, h)
@@ -114,7 +114,7 @@ export function createChromeBasemapLayer(
   // Carto dark_nolabels keeps land/water at similar low luma — a single cutoff paints
   // everything ocean. Use light_nolabels (bright land vs grey water) and map to dark chrome colors.
   return createThemedRasterLayer(
-    'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+    cartoTileUrl('light_nolabels'),
     'leaflet-chrome-base-tiles',
     (ctx, w, h) => {
       const imageData = ctx.getImageData(0, 0, w, h)
@@ -129,7 +129,7 @@ export function createChromeLabelLayer(mode: ChromeMapMode, inkCss: string): L.T
 
   if (mode === 'light') {
     const layer = createThemedRasterLayer(
-      'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+      cartoTileUrl('light_only_labels'),
       'leaflet-chrome-label-tiles',
       (ctx, w, h) => {
         const imageData = ctx.getImageData(0, 0, w, h)
@@ -143,7 +143,7 @@ export function createChromeLabelLayer(mode: ChromeMapMode, inkCss: string): L.T
   }
 
   const layer = createThemedRasterLayer(
-    'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+    cartoTileUrl('light_only_labels'),
     'leaflet-chrome-label-tiles',
     (ctx, w, h) => {
       const imageData = ctx.getImageData(0, 0, w, h)
