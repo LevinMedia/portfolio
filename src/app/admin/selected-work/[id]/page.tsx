@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { ChevronLeftIcon, PhotoIcon, PencilIcon } from '@heroicons/react/24/outline'
 import MilkdownEditor from '@/app/components/MilkdownEditor'
+import AdminContentPreview, { confirmAdminPreview } from '@/app/components/AdminContentPreview'
 import Input from '@/app/components/ui/Input'
 
 interface SelectedWork {
@@ -31,6 +32,8 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
   const isNew = id === 'new'
   const [isLoading, setIsLoading] = useState(!isNew)
   const [isSaving, setIsSaving] = useState(false)
+  const [isCheckingPreview, setIsCheckingPreview] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -82,6 +85,22 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
       console.error('Error fetching work:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handlePreview = async () => {
+    setIsCheckingPreview(true)
+    try {
+      const ok = await confirmAdminPreview()
+      if (!ok) {
+        alert('Preview is only available when you are signed in as admin.')
+        return
+      }
+      setIsPreviewOpen(true)
+    } catch {
+      alert('Preview is only available when you are signed in as admin.')
+    } finally {
+      setIsCheckingPreview(false)
     }
   }
 
@@ -189,6 +208,14 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
             Cancel
           </button>
           <button
+            type="button"
+            onClick={handlePreview}
+            disabled={isCheckingPreview}
+            className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50"
+          >
+            {isCheckingPreview ? 'Preview...' : 'Preview'}
+          </button>
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50 transition-colors"
@@ -198,6 +225,16 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
         </div>,
         actionsContainer
       )}
+
+      {isPreviewOpen ? (
+        <AdminContentPreview
+          kind="work"
+          title={formData.title}
+          content={formData.content}
+          feature_image_url={formData.feature_image_url}
+          onClose={() => setIsPreviewOpen(false)}
+        />
+      ) : null}
 
       {/* WYSIWYG Editor */}
       <div className="space-y-8">

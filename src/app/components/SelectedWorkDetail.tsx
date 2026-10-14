@@ -5,8 +5,16 @@ import DetailContentBody from './DetailContentBody'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { useDrawerHeroTitleVisibility } from '@/app/hooks/useDrawerHeroTitleVisibility'
 
+export interface SelectedWorkPreview {
+  title: string
+  content: string
+  feature_image_url: string
+}
+
 interface SelectedWorkDetailProps {
-  slug: string
+  slug?: string
+  /** Render this draft instead of loading the public slug. */
+  preview?: SelectedWorkPreview
   onTitleLoad?: (title: string) => void
   onTitleVisibilityChange?: (isVisible: boolean) => void
 }
@@ -20,13 +28,34 @@ interface SelectedWork {
   published_at: string
 }
 
-export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilityChange }: SelectedWorkDetailProps) {
+export default function SelectedWorkDetail({ slug, preview, onTitleLoad, onTitleVisibilityChange }: SelectedWorkDetailProps) {
   const [work, setWork] = useState<SelectedWork | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!preview)
   const [error, setError] = useState('')
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
+    if (preview) {
+      setWork({
+        id: 'preview',
+        title: preview.title,
+        slug: '',
+        content: preview.content,
+        feature_image_url: preview.feature_image_url,
+        published_at: '',
+      })
+      setError('')
+      setIsLoading(false)
+      if (onTitleLoad && preview.title) onTitleLoad(preview.title)
+      return
+    }
+
+    if (!slug) {
+      setError('Work not found')
+      setIsLoading(false)
+      return
+    }
+
     const fetchWork = async () => {
       try {
         const response = await fetch(`/api/selected-works/${slug}`, { credentials: 'same-origin' })
@@ -48,7 +77,7 @@ export default function SelectedWorkDetail({ slug, onTitleLoad, onTitleVisibilit
     }
 
     fetchWork()
-  }, [slug, onTitleLoad])
+  }, [slug, preview, onTitleLoad])
 
   const showLoader = useC64LoaderVisible(isLoading)
 

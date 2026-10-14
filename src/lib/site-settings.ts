@@ -51,13 +51,16 @@ export function loadSiteSettings(): SiteSettings {
     const raw = localStorage.getItem(LEGACY_COMBINED_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as LegacyCombined
-      if (!hasAppKey && parsed.screenTint != null) {
-        const migrated = migrateScreenTintFromLegacy(parsed.screenTint)
-        if (migrated) app = migrated
-      }
-      if (parsed.colorMode === 'light' || parsed.colorMode === 'dark') {
-        app = { colorMode: parsed.colorMode }
-        saveAppSettings(app)
+      // Only when the app key is missing. A saved color mode must win over a
+      // leftover colorMode/screenTint still sitting in the C64 settings blob.
+      if (!hasAppKey) {
+        if (parsed.colorMode === 'light' || parsed.colorMode === 'dark') {
+          app = { colorMode: parsed.colorMode }
+          saveAppSettings(app)
+        } else if (parsed.screenTint != null) {
+          const migrated = migrateScreenTintFromLegacy(parsed.screenTint)
+          if (migrated) app = migrated
+        }
       }
     }
   } catch {

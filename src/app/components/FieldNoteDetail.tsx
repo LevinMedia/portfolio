@@ -5,8 +5,17 @@ import DetailContentBody from './DetailContentBody'
 import { C64LoadingScreen, useC64LoaderVisible } from './C64SpriteLoader'
 import { useDrawerHeroTitleVisibility } from '@/app/hooks/useDrawerHeroTitleVisibility'
 
+export interface FieldNotePreview {
+  title: string
+  content: string
+  feature_image_url: string
+  author: string
+}
+
 interface FieldNoteDetailProps {
-  slug: string
+  slug?: string
+  /** Render this draft instead of loading the public slug. */
+  preview?: FieldNotePreview
   onTitleLoad?: (title: string) => void
   onTitleVisibilityChange?: (isVisible: boolean) => void
 }
@@ -22,13 +31,35 @@ interface FieldNote {
   og_vertical_align?: 'top' | 'center' | 'bottom'
 }
 
-export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityChange }: FieldNoteDetailProps) {
+export default function FieldNoteDetail({ slug, preview, onTitleLoad, onTitleVisibilityChange }: FieldNoteDetailProps) {
   const [note, setNote] = useState<FieldNote | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!preview)
   const [error, setError] = useState('')
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
+    if (preview) {
+      setNote({
+        id: 'preview',
+        title: preview.title,
+        slug: '',
+        content: preview.content,
+        feature_image_url: preview.feature_image_url,
+        published_at: '',
+        author: preview.author,
+      })
+      setError('')
+      setIsLoading(false)
+      if (onTitleLoad && preview.title) onTitleLoad(preview.title)
+      return
+    }
+
+    if (!slug) {
+      setError('Note not found')
+      setIsLoading(false)
+      return
+    }
+
     const fetchNote = async () => {
       try {
         const response = await fetch(`/api/field-notes/${slug}`)
@@ -50,7 +81,7 @@ export default function FieldNoteDetail({ slug, onTitleLoad, onTitleVisibilityCh
     }
 
     fetchNote()
-  }, [slug, onTitleLoad])
+  }, [slug, preview, onTitleLoad])
 
   const showLoader = useC64LoaderVisible(isLoading)
 

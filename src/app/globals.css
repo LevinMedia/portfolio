@@ -2377,9 +2377,10 @@ body > div[style*="position: fixed"] * {
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.72) 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    rgba(0, 0, 0, 0.08) 100%
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.82) 14%,
+    rgba(0, 0, 0, 0.42) 32%,
+    rgba(0, 0, 0, 0) 56%
   );
   pointer-events: none;
 }
@@ -2401,7 +2402,9 @@ body > div[style*="position: fixed"] * {
   line-height: 1.12;
   letter-spacing: -0.03em;
   color: #ffffff;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 6px 22px rgba(0, 0, 0, 0.85);
 }
 
 #c64-site-root .drawer-container.drawer-chrome .chrome-detail-hero__meta {
