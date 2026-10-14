@@ -7,6 +7,7 @@ import SelectedWorkDetail, { type SelectedWorkPreview } from './SelectedWorkDeta
 import FieldNoteDetail, { type FieldNotePreview } from './FieldNoteDetail'
 import { applySiteSettingsToRoot } from '@/lib/site-settings'
 import { loadAppSettings, resolveAppColorMode } from '@/lib/app-settings'
+import { c64ProMono, vt323 } from '@/app/c64-fonts'
 
 export async function confirmAdminPreview(): Promise<boolean> {
   const response = await fetch('/api/admin/session', { credentials: 'same-origin' })
@@ -70,7 +71,7 @@ export default function AdminContentPreview(props: AdminContentPreviewProps) {
     <div
       ref={rootRef}
       id="c64-site-root"
-      className={`c64-site ${chromeTheme}`}
+      className={`c64-site ${chromeTheme} ${vt323.variable} ${c64ProMono.variable}`}
       data-chrome-theme={chromeTheme}
       style={{
         position: 'fixed',
