@@ -24,36 +24,44 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
       // Make sure Video.js player is only initialized once and DOM element exists
       if (!playerRef.current && videoRef.current && document.contains(videoRef.current)) {
         const videoElement = videoRef.current
+        const url = srcRef.current
+        const streaming = /\.(m3u8|mpd)(\?|#|$)/i.test(url)
 
         try {
-          // Initialize Video.js player
+          // Initialize Video.js player.
+          // overrideNative makes Video.js treat the file as a stream. An MP4 then
+          // fails with MEDIA_ERR_SRC_NOT_SUPPORTED before the browser can play it.
           const player = videojs(videoElement, {
             controls: true,
             responsive: true,
             fluid: true,
             preload: 'metadata',
             playsinline: true,
-            html5: {
-              vhs: {
-                overrideNative: true
-              },
-              nativeVideoTracks: false,
-              nativeAudioTracks: false,
-              nativeTextTracks: false
-            },
+            ...(streaming
+              ? {
+                  html5: {
+                    vhs: {
+                      overrideNative: true,
+                    },
+                    nativeVideoTracks: false,
+                    nativeAudioTracks: false,
+                    nativeTextTracks: false,
+                  },
+                }
+              : {}),
             controlBar: {
               volumePanel: {
-                inline: false
-              }
-            }
+                inline: false,
+              },
+            },
           })
 
           // Add error handler
           player.on('error', () => {
             const err = player.error()
             if (err) {
-              const url = srcRef.current
-              const looksLikeMov = /\.mov(\?|#|$)/i.test(url)
+              const currentUrl = srcRef.current
+              const looksLikeMov = /\.mov(\?|#|$)/i.test(currentUrl)
               let errorMessage = 'Unable to play this video.'
 
               switch (err.code) {
@@ -76,13 +84,13 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
                 default:
                   errorMessage = `Video error: ${err.message || 'Unknown error'}`
               }
-              
+
               console.error('Video.js Error:', {
                 code: err.code,
                 message: err.message,
-                url: srcRef.current
+                url: srcRef.current,
               })
-              
+
               setError(errorMessage)
             }
           })
@@ -153,22 +161,24 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
 
 // Helper to determine video MIME type from URL
 function getVideoType(url: string): string {
-  const extension = url.split('.').pop()?.toLowerCase()
-  
+  const path = url.split('?')[0]?.split('#')[0] ?? url
+  const extension = path.split('.').pop()?.toLowerCase()
+
   const typeMap: Record<string, string> = {
-    'mp4': 'video/mp4',
-    'webm': 'video/webm',
-    'ogg': 'video/ogg',
-    'ogv': 'video/ogg',
-    'mov': 'video/quicktime',
-    'avi': 'video/x-msvideo',
-    'mkv': 'video/x-matroska',
-    'mpeg': 'video/mpeg',
-    'mpg': 'video/mpeg',
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    ogg: 'video/ogg',
+    ogv: 'video/ogg',
+    mov: 'video/quicktime',
+    avi: 'video/x-msvideo',
+    mkv: 'video/x-matroska',
+    mpeg: 'video/mpeg',
+    mpg: 'video/mpeg',
     '3gp': 'video/3gpp',
-    'flv': 'video/x-flv',
+    flv: 'video/x-flv',
+    m3u8: 'application/x-mpegURL',
+    mpd: 'application/dash+xml',
   }
-  
+
   return typeMap[extension || ''] || 'video/mp4'
 }
-
