@@ -34,9 +34,6 @@ export default function ImageGallery({ images, caption }: ImageGalleryProps) {
         } as React.CSSProperties
       }
     >
-      {caption ? (
-        <figcaption className="mb-3 text-center text-sm text-muted-foreground">{caption}</figcaption>
-      ) : null}
       <div className="c64-image-gallery-rows">
         {rowChunks.map((rowImages, rowIndex) => (
           <div key={rowIndex} className="c64-image-gallery-row">
@@ -46,7 +43,7 @@ export default function ImageGallery({ images, caption }: ImageGalleryProps) {
                 <button
                   key={`${image.url}-${index}`}
                   type="button"
-                  className="c64-image-gallery-tile group relative aspect-square overflow-hidden rounded-lg p-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  className="c64-image-gallery-tile group relative aspect-square cursor-pointer overflow-hidden rounded-lg p-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   onClick={() => openAt(index)}
                   aria-label={`View image ${index + 1} of ${images.length}`}
                 >
@@ -54,7 +51,7 @@ export default function ImageGallery({ images, caption }: ImageGalleryProps) {
                   <img
                     src={image.url}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    className="absolute inset-0 h-full w-full cursor-pointer object-cover transition-transform duration-200 group-hover:scale-105"
                     loading="lazy"
                   />
                 </button>
@@ -63,6 +60,9 @@ export default function ImageGallery({ images, caption }: ImageGalleryProps) {
           </div>
         ))}
       </div>
+      {caption ? (
+        <figcaption className="c64-image-gallery-caption">{caption}</figcaption>
+      ) : null}
       <ImageGalleryLightbox
         images={images}
         initialIndex={lightboxIndex}

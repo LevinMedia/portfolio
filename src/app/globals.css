@@ -1345,6 +1345,7 @@ body > div[style*="position: fixed"] * {
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
+  cursor: pointer;
 }
 
 #c64-site-root .c64-drawer-copy .c64-prose .c64-image-gallery img {
@@ -1355,6 +1356,31 @@ body > div[style*="position: fixed"] * {
   padding: 0;
   border: none;
   background: transparent;
+  cursor: pointer;
+}
+
+.c64-image-gallery-tile,
+.c64-image-gallery-tile img,
+.c64-zoomable-image,
+.c64-zoomable-image img {
+  cursor: pointer;
+}
+
+/* Gallery title sits centered under the image grid */
+.c64-image-gallery-caption {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 768px) {
+  .c64-image-gallery-caption {
+    margin-top: 1rem;
+  }
 }
 
 .c64-image-gallery-rows {
@@ -3274,6 +3300,7 @@ body > div[style*="position: fixed"] * {
   box-shadow: none !important;
   background: transparent !important;
   border-radius: 0 !important;
+  cursor: pointer;
 }
 
 #c64-site-root .drawer-container.drawer-chrome .c64-image-gallery button,
@@ -3283,6 +3310,24 @@ body > div[style*="position: fixed"] * {
   border: 1px solid var(--chrome-media-border);
   background: var(--chrome-card-bg);
   padding: 0;
+  cursor: pointer;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-image-gallery-tile img,
+#c64-site-root .drawer-container.drawer-chrome .c64-zoomable-image,
+#c64-site-root .drawer-container.drawer-chrome .c64-zoomable-image img {
+  cursor: pointer;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-image-gallery-caption {
+  color: var(--chrome-muted);
+  text-align: center;
+}
+
+/* Lightbox controls are portaled outside the drawer, so cursor is set here */
+.c64-gallery-lightbox button,
+.c64-gallery-lightbox button svg {
+  cursor: pointer;
 }
 
 /* Embedded video — chrome player (override global C64 video.js treatment) */

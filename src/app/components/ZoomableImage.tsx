@@ -17,12 +17,12 @@ export default function ZoomableImage({ src, alt = '', className = '' }: Zoomabl
     <>
       <button
         type="button"
-        className="block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="c64-zoomable-image block w-full cursor-pointer appearance-none border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         onClick={() => setOpen(true)}
         aria-label={alt ? `View full size: ${alt}` : 'View image full size'}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className={className} loading="lazy" />
+        <img src={src} alt={alt} className={`cursor-pointer ${className}`.trim()} loading="lazy" />
       </button>
       <ImageGalleryLightbox images={[{ url: src }]} open={open} onClose={() => setOpen(false)} />
     </>

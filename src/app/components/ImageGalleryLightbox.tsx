@@ -123,21 +123,21 @@ export default function ImageGalleryLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
+      className="c64-gallery-lightbox fixed inset-0 z-[100] flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-label="Image gallery"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/80"
+        className="absolute inset-0 cursor-pointer bg-black/80"
         aria-label="Close gallery"
         onClick={onClose}
       />
 
       <button
         type="button"
-        className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+        className="absolute top-4 right-4 z-10 cursor-pointer rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
         aria-label="Close"
         onClick={onClose}
       >
@@ -148,7 +148,7 @@ export default function ImageGalleryLightbox({
         <>
           <button
             type="button"
-            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
             aria-label="Previous image"
             onClick={(e) => {
               e.stopPropagation()
@@ -159,7 +159,7 @@ export default function ImageGalleryLightbox({
           </button>
           <button
             type="button"
-            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
             aria-label="Next image"
             onClick={(e) => {
               e.stopPropagation()
