@@ -134,21 +134,21 @@ export default function ImageGalleryLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
+      className="c64-gallery-lightbox fixed inset-0 z-[100] flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-label="Image gallery"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/95 backdrop-blur-2xl"
+        className="absolute inset-0 cursor-pointer bg-black/95 backdrop-blur-2xl"
         aria-label="Close gallery"
         onClick={onClose}
       />
 
       <button
         type="button"
-        className={`absolute top-4 right-4 p-2 ${lightboxControlClass}`}
+        className={`absolute top-4 right-4 cursor-pointer p-2 ${lightboxControlClass}`}
         aria-label="Close"
         onClick={onClose}
       >
@@ -159,7 +159,7 @@ export default function ImageGalleryLightbox({
         <>
           <button
             type="button"
-            className={`absolute left-4 top-1/2 -translate-y-1/2 p-2 ${lightboxControlClass}`}
+            className={`absolute left-4 top-1/2 -translate-y-1/2 cursor-pointer p-2 ${lightboxControlClass}`}
             aria-label="Previous image"
             onClick={(e) => {
               e.stopPropagation()
@@ -170,7 +170,7 @@ export default function ImageGalleryLightbox({
           </button>
           <button
             type="button"
-            className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 ${lightboxControlClass}`}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer p-2 ${lightboxControlClass}`}
             aria-label="Next image"
             onClick={(e) => {
               e.stopPropagation()

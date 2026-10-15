@@ -59,7 +59,9 @@ export default function ImageGallery({ images, caption, onOpenImage }: ImageGall
           </div>
         ))}
       </div>
-      {caption ? <figcaption className="md-caption mt-3">{caption}</figcaption> : null}
+      {caption ? (
+        <figcaption className="c64-image-gallery-caption md-caption mt-3">{caption}</figcaption>
+      ) : null}
       {onOpenImage ? null : (
         <ImageGalleryLightbox
           images={images}
@@ -98,7 +100,7 @@ function GalleryTile({
   return (
     <button
       type="button"
-      className="c64-image-gallery-tile group relative aspect-square overflow-hidden rounded-lg p-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      className="c64-image-gallery-tile group relative aspect-square cursor-pointer overflow-hidden rounded-lg p-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       onClick={() => onOpen(index)}
       aria-label={`View image ${index + 1} of ${total}`}
     >
@@ -106,7 +108,7 @@ function GalleryTile({
       <img
         src={image.url}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-200"
+        className="absolute inset-0 h-full w-full cursor-pointer object-cover transition-transform duration-200"
         style={{ '--alpha-inset': inset } as React.CSSProperties}
         loading="lazy"
       />
