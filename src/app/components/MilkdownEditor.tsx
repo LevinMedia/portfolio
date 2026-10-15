@@ -391,7 +391,7 @@ export default function MilkdownEditor({
               withBorderlessImageBlock(prev(innerCtx))
             )
           })
-          .use([captionSchema, remarkCaptionPlugin, imageBorderlessPlugin])
+          .use([...captionSchema, remarkCaptionPlugin, imageBorderlessPlugin])
 
         crepe.on((listener) => {
           listener.markdownUpdated((ctx, markdown) => {

@@ -12,7 +12,7 @@ describe('caption markdown', () => {
       .use(remarkCaptionNode)
       .use(remarkStringify, {
         handlers: { caption: stringifyCaption },
-      })
+      } as never)
       .process(source)
 
     const text = String(file)
@@ -27,7 +27,7 @@ describe('caption markdown', () => {
       .use(remarkCaption)
       .run(unified().use(remarkParse).parse(`${CAPTION_MARKER} Hello *there*`))
 
-    const caption = (tree as { children: Array<{ data?: { hName?: string }; children?: Array<{ type: string }> }> }).children[0]
+    const caption = (tree as unknown as { children: Array<{ data?: { hName?: string }; children?: Array<{ type: string }> }> }).children[0]
     expect(caption.data?.hName).toBe(CAPTION_TAG)
     expect(caption.children?.some((child) => child.type === 'emphasis')).toBe(true)
   })

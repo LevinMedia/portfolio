@@ -1,4 +1,3 @@
-import type { Ctx } from '@milkdown/ctx'
 import { Plugin, PluginKey } from '@milkdown/prose/state'
 import type { EditorView } from '@milkdown/prose/view'
 import type { NodeSchema } from '@milkdown/transformer'
@@ -135,32 +134,37 @@ function guardCaptionFieldEvent(_view: EditorView, event: Event): boolean {
 }
 
 /** The image caption is a single-line input, so long text clips. Mirror it with a wrapping field. */
+function createCaptionField(input: HTMLInputElement): HTMLTextAreaElement {
+  const textarea = document.createElement('textarea')
+  textarea.className = 'caption-input'
+  textarea.rows = 1
+  textarea.setAttribute('aria-label', 'Image caption')
+  const stop = (event: Event) => event.stopPropagation()
+  for (const type of CAPTION_FIELD_EVENTS) textarea.addEventListener(type, stop)
+  textarea.addEventListener('input', () => {
+    input.value = textarea.value
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    fitCaptionField(textarea)
+  })
+  textarea.addEventListener('blur', () => {
+    input.value = textarea.value
+    input.dispatchEvent(new Event('blur', { bubbles: true }))
+  })
+  textarea.addEventListener('dragstart', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  })
+  input.insertAdjacentElement('afterend', textarea)
+  return textarea
+}
+
 function syncImageCaptions(root: HTMLElement) {
   root.querySelectorAll<HTMLInputElement>('.milkdown-image-block > input.caption-input').forEach((input) => {
-    let field = input.nextElementSibling
-    if (!(field instanceof HTMLTextAreaElement) || !field.classList.contains('caption-input')) {
-      const textarea = document.createElement('textarea')
-      textarea.className = 'caption-input'
-      textarea.rows = 1
-      textarea.setAttribute('aria-label', 'Image caption')
-      const stop = (event: Event) => event.stopPropagation()
-      for (const type of CAPTION_FIELD_EVENTS) textarea.addEventListener(type, stop)
-      textarea.addEventListener('input', () => {
-        input.value = textarea.value
-        input.dispatchEvent(new Event('input', { bubbles: true }))
-        fitCaptionField(textarea)
-      })
-      textarea.addEventListener('blur', () => {
-        input.value = textarea.value
-        input.dispatchEvent(new Event('blur', { bubbles: true }))
-      })
-      textarea.addEventListener('dragstart', (event) => {
-        event.preventDefault()
-        event.stopPropagation()
-      })
-      input.insertAdjacentElement('afterend', textarea)
-      field = textarea
-    }
+    const existing = input.nextElementSibling
+    const field =
+      existing instanceof HTMLTextAreaElement && existing.classList.contains('caption-input')
+        ? existing
+        : createCaptionField(input)
 
     field.placeholder = input.placeholder
     if (document.activeElement !== field && field.value !== input.value) {
@@ -219,7 +223,7 @@ function syncBorderlessControls(view: EditorView) {
 }
 
 export const imageBorderlessPlugin = $prose(
-  (_ctx: Ctx) =>
+  () =>
     new Plugin({
       key: borderlessPluginKey,
       props: {
