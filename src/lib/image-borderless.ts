@@ -109,6 +109,31 @@ function fitCaptionField(textarea: HTMLTextAreaElement) {
   textarea.style.height = `${textarea.scrollHeight}px`
 }
 
+/** Typing in the caption must not reach ProseMirror, which would replace the selected image. */
+const CAPTION_FIELD_EVENTS = [
+  'pointerdown',
+  'mousedown',
+  'keydown',
+  'keyup',
+  'keypress',
+  'beforeinput',
+  'input',
+  'compositionstart',
+  'compositionupdate',
+  'compositionend',
+  'paste',
+  'cut',
+  'drop',
+] as const
+
+export function isImageCaptionFieldTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest('textarea.caption-input'))
+}
+
+function guardCaptionFieldEvent(_view: EditorView, event: Event): boolean {
+  return isImageCaptionFieldTarget(event.target)
+}
+
 /** The image caption is a single-line input, so long text clips. Mirror it with a wrapping field. */
 function syncImageCaptions(root: HTMLElement) {
   root.querySelectorAll<HTMLInputElement>('.milkdown-image-block > input.caption-input').forEach((input) => {
@@ -119,12 +144,7 @@ function syncImageCaptions(root: HTMLElement) {
       textarea.rows = 1
       textarea.setAttribute('aria-label', 'Image caption')
       const stop = (event: Event) => event.stopPropagation()
-      textarea.addEventListener('pointerdown', stop)
-      textarea.addEventListener('mousedown', stop)
-      textarea.addEventListener('keydown', stop)
-      textarea.addEventListener('keyup', stop)
-      textarea.addEventListener('beforeinput', stop)
-      textarea.addEventListener('paste', stop)
+      for (const type of CAPTION_FIELD_EVENTS) textarea.addEventListener(type, stop)
       textarea.addEventListener('input', () => {
         input.value = textarea.value
         input.dispatchEvent(new Event('input', { bubbles: true }))
@@ -202,6 +222,20 @@ export const imageBorderlessPlugin = $prose(
   (_ctx: Ctx) =>
     new Plugin({
       key: borderlessPluginKey,
+      props: {
+        handleDOMEvents: {
+          keydown: guardCaptionFieldEvent,
+          keyup: guardCaptionFieldEvent,
+          keypress: guardCaptionFieldEvent,
+          beforeinput: guardCaptionFieldEvent,
+          compositionstart: guardCaptionFieldEvent,
+          compositionupdate: guardCaptionFieldEvent,
+          compositionend: guardCaptionFieldEvent,
+          paste: guardCaptionFieldEvent,
+          cut: guardCaptionFieldEvent,
+          drop: guardCaptionFieldEvent,
+        },
+      },
       view(editorView) {
         let currentView = editorView
         const observer = new MutationObserver(() => {
