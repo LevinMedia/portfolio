@@ -637,6 +637,58 @@ body > div[style*="position: fixed"] * {
   border-radius: 0.5rem;
 }
 
+.crepe-editor .milkdown .milkdown-image-block.is-borderless,
+.crepe-editor .milkdown .milkdown-image-block.is-borderless > .image-wrapper,
+.crepe-editor .milkdown .milkdown-image-block.is-borderless > .image-wrapper img {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+
+.crepe-editor .milkdown .milkdown-image-block .image-wrapper .operation > .borderless-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  width: auto !important;
+  height: 32px;
+  padding: 0 10px 0 8px !important;
+  border-radius: 999px !important;
+  opacity: 0.92 !important;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+
+.crepe-editor .milkdown-image-block > textarea.caption-input {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  box-sizing: border-box;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  text-align: left;
+  line-height: 1.5;
+  font-size: 16px;
+  background: transparent;
+  border: 0;
+  color: var(--foreground);
+  font-family: inherit;
+}
+
+.crepe-editor .milkdown .milkdown-image-block .image-wrapper .operation > .borderless-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+
 /* List styling */
 .crepe-editor .ProseMirror ul,
 .crepe-editor .ProseMirror ol {
@@ -695,6 +747,17 @@ body > div[style*="position: fixed"] * {
 
 .milkdown-editor .ProseMirror p {
   margin: 0.5rem 0;
+}
+
+/* Caption block: 16px cap, 72% opacity. Italic is a separate mark. */
+.crepe-editor .ProseMirror p.md-caption,
+#c64-site-root .c64-prose p.md-caption,
+#c64-site-root .c64-prose figcaption.md-caption,
+#c64-site-root .drawer-container.drawer-chrome .c64-prose p.md-caption,
+#c64-site-root .drawer-container.drawer-chrome .c64-prose figcaption.md-caption {
+  font-size: 16px;
+  line-height: 1.5;
+  opacity: 0.72;
 }
 
 .milkdown-editor .ProseMirror h1,
@@ -1386,6 +1449,16 @@ body > div[style*="position: fixed"] * {
     (100% - (var(--gallery-cols) - 1) * 0.75rem) / var(--gallery-cols)
   );
   flex-shrink: 0;
+}
+
+.c64-image-gallery-tile img {
+  --alpha-inset: 1;
+  transform: scale(var(--alpha-inset));
+  transform-origin: center;
+}
+
+.c64-image-gallery-tile:hover img {
+  transform: scale(calc(var(--alpha-inset) * 1.05));
 }
 
 @media (min-width: 768px) {
@@ -3150,6 +3223,73 @@ body > div[style*="position: fixed"] * {
   }
 }
 
+/* Featured work and field notes: 1.2x the shared drawer type scale. */
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail.c64-drawer-copy {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 640px) {
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail.c64-drawer-copy {
+    font-size: 1.2rem;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .chrome-detail-hero__title {
+  font-size: clamp(1.8rem, 4.8vw, 2.7rem);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .chrome-detail-hero__meta {
+  font-size: 1.05rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h1 {
+  font-size: 2.1rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h2 {
+  font-size: 1.65rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h3 {
+  font-size: 1.35rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h4 {
+  font-size: 1.2rem;
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h5,
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h6 {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 640px) {
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h1 {
+    font-size: 2.7rem;
+  }
+
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h2 {
+    font-size: 1.95rem;
+  }
+
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h3 {
+    font-size: 1.5rem;
+  }
+
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h4 {
+    font-size: 1.275rem;
+  }
+
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h5,
+  #c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose h6 {
+    font-size: 1.2rem;
+  }
+}
+
+#c64-site-root .drawer-container.drawer-chrome .chrome-detail .c64-prose pre {
+  font-size: 0.975rem;
+}
+
 #c64-site-root .drawer-container.drawer-chrome .c64-work-history-content .c64-prose :is(h1, h2, h3, h4, h5, h6) {
   color: var(--chrome-text);
 }
@@ -3261,6 +3401,19 @@ body > div[style*="position: fixed"] * {
   box-shadow: var(--chrome-shadow-media);
   border: 1px solid var(--chrome-media-border);
   background: var(--chrome-card-bg);
+}
+
+#c64-site-root .drawer-container.drawer-chrome .c64-drawer-copy .c64-prose img.image-borderless,
+#c64-site-root .drawer-container.drawer-chrome .c64-media img.image-borderless,
+#c64-site-root .c64-drawer-copy .c64-prose img.image-borderless,
+#c64-site-root .c64-media img.image-borderless,
+#c64-site-root .c64-prose img.image-borderless,
+#c64-site-root .c64-prose button:has(> img.image-borderless) {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Gallery grid — single chrome frame on tile button; img fills edge-to-edge */

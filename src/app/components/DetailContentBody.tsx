@@ -1,12 +1,16 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { remarkCaption } from '@/lib/caption-markdown'
+import { IMAGE_BORDERLESS_CLASS, parseImageBlockAlt } from '@/lib/image-borderless'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
-import { parseContentWithEmbeds } from '@/lib/gallery-markdown'
+import { indexPostMedia, videoDisplayCaption } from '@/lib/post-media'
 import VideoPlayer from './VideoPlayer'
 import YouTubeEmbed from './YouTubeEmbed'
 import ImageGallery from './ImageGallery'
+import ImageGalleryLightbox from './ImageGalleryLightbox'
 import ZoomableImage from './ZoomableImage'
 
 interface DetailContentBodyProps {
@@ -18,6 +22,8 @@ interface DetailContentBodyProps {
    * opening a new tab, so the destination can stack over the current overlay.
    */
   onInternalNavigate?: (href: string) => void
+  /** Featured work and field notes: 20% wider text column and media frame. */
+  wide?: boolean
 }
 
 /** In-app href for links to this site (relative, same origin, or levinmedia.com); otherwise null. */
@@ -43,22 +49,42 @@ export default function DetailContentBody({
   content,
   imageClassName = '',
   onInternalNavigate,
+  wide = false,
 }: DetailContentBodyProps) {
+  const frameClass = wide ? 'md:max-w-[67.2rem]' : 'md:max-w-4xl'
+  const insetClass = wide ? 'md:px-[14.285714%]' : 'md:px-32'
+  const bleedClass = wide ? 'my-6 md:-mx-[20%]' : 'my-6 md:-mx-32'
+  const { parts, media } = useMemo(() => indexPostMedia(content), [content])
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
   return (
-    <div className="c64-prose c64-media space-y-8 mt-8 w-full md:max-w-4xl mx-auto">
-      <div className="max-w-none md:px-32">
-        {parseContentWithEmbeds(content).map((part, index) => {
+    <div className={`c64-prose c64-media space-y-8 mt-8 w-full mx-auto ${frameClass}`}>
+      <div className={`max-w-none ${insetClass}`}>
+        {parts.map((part, index) => {
           if (part.type === 'video') {
+            const caption = videoDisplayCaption(part.alt)
             return (
-              <div key={index} className="my-6 md:-mx-32">
+              <div
+                key={index}
+                className={bleedClass}
+                onClickCapture={(event) => {
+                  const target = event.target as HTMLElement
+                  if (target.closest('.vjs-control-bar, .vjs-big-play-button, .vjs-menu, button')) return
+                  if (!target.closest('.video-js, video')) return
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setLightboxIndex(part.mediaStart)
+                }}
+              >
                 <VideoPlayer src={part.content} />
+                {caption ? <p className="md-caption mt-3">{caption}</p> : null}
               </div>
             )
           }
 
           if (part.type === 'youtube') {
             return (
-              <div key={index} className="my-6 md:-mx-32">
+              <div key={index} className={bleedClass}>
                 <YouTubeEmbed videoId={part.videoId} />
               </div>
             )
@@ -66,16 +92,22 @@ export default function DetailContentBody({
 
           if (part.type === 'gallery') {
             return (
-              <div key={index} className="my-6 md:-mx-32">
-                <ImageGallery images={part.images} caption={part.caption} />
+              <div key={index} className={bleedClass}>
+                <ImageGallery
+                  images={part.images}
+                  caption={part.caption}
+                  onOpenImage={(imageIndex) => setLightboxIndex(part.mediaStart + imageIndex)}
+                />
               </div>
             )
           }
 
+          const imageOrdinal = { next: part.mediaStart }
+
           return (
             <div key={index}>
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkCaption]}
                 components={{
                   h1: ({ children }) => <h1>{children}</h1>,
                   h2: ({ children }) => <h2>{children}</h2>,
@@ -83,6 +115,9 @@ export default function DetailContentBody({
                   h4: ({ children }) => <h4>{children}</h4>,
                   h5: ({ children }) => <h5>{children}</h5>,
                   h6: ({ children }) => <h6>{children}</h6>,
+                  mdcaption: ({ children }) => (
+                    <p className="md-caption mb-4 last:mb-0 leading-relaxed">{children}</p>
+                  ),
                   p: ({ children, node }) => {
                     // Check if this paragraph only contains an image
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,15 +131,26 @@ export default function DetailContentBody({
                   ol: ({ children }) => <ol className="list-decimal mb-4 space-y-2" style={{ paddingLeft: '1.5rem' }}>{children}</ol>,
                   li: ({ children }) => <li>{children}</li>,
                   blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">{children}</blockquote>,
-                  img: ({ src, alt }) => {
+                  img: ({ src, alt, title }) => {
                     if (!src) return null
+                    const slideIndex = imageOrdinal.next
+                    imageOrdinal.next += 1
+                    const parsed = parseImageBlockAlt(typeof alt === 'string' ? alt : undefined)
+                    const slide = media[slideIndex]
+                    const fromTitle = typeof title === 'string' ? title.trim() : ''
+                    const fromSlide = slide?.kind === 'image' ? slide.caption?.trim() || '' : ''
+                    const caption = fromTitle || fromSlide
+                    const displayAlt = parsed.ratio != null ? caption : alt || ''
+                    const frameClass = parsed.borderless ? IMAGE_BORDERLESS_CLASS : ''
                     return (
-                      <div className="my-6 md:-mx-32">
+                      <div className={bleedClass}>
                         <ZoomableImage
                           src={String(src)}
-                          alt={alt || ''}
-                          className={`w-full h-auto ${imageClassName}`.trim()}
+                          alt={displayAlt}
+                          className={`w-full h-auto ${imageClassName} ${frameClass}`.trim()}
+                          onOpen={() => setLightboxIndex(slideIndex)}
                         />
+                        {caption ? <p className="md-caption mt-3">{caption}</p> : null}
                       </div>
                     )
                   },
@@ -151,6 +197,13 @@ export default function DetailContentBody({
           )
         })}
       </div>
+      <ImageGalleryLightbox
+        key={lightboxIndex ?? 'closed'}
+        images={media}
+        initialIndex={lightboxIndex ?? 0}
+        open={lightboxIndex !== null}
+        onClose={() => setLightboxIndex(null)}
+      />
     </div>
   )
 }
