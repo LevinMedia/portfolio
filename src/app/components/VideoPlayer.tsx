@@ -9,14 +9,32 @@ interface VideoPlayerProps {
   src: string
   className?: string
   poster?: string
+  /** Explicit player size. The page player stays fluid when these are omitted. */
+  width?: number
+  height?: number
+  /** Width / height of the loaded file, so a fitted frame can match the picture. */
+  onAspectRatio?: (ratio: number) => void
 }
 
-export default function VideoPlayer({ src, className = '', poster }: VideoPlayerProps) {
+export default function VideoPlayer({
+  src,
+  className = '',
+  poster,
+  width,
+  height,
+  onAspectRatio,
+}: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const playerRef = useRef<Player | null>(null)
   const [error, setError] = useState<string | null>(null)
   const srcRef = useRef(src)
   srcRef.current = src
+  const boxRef = useRef({ width, height })
+  boxRef.current = { width, height }
+  const onAspectRatioRef = useRef(onAspectRatio)
+  onAspectRatioRef.current = onAspectRatio
+
+  const fitted = width != null && height != null
 
   useEffect(() => {
     // Wait for next tick to ensure DOM is ready
@@ -31,10 +49,15 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
           // Initialize Video.js player.
           // overrideNative makes Video.js treat the file as a stream. An MP4 then
           // fails with MEDIA_ERR_SRC_NOT_SUPPORTED before the browser can play it.
+          const fittedBox = boxRef.current
+          const useFitted = fittedBox.width != null && fittedBox.height != null
           const player = videojs(videoElement, {
             controls: true,
-            responsive: true,
-            fluid: true,
+            responsive: !useFitted,
+            fluid: !useFitted,
+            ...(useFitted
+              ? { width: Math.round(fittedBox.width!), height: Math.round(fittedBox.height!) }
+              : {}),
             preload: 'metadata',
             playsinline: true,
             ...(streaming
@@ -95,6 +118,14 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
             }
           })
 
+          player.on('loadedmetadata', () => {
+            const videoWidth = player.videoWidth()
+            const videoHeight = player.videoHeight()
+            if (videoWidth > 0 && videoHeight > 0) {
+              onAspectRatioRef.current?.(videoWidth / videoHeight)
+            }
+          })
+
           playerRef.current = player
         } catch (error) {
           console.error('Failed to initialize Video.js:', error)
@@ -125,6 +156,14 @@ export default function VideoPlayer({ src, className = '', poster }: VideoPlayer
       playerRef.current.load()
     }
   }, [src])
+
+  useEffect(() => {
+    const player = playerRef.current
+    if (!player || !fitted || width == null || height == null) return
+    player.fluid(false)
+    player.width(Math.round(width))
+    player.height(Math.round(height))
+  }, [fitted, width, height])
 
   return (
     <div className={`video-player-wrapper ${className} relative`}>

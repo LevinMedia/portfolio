@@ -32,6 +32,8 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
   const isNew = id === 'new'
   const [isLoading, setIsLoading] = useState(!isNew)
   const [isSaving, setIsSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+  const savedIdRef = useRef<string | null>(isNew ? null : id)
   const [isCheckingPreview, setIsCheckingPreview] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
@@ -54,6 +56,12 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
     setTitleContainer(document.getElementById('admin-page-title'))
     setActionsContainer(document.getElementById('admin-top-bar-actions'))
   }, [])
+
+  useEffect(() => {
+    if (!justSaved) return
+    const timer = setTimeout(() => setJustSaved(false), 2000)
+    return () => clearTimeout(timer)
+  }, [justSaved])
 
   useEffect(() => {
     if (!isNew) {
@@ -111,18 +119,24 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
     }
 
     setIsSaving(true)
+    setJustSaved(false)
     try {
       const response = await fetch('/api/admin/selected-works', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: isNew ? null : id,
+          id: savedIdRef.current,
           ...formData
         })
       })
 
       if (response.ok) {
-        router.push('/admin/selected-work')
+        const result = (await response.json()) as { id?: string }
+        if (result.id) savedIdRef.current = result.id
+        if (isNew && result.id) {
+          router.replace(`/admin/selected-work/${result.id}`)
+        }
+        setJustSaved(true)
       } else {
         alert('Failed to save work')
       }
@@ -220,7 +234,7 @@ export default function EditSelectedWork({ params }: { params: Promise<{ id: str
             disabled={isSaving}
             className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50 transition-colors"
           >
-            {isSaving ? 'Saving...' : 'Save Work'}
+            {isSaving ? 'Saving...' : justSaved ? 'Saved' : 'Save Work'}
           </button>
         </div>,
         actionsContainer

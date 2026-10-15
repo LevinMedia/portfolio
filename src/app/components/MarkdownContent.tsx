@@ -2,6 +2,7 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { remarkCaption } from '@/lib/caption-markdown'
 import remarkBreaks from 'remark-breaks'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 
@@ -16,7 +17,7 @@ export default function MarkdownContent({ children, className = '' }: MarkdownCo
   return (
     <div className={`c64-prose max-w-none ${className}`.trim()}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkCaption]}
         components={{
           h1: ({ children: c }) => <h1>{c}</h1>,
           h2: ({ children: c }) => <h2>{c}</h2>,
@@ -24,6 +25,7 @@ export default function MarkdownContent({ children, className = '' }: MarkdownCo
           h4: ({ children: c }) => <h4>{c}</h4>,
           h5: ({ children: c }) => <h5>{c}</h5>,
           h6: ({ children: c }) => <h6>{c}</h6>,
+          mdcaption: ({ children: c }) => <p className="md-caption mb-3 last:mb-0">{c}</p>,
           p: ({ children: c }) => <p className="mb-3 last:mb-0">{c}</p>,
           ul: ({ children: c }) => (
             <ul className="mb-3 list-disc list-outside space-y-1.5 pl-6">{c}</ul>

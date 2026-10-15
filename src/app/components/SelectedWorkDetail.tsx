@@ -99,7 +99,7 @@ export default function SelectedWorkDetail({ slug, preview, onTitleLoad, onTitle
   const heroImage = work.feature_image_url?.trim()
 
   return (
-    <div className="c64-drawer-copy">
+    <div className="c64-drawer-copy chrome-detail">
       <div className="chrome-detail-hero -mx-4">
         {heroImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -118,7 +118,7 @@ export default function SelectedWorkDetail({ slug, preview, onTitleLoad, onTitle
         </div>
       </div>
 
-      <DetailContentBody content={work.content} />
+      <DetailContentBody content={work.content} wide />
     </div>
   )
 }
