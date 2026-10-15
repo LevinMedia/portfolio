@@ -6,6 +6,7 @@ import { Input } from '@headlessui/react'
 import ReactMarkdown from 'react-markdown'
 import { normalizeLiteralHtmlBreaksInMarkdown } from '@/lib/markdown-normalize'
 import remarkGfm from 'remark-gfm'
+import { remarkCaption } from '@/lib/caption-markdown'
 import MilkdownEditor from './MilkdownEditor'
 import { c64FormFieldClass, c64FormFieldLabelClass } from '@/lib/c64-form-classes'
 import DrawerSection from './DrawerSection'
@@ -424,7 +425,7 @@ export default function Guestbook() {
 
               <div className="c64-prose max-w-none mb-4">
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkCaption]}
                   components={{
                     h1: ({ children }) => <h1>{children}</h1>,
                     h2: ({ children }) => <h2>{children}</h2>,
@@ -432,6 +433,9 @@ export default function Guestbook() {
                     h4: ({ children }) => <h4>{children}</h4>,
                     h5: ({ children }) => <h5>{children}</h5>,
                     h6: ({ children }) => <h6>{children}</h6>,
+                    mdcaption: ({ children }) => (
+                      <p className="md-caption mb-3 last:mb-0">{children}</p>
+                    ),
                     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
                     ul: ({ children }) => (
                       <ul className="mb-3 list-disc list-outside space-y-1 pl-5">{children}</ul>

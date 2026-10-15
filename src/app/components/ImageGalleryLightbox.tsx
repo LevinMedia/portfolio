@@ -3,10 +3,19 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import type { GalleryImage } from '@/lib/gallery-markdown'
+import { fitMediaBox } from '@/lib/lightbox-fit'
+import VideoPlayer from './VideoPlayer'
+import YouTubeEmbed from './YouTubeEmbed'
+
+export type LightboxSlide = {
+  url?: string
+  caption?: string
+  kind?: 'image' | 'video' | 'youtube'
+  videoId?: string
+}
 
 interface ImageGalleryLightboxProps {
-  images: GalleryImage[]
+  images: LightboxSlide[]
   initialIndex?: number
   open: boolean
   onClose: () => void
@@ -14,9 +23,11 @@ interface ImageGalleryLightboxProps {
 
 const SWIPE_THRESHOLD = 50
 const VIEWPORT_FRACTION = 0.96
-const CONTENT_GAP_PX = 8
+const CONTENT_GAP_PX = 32
 const CONTENT_PADDING_Y_PX = 16
 const CAPTION_MAX_VH = 0.28
+const lightboxControlClass =
+  'z-10 rounded-full border border-white/80 bg-white/20 text-white shadow-[0_0_0_1px_rgba(0,0,0,0.45)] backdrop-blur-md hover:bg-white/35'
 
 export default function ImageGalleryLightbox({
   images,
@@ -130,14 +141,14 @@ export default function ImageGalleryLightbox({
     >
       <button
         type="button"
-        className="absolute inset-0 cursor-pointer bg-black/80"
+        className="absolute inset-0 cursor-pointer bg-black/95 backdrop-blur-2xl"
         aria-label="Close gallery"
         onClick={onClose}
       />
 
       <button
         type="button"
-        className="absolute top-4 right-4 z-10 cursor-pointer rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+        className={`absolute top-4 right-4 cursor-pointer p-2 ${lightboxControlClass}`}
         aria-label="Close"
         onClick={onClose}
       >
@@ -148,7 +159,7 @@ export default function ImageGalleryLightbox({
         <>
           <button
             type="button"
-            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+            className={`absolute left-4 top-1/2 -translate-y-1/2 cursor-pointer p-2 ${lightboxControlClass}`}
             aria-label="Previous image"
             onClick={(e) => {
               e.stopPropagation()
@@ -159,7 +170,7 @@ export default function ImageGalleryLightbox({
           </button>
           <button
             type="button"
-            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+            className={`absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer p-2 ${lightboxControlClass}`}
             aria-label="Next image"
             onClick={(e) => {
               e.stopPropagation()
@@ -172,20 +183,16 @@ export default function ImageGalleryLightbox({
       )}
 
       <div
-        className="relative z-[1] flex max-w-[92vw] flex-col items-center gap-2 px-12 py-2"
+        className="relative z-[1] flex max-h-[100dvh] max-w-[92vw] flex-col items-center gap-8 overflow-hidden px-12 py-2"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={current.url}
-          alt={current.caption || ''}
-          className="h-auto w-auto rounded-2xl"
-          style={{
-            maxHeight: imageBounds.maxHeight,
-            maxWidth: imageBounds.maxWidth,
-          }}
+        <LightboxSlideView
+          key={`${index}-${current.kind ?? 'image'}-${current.url ?? current.videoId ?? ''}`}
+          slide={current}
+          maxWidth={imageBounds.maxWidth}
+          maxHeight={imageBounds.maxHeight}
           onLoad={updateImageBounds}
         />
         {showMeta ? (
@@ -195,7 +202,7 @@ export default function ImageGalleryLightbox({
             style={{ maxHeight: `${CAPTION_MAX_VH * 100}vh` }}
           >
             {current.caption ? (
-              <p className="text-sm text-white">{current.caption}</p>
+              <p className="text-xl leading-snug text-white">{current.caption}</p>
             ) : null}
             {images.length > 1 && (
               <p className={`text-sm text-white/80 ${current.caption ? 'mt-1' : ''}`}>
@@ -207,5 +214,58 @@ export default function ImageGalleryLightbox({
       </div>
     </div>,
     document.body,
+  )
+}
+
+function LightboxSlideView({
+  slide,
+  maxWidth,
+  maxHeight,
+  onLoad,
+}: {
+  slide: LightboxSlide
+  maxWidth: number
+  maxHeight: number
+  onLoad: () => void
+}) {
+  const kind = slide.kind ?? 'image'
+  const [aspect, setAspect] = useState(16 / 9)
+
+  if (kind === 'youtube' && slide.videoId) {
+    const box = fitMediaBox(maxWidth, maxHeight, 16 / 9)
+    return (
+      <div className="min-h-0 max-w-[92vw] shrink" style={{ width: box.width }}>
+        <YouTubeEmbed videoId={slide.videoId} title={slide.caption || 'YouTube video'} />
+      </div>
+    )
+  }
+
+  if (kind === 'video' && slide.url) {
+    const box = fitMediaBox(maxWidth, maxHeight, aspect)
+    return (
+      <div className="min-h-0 max-w-[92vw] shrink" style={{ width: box.width, height: box.height }}>
+        <VideoPlayer
+          src={slide.url}
+          width={box.width}
+          height={box.height}
+          onAspectRatio={(next) => {
+            setAspect((prev) => (Math.abs(prev - next) < 0.01 ? prev : next))
+          }}
+        />
+      </div>
+    )
+  }
+
+  if (!slide.url) return null
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={slide.url}
+      alt={slide.caption || ''}
+      className="h-auto w-auto rounded-2xl"
+      style={{ maxHeight, maxWidth }}
+      onLoad={onLoad}
+    />
   )
 }

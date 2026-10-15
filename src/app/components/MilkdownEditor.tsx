@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Crepe } from '@milkdown/crepe'
-import { commandsCtx, editorViewCtx } from '@milkdown/kit/core'
-import { clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark'
+import { imageBlockSchema } from '@milkdown/kit/component/image-block'
+import { commandsCtx, editorViewCtx, remarkStringifyOptionsCtx } from '@milkdown/kit/core'
+import { clearTextInCurrentBlockCommand, setBlockTypeCommand } from '@milkdown/kit/preset/commonmark'
 import { insert, replaceAll } from '@milkdown/utils'
 import { ADMIN_VIDEO_MAX_BYTES } from '@/lib/admin-video-upload'
 import {
@@ -12,9 +13,18 @@ import {
   findAllGalleriesInContent,
   type GalleryImage,
 } from '@/lib/gallery-markdown'
+import { captionSchema, remarkCaptionPlugin } from '@/lib/caption-schema'
+import { stringifyCaption } from '@/lib/caption-markdown'
+import { imageBorderlessPlugin, withBorderlessImageBlock } from '@/lib/image-borderless'
 import { buildYouTubeMarkdown, extractYouTubeVideoId } from '@/lib/youtube'
 import GalleryUploadModal from './GalleryUploadModal'
 import '@milkdown/crepe/theme/common/style.css'
+
+const captionIcon = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <path d="M4 5h16v2H4V5Zm0 4h10v2H4V9Zm0 4h16v2H4v-2Zm0 4h8v2H4v-2Z"/>
+  </svg>
+`
 
 const galleryIcon = `
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -332,23 +342,33 @@ export default function MilkdownEditor({
                 }
               },
             },
-            ...(allowGallery
-              ? {
-                  [Crepe.Feature.BlockEdit]: {
-                    buildMenu: (builder) => {
-                      builder.getGroup('advanced').addItem('image-gallery', {
-                        label: 'Image Gallery',
-                        icon: galleryIcon,
-                        onRun: (ctx) => {
-                          const commands = ctx.get(commandsCtx)
-                          commands.call(clearTextInCurrentBlockCommand.key)
-                          openGalleryModalRef.current()
-                        },
-                      })
-                    },
+            [Crepe.Feature.BlockEdit]: {
+              buildMenu: (builder) => {
+                builder.getGroup('text').addItem('caption', {
+                  label: 'Caption',
+                  icon: captionIcon,
+                  onRun: (ctx) => {
+                    const commands = ctx.get(commandsCtx)
+                    commands.call(clearTextInCurrentBlockCommand.key)
+                    commands.call(setBlockTypeCommand.key, {
+                      nodeType: captionSchema.type(ctx),
+                    })
                   },
-                }
-              : {}),
+                })
+
+                if (!allowGallery) return
+
+                builder.getGroup('advanced').addItem('image-gallery', {
+                  label: 'Image Gallery',
+                  icon: galleryIcon,
+                  onRun: (ctx) => {
+                    const commands = ctx.get(commandsCtx)
+                    commands.call(clearTextInCurrentBlockCommand.key)
+                    openGalleryModalRef.current()
+                  },
+                })
+              },
+            },
           },
         })
 
@@ -357,6 +377,21 @@ export default function MilkdownEditor({
           creatingRef.current = false
           return
         }
+
+        crepe.editor
+          .config((ctx) => {
+            ctx.update(remarkStringifyOptionsCtx, (prev) => ({
+              ...prev,
+              handlers: {
+                ...prev.handlers,
+                caption: stringifyCaption,
+              },
+            }))
+            ctx.update(imageBlockSchema.key, (prev) => (innerCtx) =>
+              withBorderlessImageBlock(prev(innerCtx))
+            )
+          })
+          .use([...captionSchema, remarkCaptionPlugin, imageBorderlessPlugin])
 
         crepe.on((listener) => {
           listener.markdownUpdated((ctx, markdown) => {

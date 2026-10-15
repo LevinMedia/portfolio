@@ -10,6 +10,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import type { GalleryImage } from '@/lib/gallery-markdown'
+import ImageGalleryLightbox from './ImageGalleryLightbox'
 
 interface GalleryUploadModalProps {
   open: boolean
@@ -66,6 +67,7 @@ export default function GalleryUploadModal({
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
   const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const prevOpenRef = useRef(false)
 
   // Initialize form state only when the modal opens (avoids infinite loop from unstable [] deps)
@@ -104,6 +106,7 @@ export default function GalleryUploadModal({
     setError('')
     setIsUploading(false)
     setDragIndex(null)
+    setPreviewIndex(null)
     onClose()
   }
 
@@ -144,6 +147,31 @@ export default function GalleryUploadModal({
       next[index] = { ...next[index], caption }
       return next
     })
+  }
+
+  const handleReplaceFile = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const preview = URL.createObjectURL(file)
+    setItems((prev) => {
+      const current = prev[index]
+      if (!current) {
+        URL.revokeObjectURL(preview)
+        return prev
+      }
+      if (current.file) URL.revokeObjectURL(current.preview)
+      const next = [...prev]
+      next[index] = {
+        ...current,
+        file,
+        url: undefined,
+        preview,
+      }
+      return next
+    })
+    setError('')
   }
 
   const handleDragStart = (index: number) => {
@@ -260,7 +288,7 @@ export default function GalleryUploadModal({
           {items.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground">
-                Drag to reorder · add a caption per image
+                Click a thumbnail to preview · drag to reorder · caption or upload a new image
               </p>
               {items.map((item, index) => (
                 <div
@@ -282,13 +310,47 @@ export default function GalleryUploadModal({
                     <Bars3Icon className="h-5 w-5" />
                   </button>
 
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md border border-border">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.preview}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
+                  <div className="flex w-20 shrink-0 flex-col gap-1">
+                    <button
+                      type="button"
+                      draggable={false}
+                      disabled={isUploading}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onDragStart={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                      }}
+                      onClick={() => setPreviewIndex(index)}
+                      className="relative h-20 w-20 cursor-zoom-in overflow-hidden rounded-md border border-border disabled:cursor-default"
+                      aria-label={`Preview image ${index + 1}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.preview}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    </button>
+                    <label
+                      draggable={false}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onDragStart={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                      }}
+                      className={`cursor-pointer text-center text-[11px] font-medium leading-tight text-primary hover:underline ${
+                        isUploading ? 'pointer-events-none opacity-50' : ''
+                      }`}
+                    >
+                      Upload new
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
+                        className="sr-only"
+                        disabled={isUploading}
+                        onChange={(event) => handleReplaceFile(index, event)}
+                      />
+                    </label>
                   </div>
 
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -361,6 +423,16 @@ export default function GalleryUploadModal({
           </button>
         </div>
       </div>
+
+      <ImageGalleryLightbox
+        images={items.map((item) => ({
+          url: item.preview,
+          caption: item.caption.trim() || undefined,
+        }))}
+        initialIndex={previewIndex ?? 0}
+        open={previewIndex !== null}
+        onClose={() => setPreviewIndex(null)}
+      />
     </div>
   )
 }
